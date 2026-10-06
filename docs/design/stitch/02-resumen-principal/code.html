@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-surface" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tally - Resumen de Gastos</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#e4eae5",
+            "surface": "#f5fbf6",
+            "error": "#ba1a1a",
+            "tertiary-fixed": "#b2efdb",
+            "on-tertiary-container": "#71ab9a",
+            "outline": "#717973",
+            "secondary-fixed": "#aff1c5",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#0c5131",
+            "on-secondary-container": "#2f6e4b",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#133e2b",
+            "surface-tint": "#3d6751",
+            "background": "#f5fbf6",
+            "outline-variant": "#c1c8c1",
+            "on-background": "#171d1a",
+            "primary-fixed-dim": "#a3d1b6",
+            "surface-container-highest": "#dee4df",
+            "inverse-primary": "#a3d1b6",
+            "on-tertiary-fixed": "#002019",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#2c322f",
+            "secondary-fixed-dim": "#94d5aa",
+            "surface-variant": "#dee4df",
+            "secondary-container": "#acefc2",
+            "on-primary-fixed-variant": "#254f3a",
+            "surface-bright": "#f5fbf6",
+            "on-secondary-fixed": "#002110",
+            "surface-dim": "#d5dbd7",
+            "on-error-container": "#93000a",
+            "primary-fixed": "#bfedd2",
+            "on-tertiary": "#ffffff",
+            "secondary": "#2b6a47",
+            "on-surface": "#171d1a",
+            "on-secondary": "#ffffff",
+            "tertiary-container": "#003f33",
+            "on-tertiary-fixed-variant": "#105042",
+            "tertiary-fixed-dim": "#97d2c0",
+            "surface-container-low": "#eff5f0",
+            "on-primary-fixed": "#002113",
+            "surface-container": "#e9efea",
+            "on-surface-variant": "#414943",
+            "on-primary-container": "#7da990",
+            "tertiary": "#00271f",
+            "primary": "#002718",
+            "inverse-on-surface": "#ecf2ed"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-tablet": "1.25rem",
+            "gutter": "1rem",
+            "margin-tablet": "1.5rem",
+            "margin-desktop": "2rem",
+            "margin": "1.25rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "display-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "title-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-md": ["Inter"],
+            "title-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "display-md-mobile": ["Inter"],
+            "label-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["57px", {"lineHeight": "64px", "fontWeight": "600"}],
+            "title-md": ["16px", {"lineHeight": "24px", "fontWeight": "600"}],
+            "display-md": ["45px", {"lineHeight": "52px", "fontWeight": "600"}],
+            "headline-sm": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+            "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "600"}],
+            "headline-md": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+            "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+            "title-sm": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "label-sm": ["11px", {"lineHeight": "16px", "fontWeight": "500"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "display-md-mobile": ["34px", {"lineHeight": "40px", "fontWeight": "600"}],
+            "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="h-full bg-surface text-on-surface flex flex-col font-body-md text-body-md antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopAppBar Anchored from JSON: docked full-width top-0, flat, zero border lines by Shell Border Ban -->
+<header class="fixed top-0 left-0 right-0 z-40 bg-surface flex justify-between items-center w-full px-margin-mobile h-16 shadow-none">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container text-primary hover:bg-surface-container-high transition-colors duration-150 active:scale-95">
+<span class="material-symbols-outlined text-primary text-[24px]">account_balance_wallet</span>
+</div>
+<span class="font-title-lg text-title-lg font-semibold text-primary tracking-tight">Tally</span>
+</div>
+<!-- Right Actions / Profile -->
+<div class="flex items-center gap-1">
+<button aria-label="Notificaciones" class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors duration-150 rounded-full active:scale-95">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+</button>
+<button aria-label="Perfil y Ajustes" class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors duration-150 rounded-full active:scale-95">
+<span class="material-symbols-outlined text-[24px]">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Scrollable Canvas with Safe Bottom Buffering for FAB and BottomBar -->
+<main class="flex-1 w-full max-w-4xl mx-auto pt-16 px-margin-mobile pb-36 space-y-5">
+<!-- Time Period Filter Chips / Segmented Control -->
+<section aria-label="Selector de periodo" class="pt-2">
+<div class="flex items-center justify-between gap-1.5 p-1 bg-surface-container-low rounded-full">
+<button class="flex-1 py-1.5 px-3 rounded-full text-center font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95" type="button">
+          Día
+        </button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-center font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95" type="button">
+          Semana
+        </button>
+<!-- Active Pill: Deep M3 Mint Green style -->
+<button class="flex-1 py-1.5 px-3 rounded-full text-center bg-secondary-container text-on-secondary-container font-label-md text-label-md shadow-sm transition-all duration-150 active:scale-95 flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check</span>
+<span>Mes</span>
+</button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-center font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95 flex items-center justify-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">calendar_month</span>
+<span>Personalizado</span>
+</button>
+</div>
+</section>
+<!-- Total Spent Highlight Bento Card (Level 1 Elevation with hairline container boundary) -->
+<section class="bg-surface-container-low rounded-3xl p-5 border border-outline-variant/40">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface-variant tracking-wide font-medium">GASTO TOTAL DEL PERIODO</span>
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-full font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          1 May – 31 May
+        </span>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 mt-1">
+<div class="flex items-baseline gap-1">
+<h1 class="font-display-md-mobile sm:font-display-md text-display-md-mobile sm:text-display-md text-primary tracking-tight tabular-nums">
+            1.428,50
+          </h1>
+<span class="font-headline-sm text-headline-sm text-primary font-medium">€</span>
+</div>
+<!-- Comparative Badge -->
+<div class="inline-flex items-center gap-1 self-start sm:self-auto px-2.5 py-1 rounded-full bg-secondary-container/60 text-on-secondary-container font-label-md text-label-md font-medium">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span>-4.2% vs periodo anterior</span>
+</div>
+</div>
+<!-- Quick Micro Metrics Ledger -->
+<div class="grid grid-cols-2 gap-2 mt-5 pt-4 border-t border-outline-variant/20">
+<div class="p-3 bg-surface-container rounded-2xl">
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Promedio diario</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold tabular-nums mt-0.5 block">46,08 € / día</span>
+</div>
+<div class="p-3 bg-surface-container rounded-2xl">
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Tickets registrados</span>
+<span class="font-title-sm text-title-sm text-on-surface font-semibold tabular-nums mt-0.5 block">38 recibos OCR</span>
+</div>
+</div>
+</section>
+<!-- Donut Chart & Category Analysis Section -->
+<section class="bg-surface-container-low rounded-3xl p-5 border border-outline-variant/40 space-y-6">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-title-md text-title-md text-on-surface font-semibold">Distribución por Categorías</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">6 categorías activas procesadas con IA</p>
+</div>
+<button aria-label="Información de desglose" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">query_stats</span>
+</button>
+</div>
+<!-- Donut Chart Canvas & Concentric Donut -->
+<div class="flex flex-col sm:flex-row items-center justify-center gap-6 py-2">
+<div class="relative w-44 h-44 shrink-0 flex items-center justify-center">
+<svg aria-hidden="true" class="w-full h-full -rotate-90" viewbox="0 0 100 100">
+<!-- Background Ring -->
+<circle cx="50" cy="50" fill="none" r="38" stroke="#dee4df" stroke-width="12"></circle>
+<!-- Alimentación: 38% -> stroke-dasharray="90.7 238.8" offset=0 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#133e2b" stroke-dasharray="90.7 238.8" stroke-dashoffset="0" stroke-width="12"></circle>
+<!-- Hogar: 20% -> dash: 47.7, offset: -90.7 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#2b6a47" stroke-dasharray="47.7 238.8" stroke-dashoffset="-90.7" stroke-width="12"></circle>
+<!-- Transporte: 15% -> dash: 35.8, offset: -138.4 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#414943" stroke-dasharray="35.8 238.8" stroke-dashoffset="-138.4" stroke-width="12"></circle>
+<!-- Ocio: 14% -> dash: 33.4, offset: -174.2 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#71ab9a" stroke-dasharray="33.4 238.8" stroke-dashoffset="-174.2" stroke-width="12"></circle>
+<!-- Salud: 8% -> dash: 19.1, offset: -207.6 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#a3d1b6" stroke-dasharray="19.1 238.8" stroke-dashoffset="-207.6" stroke-width="12"></circle>
+<!-- Otros: 5% -> dash: 11.9, offset: -226.7 -->
+<circle class="transition-all duration-500 hover:opacity-90" cx="50" cy="50" fill="none" r="38" stroke="#c1c8c1" stroke-dasharray="11.9 238.8" stroke-dashoffset="-226.7" stroke-width="12"></circle>
+</svg>
+<!-- Donut Central Data Metric -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Mayor gasto</span>
+<span class="font-title-md text-title-md text-primary font-bold">38%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Alimentos</span>
+</div>
+</div>
+<!-- Semantic Chart Legend -->
+<div class="grid grid-cols-2 gap-x-6 gap-y-2.5 w-full sm:w-auto text-on-surface">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#133e2b]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Alimentación (38%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#2b6a47]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Hogar (20%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#414943]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Transporte (15%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#71ab9a]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Ocio (14%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#a3d1b6]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Salud (8%)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full shrink-0 bg-[#c1c8c1]"></span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Otros (5%)</span>
+</div>
+</div>
+</div>
+<!-- Detailed Categories List with Tonal Progress Indicator -->
+<div class="space-y-3 pt-2">
+<div class="flex items-center justify-between pb-1 border-b border-outline-variant/20">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">DESGLOSE DETALLADO</span>
+<span class="font-label-md text-label-md text-on-surface-variant font-medium">IMPORTE / RATIO</span>
+</div>
+<!-- 1. Alimentación -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#133e2b] text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">restaurant</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Alimentación</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Supermercados y restaurantes</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">542,83 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">38%</span>
+</div>
+</div>
+<!-- Tonal Bar -->
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#133e2b] h-full rounded-full" style="width: 38%"></div>
+</div>
+</article>
+<!-- 2. Hogar -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#2b6a47] text-on-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Hogar</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Suministros y mantenimiento</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">285,70 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">20%</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#2b6a47] h-full rounded-full" style="width: 20%"></div>
+</div>
+</article>
+<!-- 3. Transporte -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#414943] text-white flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">directions_subway</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Transporte</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Combustible y abono mensual</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">214,27 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">15%</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#414943] h-full rounded-full" style="width: 15%"></div>
+</div>
+</article>
+<!-- 4. Ocio -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#71ab9a] text-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">theater_comedy</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Ocio</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Suscripciones, cine y viajes</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">199,99 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">14%</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#71ab9a] h-full rounded-full" style="width: 14%"></div>
+</div>
+</article>
+<!-- 5. Salud -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#a3d1b6] text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Salud</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Farmacia y revisiones</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">114,28 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">8%</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#a3d1b6] h-full rounded-full" style="width: 8%"></div>
+</div>
+</article>
+<!-- 6. Otros -->
+<article class="p-3 bg-surface-container rounded-2xl space-y-2 hover:bg-surface-container-high transition-colors">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-[#c1c8c1] text-on-surface flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface font-semibold">Otros</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Imprevistos e impuestos</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-title-sm text-title-sm text-primary font-bold tabular-nums block">71,43 €</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">5%</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#c1c8c1] h-full rounded-full" style="width: 5%"></div>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- M3 Expressive Floating Action Button (FAB) anchored right above bottom bar -->
+<aside class="fixed bottom-24 right-4 z-40">
+<button class="h-14 px-5 rounded-2xl bg-primary text-secondary-container flex items-center gap-3 shadow-[0_8px_20px_rgba(0,39,24,0.22)] active:scale-95 hover:bg-primary-container transition-all duration-150 group" type="button">
+<span class="material-symbols-outlined text-[26px] text-secondary-container transition-transform group-hover:scale-110">document_scanner</span>
+<span class="font-label-lg text-label-lg font-semibold tracking-wide text-white">Escanear</span>
+</button>
+</aside>
+<!-- BottomNavBar Anchored from JSON: Destination Count 3 ["Resumen", "Gastos", "Escanear"] -->
+<!-- Active state: 'Resumen' mapped directly from prompt & intent -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-margin-mobile pb-safe bg-surface-container-low border-none shadow-none">
+<!-- Item 1: Resumen (ACTIVE) -->
+<a class="flex flex-col items-center justify-center gap-1 text-primary active:scale-95 transition-transform duration-150 ease-out" href="#">
+<span class="bg-secondary-container text-on-secondary-container px-5 py-1 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">insights</span>
+</span>
+<span class="font-label-md text-label-md font-semibold">Resumen</span>
+</a>
+<!-- Item 2: Gastos (INACTIVE) -->
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95" href="#">
+<span class="px-5 py-1 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">receipt_long</span>
+</span>
+<span class="font-label-md text-label-md">Gastos</span>
+</a>
+<!-- Item 3: Escanear (INACTIVE) -->
+<a class="flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95" href="#">
+<span class="px-5 py-1 flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">document_scanner</span>
+</span>
+<span class="font-label-md text-label-md">Escanear</span>
+</a>
+</nav>
+</body></html>

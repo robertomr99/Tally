@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Tally - Splash</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#e4eae5",
+            "surface": "#f5fbf6",
+            "error": "#ba1a1a",
+            "tertiary-fixed": "#b2efdb",
+            "on-tertiary-container": "#71ab9a",
+            "outline": "#717973",
+            "secondary-fixed": "#aff1c5",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#0c5131",
+            "on-secondary-container": "#2f6e4b",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#133e2b",
+            "surface-tint": "#3d6751",
+            "background": "#f5fbf6",
+            "outline-variant": "#c1c8c1",
+            "on-background": "#171d1a",
+            "primary-fixed-dim": "#a3d1b6",
+            "surface-container-highest": "#dee4df",
+            "inverse-primary": "#a3d1b6",
+            "on-tertiary-fixed": "#002019",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#2c322f",
+            "secondary-fixed-dim": "#94d5aa",
+            "surface-variant": "#dee4df",
+            "secondary-container": "#acefc2",
+            "on-primary-fixed-variant": "#254f3a",
+            "surface-bright": "#f5fbf6",
+            "on-secondary-fixed": "#002110",
+            "surface-dim": "#d5dbd7",
+            "on-error-container": "#93000a",
+            "primary-fixed": "#bfedd2",
+            "on-tertiary": "#ffffff",
+            "secondary": "#2b6a47",
+            "on-surface": "#171d1a",
+            "on-secondary": "#ffffff",
+            "tertiary-container": "#003f33",
+            "on-tertiary-fixed-variant": "#105042",
+            "tertiary-fixed-dim": "#97d2c0",
+            "surface-container-low": "#eff5f0",
+            "on-primary-fixed": "#002113",
+            "surface-container": "#e9efea",
+            "on-surface-variant": "#414943",
+            "on-primary-container": "#7da990",
+            "tertiary": "#00271f",
+            "primary": "#002718",
+            "inverse-on-surface": "#ecf2ed"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-tablet": "1.25rem",
+            "gutter": "1rem",
+            "margin-tablet": "1.5rem",
+            "margin-desktop": "2rem",
+            "margin": "1.25rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "display-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "title-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-md": ["Inter"],
+            "title-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "display-md-mobile": ["Inter"],
+            "label-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["57px", { "lineHeight": "64px", "fontWeight": "600" }],
+            "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "display-md": ["45px", { "lineHeight": "52px", "fontWeight": "600" }],
+            "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "title-sm": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "display-md-mobile": ["34px", { "lineHeight": "40px", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 16px;
+      line-height: 1;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="bg-primary text-on-primary h-full w-full overflow-hidden flex flex-col justify-between select-none antialiased">
+<!-- Barra de estado nativa de Android (Top Safe Area / Status Bar) -->
+<header class="w-full h-10 px-margin-mobile flex items-center justify-between z-10 opacity-70">
+<!-- Reloj nativo estilo Material 3 -->
+<div class="font-label-md text-label-md text-primary-fixed tracking-tight font-medium pl-1">
+      9:41
+    </div>
+<!-- Iconos del sistema Android: Wi-Fi, Red Celular y Batería -->
+<div class="flex items-center space-x-1.5 pr-1 text-primary-fixed">
+<span class="material-symbols-outlined text-[15px]" data-icon="wifi">wifi</span>
+<span class="material-symbols-outlined text-[15px]" data-icon="signal_cellular_4_bar">signal_cellular_4_bar</span>
+<span class="material-symbols-outlined text-[16px]" data-icon="battery_full">battery_full</span>
+</div>
+</header>
+<!-- Contenedor central absoluto: Emblema geométrico de Tally -->
+<main class="flex-1 flex items-center justify-center relative px-margin-mobile">
+<div class="relative flex items-center justify-center p-space-md">
+<!-- Tally Marks Iconography (Pure Geometric Material Design) -->
+<div class="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-between px-1">
+<!-- 4 barras verticales calibradas con bordes suaves -->
+<div class="w-2.5 sm:w-3 h-20 sm:h-24 bg-primary-fixed rounded-full shadow-sm transition-all duration-300"></div>
+<div class="w-2.5 sm:w-3 h-20 sm:h-24 bg-primary-fixed rounded-full shadow-sm transition-all duration-300"></div>
+<div class="w-2.5 sm:w-3 h-20 sm:h-24 bg-primary-fixed rounded-full shadow-sm transition-all duration-300"></div>
+<div class="w-2.5 sm:w-3 h-20 sm:h-24 bg-primary-fixed rounded-full shadow-sm transition-all duration-300"></div>
+<!-- Barra diagonal dinámica que cruza las 4 marcas (trazo distintivo de conteo) -->
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 sm:w-36 h-2.5 sm:h-3 bg-primary-fixed rounded-full -rotate-[28deg] origin-center shadow-md border border-primary/20"></div>
+</div>
+</div>
+</main>
+<!-- Barra de navegación por gestos nativa de Android (Navigation Bar Pill) -->
+<footer class="w-full h-8 flex items-center justify-center pb-2 z-10">
+<div class="w-28 h-1 bg-primary-fixed opacity-40 rounded-full"></div>
+</footer>
+</body></html>

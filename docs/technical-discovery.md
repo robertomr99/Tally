@@ -1,0 +1,81 @@
+# Technical Discovery
+
+## Product Surface
+
+- App Android nativa, single-activity, Kotlin 100 %, Jetpack Compose + Material 3.
+- Arquitectura, módulos y reglas: `AGENTS.md` (fuente de verdad; este doc no la
+  duplica). Resumen: Clean Architecture multi-módulo, Hilt, Coroutines/Flow,
+  Room, sin XML.
+- Dispositivos de prueba: Galaxy Tab S9+ (12 GB RAM, pantalla expandida) y
+  realme GT 2 (compacto, no mueve el modelo local). La app debe verse
+  correcta en ambos: layouts con ancho máximo centrado del diseño de Stitch.
+
+## Candidate Stack
+
+Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
+
+- **OCR**: ML Kit Text Recognition v2 (`text-recognition` latin), on-device,
+  gratuito, sin clave de API. Produce el texto crudo.
+- **Motor Local**: Gemma 3n con MediaPipe (LLM Inference / GenAI) como
+  `GemmaLocalEngine` en `framework/ai`. El archivo del modelo NO va en el APK:
+  se descarga en la primera ejecución (WiFi + progreso + espacio).
+- **Motor Nube**: Gemini vía Firebase AI Logic SDK como `GeminiCloudEngine`
+  (sin clave de API en el APK; la gestione Firebase).
+- **Gráfica**: donut dibujado con Canvas de Compose (el diseño usa SVG, se
+  traduce a arcos). Sin librería de charts de terceros.
+
+## Data and Storage
+
+- Room como única fuente de verdad: tablas `tickets` y `lineas` (borrado en
+  cascada por FK), escrituras multi-tabla con `@Transaction`.
+- Fotos y texto crudo: ficheros en el directorio privado de la app
+  (`filesDir`), ruta guardada en Room. Nada en MediaStore (evita exposición
+  en la galería).
+- Fotos comprimidas a un máximo razonable (~1280 px lado largo, JPEG ~85)
+  tras corregir orientación EXIF; no se guarda el original en resolución
+  de cámara completa.
+
+## Integrations
+
+- Solo dos salidas externas: descarga inicial del modelo local (Hugging Face)
+  e inference en nube (Firebase AI Logic). Nada más: sin REST propio, sin
+  analíticas, sin crash reporting obligatorio (valorar más adelante).
+
+## Authentication and Authorization
+
+- Ninguna. Sin cuentas ni login (decisión de producto). El acceso a los datos
+  equivale a desbloquear el dispositivo; los datos viven en almacenamiento
+  privado de la app. Requisito de privacidad explícito en la demo: el ticket
+  nunca sale del dispositivo cuando se usa el motor Local.
+
+## Deployment and Operations
+
+- Distribución: APK firmado instalado a mano en los dos móviles (no hay
+  Play Store en el MVP).
+- Operación día 1: el propio autor. El error humano a prevenir: perder la
+  foto por un crash → la foto se persiste en el momento de la captura.
+- Sin CI obligatorio; builds locales de Gradle.
+
+## Testing and Verification
+
+- Unit: casos de uso, repositorios y ViewModels con dobles de `:test:unit`,
+  Turbine para Flow. Crítico: reglas del router, patrón Período (rangos),
+  borrado en cascada, y el extractor con textos crudos de ejemplo (sin red).
+- Instrumentado (si hay tiempo): Room en memoria + Hilt `@TestInstallIn`.
+- Verificación E2E: manual, en los dos dispositivos (ver build-brief).
+
+## Observability
+
+- Mínimo y local: registro (log o tabla de debug) de cada extracción con
+  motor usado, duración, longitud del texto crudo y resultado (éxito/fallo).
+  Sirve para la memoria del curso y para diagnosticar en la demo.
+
+## Constraints
+
+- 6 semanas, 1 persona: cualquier dependencia nueva debe justificarse por
+  ahorrar tiempo, no por elegancia.
+- Offline-first: el motor Local debe poder completar el flujo sin red
+  (incluida la primera descarga del modelo hecha antes).
+- Sin claves de API en el APK ni en BuildConfig (regla de AGENTS.md).
+- Windows como entorno de desarrollo: comprobar que el toolchain de Android
+  y las herramientas de MediaPipe funcionan en este entorno (tarea de la S1).

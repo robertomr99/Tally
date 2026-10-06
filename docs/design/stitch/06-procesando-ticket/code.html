@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tally - Procesando Extracción OCR</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Inter Google Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config directly from specification -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-high": "#e4eae5",
+            "surface": "#f5fbf6",
+            "error": "#ba1a1a",
+            "tertiary-fixed": "#b2efdb",
+            "on-tertiary-container": "#71ab9a",
+            "outline": "#717973",
+            "secondary-fixed": "#aff1c5",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-secondary-fixed-variant": "#0c5131",
+            "on-secondary-container": "#2f6e4b",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#133e2b",
+            "surface-tint": "#3d6751",
+            "background": "#f5fbf6",
+            "outline-variant": "#c1c8c1",
+            "on-background": "#171d1a",
+            "primary-fixed-dim": "#a3d1b6",
+            "surface-container-highest": "#dee4df",
+            "inverse-primary": "#a3d1b6",
+            "on-tertiary-fixed": "#002019",
+            "on-primary": "#ffffff",
+            "inverse-surface": "#2c322f",
+            "secondary-fixed-dim": "#94d5aa",
+            "surface-variant": "#dee4df",
+            "secondary-container": "#acefc2",
+            "on-primary-fixed-variant": "#254f3a",
+            "surface-bright": "#f5fbf6",
+            "on-secondary-fixed": "#002110",
+            "surface-dim": "#d5dbd7",
+            "on-error-container": "#93000a",
+            "primary-fixed": "#bfedd2",
+            "on-tertiary": "#ffffff",
+            "secondary": "#2b6a47",
+            "on-surface": "#171d1a",
+            "on-secondary": "#ffffff",
+            "tertiary-container": "#003f33",
+            "on-tertiary-fixed-variant": "#105042",
+            "tertiary-fixed-dim": "#97d2c0",
+            "surface-container-low": "#eff5f0",
+            "on-primary-fixed": "#002113",
+            "surface-container": "#e9efea",
+            "on-surface-variant": "#414943",
+            "on-primary-container": "#7da990",
+            "tertiary": "#00271f",
+            "primary": "#002718",
+            "inverse-on-surface": "#ecf2ed"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter-tablet": "1.25rem",
+            "gutter": "1rem",
+            "margin-tablet": "1.5rem",
+            "margin-desktop": "2rem",
+            "margin": "1.25rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "margin-mobile": "1rem",
+            "gutter-mobile": "0.75rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Inter"],
+            "title-md": ["Inter"],
+            "display-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "title-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "label-md": ["Inter"],
+            "title-sm": ["Inter"],
+            "body-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-lg": ["Inter"],
+            "display-md-mobile": ["Inter"],
+            "label-lg": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["57px", { "lineHeight": "64px", "fontWeight": "600" }],
+            "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "display-md": ["45px", { "lineHeight": "52px", "fontWeight": "600" }],
+            "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "title-lg": ["22px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-md": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "title-sm": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "display-md-mobile": ["34px", { "lineHeight": "40px", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    
+    @keyframes radarWave {
+      0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+      }
+      50% {
+        opacity: 0.35;
+      }
+      100% {
+        transform: scale(1.4);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes scanBeam {
+      0%, 100% {
+        top: 6%;
+        opacity: 0.2;
+      }
+      50% {
+        top: 86%;
+        opacity: 0.85;
+      }
+    }
+
+    .animate-radar {
+      animation: radarWave 3s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    .animate-radar-delayed {
+      animation: radarWave 3s cubic-bezier(0, 0, 0.2, 1) 1.2s infinite;
+    }
+
+    .animate-scan-line {
+      animation: scanBeam 2.8s ease-in-out infinite;
+    }
+
+    .circle-progress-bar {
+      transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface h-full flex flex-col antialiased selection:bg-secondary-container selection:text-on-secondary-container overflow-hidden">
+<!-- Top App Bar following Shared Components JSON exact spec -->
+<header class="bg-surface border-b border-outline-variant/30 flex justify-between items-center w-full px-margin-mobile h-16 shrink-0 z-30">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors duration-150 rounded-full active:scale-95">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+</button>
+<span class="font-title-lg text-title-lg font-semibold text-primary tracking-tight">Tally</span>
+</div>
+<!-- State/Contextual Mode Info in Header -->
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-high px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-outline-variant/40">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+        Motor OCR v4.2
+      </span>
+<button aria-label="Usuario" class="w-10 h-10 flex items-center justify-center text-primary hover:bg-surface-container-high transition-colors duration-150 rounded-full active:scale-95">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Focused Canvas Context (Bottom Navigation is strictly suppressed on linear processing screens per UX Goal) -->
+<main class="flex-1 relative w-full flex flex-col justify-between items-center px-margin-mobile py-space-md max-w-xl mx-auto z-10 overflow-hidden">
+<!-- TOP ARCHITECTURE BADGE: Machine learning on-device privacy toggle -->
+<div class="pt-space-xs flex flex-col items-center">
+<div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container border border-outline-variant/50 shadow-sm">
+<span class="material-symbols-outlined text-secondary font-semibold text-[18px]" data-icon="memory" style="font-variation-settings: 'FILL' 1;">memory</span>
+<span class="font-label-md text-label-md text-on-surface font-medium tracking-tight">Procesando en el dispositivo (On-device ML)</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]" data-icon="lock">lock</span>
+</div>
+<p class="font-label-sm text-label-sm text-outline mt-1.5 flex items-center gap-1">
+<span>Garantía de privacidad criptográfica</span>
+<span>•</span>
+<button class="text-secondary font-medium hover:underline focus:outline-none" id="cloudToggleBtn">Cambiar a Nube</button>
+</p>
+</div>
+<!-- CENTRAL FOCAL REGION: Ghosted Receipt Canvas + Optical Scanner Ring + Expressive Progress -->
+<div class="relative w-full flex flex-col items-center justify-center my-auto py- space-sm">
+<!-- Ghosted Translucent Receipt Backplate (Silueta del ticket en computación visual) -->
+<div class="relative w-64 h-80 rounded-xl bg-surface-container-lowest/85 border border-outline-variant/50 p-4 shadow-sm overflow-hidden flex flex-col justify-between select-none">
+<!-- Scanning Laser / Beam overlay on ticket -->
+<div class="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent animate-scan-line shadow-[0_0_12px_rgba(43,106,71,0.6)] z-20 pointer-events-none"></div>
+<!-- Simulated Computer Vision Bounding Boxes -->
+<div class="space-y-3 opacity-60 z-10">
+<div class="flex justify-between items-start">
+<div class="space-y-1">
+<div class="h-3 w-28 bg-surface-container-high rounded relative">
+<span class="absolute -top-3 left-0 font-label-sm text-[9px] text-secondary font-mono tracking-tighter">[ORG_NAME 98%]</span>
+</div>
+<div class="h-2 w-16 bg-surface-container rounded"></div>
+</div>
+<div class="h-5 w-5 rounded bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-outline text-[14px]" data-icon="receipt">receipt</span>
+</div>
+</div>
+<div class="h-px bg-dashed border-t border-outline-variant/60 my-2"></div>
+<!-- Line items recognized tags -->
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<div class="h-2.5 w-32 bg-secondary-container/40 rounded border border-secondary/30 relative">
+<span class="absolute -top-3 right-0 font-label-sm text-[8px] text-on-secondary-container font-mono">ITEM_01</span>
+</div>
+<div class="h-2.5 w-8 bg-surface-container-high rounded"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="h-2.5 w-24 bg-surface-container-high rounded"></div>
+<div class="h-2.5 w-8 bg-surface-container-high rounded"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="h-2.5 w-36 bg-secondary-container/40 rounded border border-secondary/30"></div>
+<div class="h-2.5 w-10 bg-surface-container-high rounded"></div>
+</div>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/40 flex justify-between items-end opacity-75 z-10">
+<div class="space-y-1">
+<div class="h-2 w-12 bg-surface-container-high rounded"></div>
+<div class="h-2 w-16 bg-surface-container-high rounded"></div>
+</div>
+<div class="h-4 w-14 bg-secondary-container rounded border border-secondary/40"></div>
+</div>
+<!-- Watermark barcode ghost -->
+<div class="absolute bottom-2 inset-x-8 flex justify-center gap-1 opacity-20 z-0">
+<div class="w-1 h-3 bg-on-surface"></div>
+<div class="w-2 h-3 bg-on-surface"></div>
+<div class="w-0.5 h-3 bg-on-surface"></div>
+<div class="w-1.5 h-3 bg-on-surface"></div>
+<div class="w-1 h-3 bg-on-surface"></div>
+<div class="w-2.5 h-3 bg-on-surface"></div>
+</div>
+</div>
+<!-- OVERLAY FLOATING CONTROLLER: M3 Expressive Circular Progress HUD -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<!-- Ambient Radar waves -->
+<div class="absolute w-44 h-44 rounded-full border border-secondary/40 animate-radar"></div>
+<div class="absolute w-44 h-44 rounded-full border border-secondary/25 animate-radar-delayed"></div>
+<!-- Backdrop blur circle card -->
+<div class="relative w-36 h-36 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-lg border border-outline-variant/30 flex flex-col items-center justify-center pointer-events-auto">
+<!-- SVG Radial Gauge -->
+<svg class="absolute inset-0 w-full h-full -rotate-90 p-1" viewbox="0 0 100 100">
+<!-- Track -->
+<circle cx="50" cy="50" fill="none" r="42" stroke="#e4eae5" stroke-width="5"></circle>
+<!-- Active Fill -->
+<circle class="circle-progress-bar" cx="50" cy="50" fill="none" id="progressCircle" r="42" stroke="#2b6a47" stroke-dasharray="264" stroke-dashoffset="84" stroke-linecap="round" stroke-width="5.5"></circle>
+</svg>
+<!-- Core Metric -->
+<div class="flex flex-col items-center justify-center text-center">
+<span class="font-display-md-mobile text-display-md-mobile text-primary font-bold tracking-tight" id="percentDisplay">68%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium uppercase tracking-wider -mt-1">Extrayendo</span>
+</div>
+</div>
+</div>
+</div>
+<!-- INFORMATIVE TEXT & PIPELINE STATUS -->
+<div class="w-full text-center space-y-3 px-space-sm mb-2">
+<div class="space-y-1">
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">
+          Analizando ticket de compra
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-sm mx-auto min-h-[40px] flex items-center justify-center transition-all duration-300" id="statusMessage">
+          Extrayendo comercio, fecha e importes desglosados...
+        </p>
+</div>
+<!-- Micro Pipeline Stage Indicators -->
+<div class="flex items-center justify-center gap-1.5 pt-1">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-[10px] font-medium">
+<span class="material-symbols-outlined text-[12px]" data-icon="check">check</span>
+          Encuadre
+        </span>
+<span class="material-symbols-outlined text-outline-variant text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-white font-label-sm text-[10px] font-medium shadow-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-ping"></span>
+          OCR Semántico
+        </span>
+<span class="material-symbols-outlined text-outline-variant text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-container-high text-outline font-label-sm text-[10px]">
+          Categorización
+        </span>
+</div>
+</div>
+<!-- BOTTOM ACTION AREA: Cancel / Abort Navigation -->
+<div class="w-full pt-space-xs pb-space-sm flex flex-col items-center gap-2">
+<!-- Outlined or Text Cancel Button per design guidelines -->
+<button class="h-11 px-8 rounded-full text-primary hover:bg-surface-container-high active:scale-95 transition-all duration-150 font-label-lg text-label-lg font-medium flex items-center justify-center gap-2 group" onclick="window.history.length &gt; 1 ? window.history.back() : null">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors text-[20px]" data-icon="close">close</span>
+<span>Cancelar</span>
+</button>
+<span class="font-label-sm text-label-sm text-outline tracking-tight">
+        Tally AI Engine • Cifrado de extremo a extremo
+      </span>
+</div>
+</main>
+<!-- Interactive script for progress simulation and pipeline transitions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const circle = document.getElementById('progressCircle');
+      const percentEl = document.getElementById('percentDisplay');
+      const statusEl = document.getElementById('statusMessage');
+      const cloudBtn = document.getElementById('cloudToggleBtn');
+      
+      const circumference = 264; // 2 * pi * 42
+      let currentProgress = 68;
+      
+      const pipelineSteps = [
+        "Normalizando contraste y perspectiva...",
+        "Extrayendo comercio, fecha e importes desglosados...",
+        "Validando sumatorio de base imponible e IVA...",
+        "Asignando categoría presupuestaria inteligente...",
+        "Finalizando estructura del comprobante..."
+      ];
+      
+      let stepIndex = 1;
+
+      // Update circular indicator function
+      function setProgress(percent) {
+        const offset = circumference - (percent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+        percentEl.textContent = `${Math.round(percent)}%`;
+      }
+
+      // Initial visual sync
+      setProgress(currentProgress);
+
+      // Organic incremental progression simulation
+      const interval = setInterval(() => {
+        if (currentProgress < 96) {
+          const delta = Math.random() * 4 + 1;
+          currentProgress = Math.min(96, currentProgress + delta);
+          setProgress(currentProgress);
+
+          if (currentProgress > 78 && stepIndex === 1) {
+            stepIndex = 2;
+            statusEl.style.opacity = '0';
+            setTimeout(() => {
+              statusEl.textContent = pipelineSteps[2];
+              statusEl.style.opacity = '1';
+            }, 200);
+          } else if (currentProgress > 89 && stepIndex === 2) {
+            stepIndex = 3;
+            statusEl.style.opacity = '0';
+            setTimeout(() => {
+              statusEl.textContent = pipelineSteps[3];
+              statusEl.style.opacity = '1';
+            }, 200);
+          }
+        }
+      }, 750);
+
+      // Interactive toggle between Device and Cloud
+      let onDevice = true;
+      cloudBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        onDevice = !onDevice;
+        if (!onDevice) {
+          cloudBtn.textContent = 'Cambiar a En Dispositivo';
+          statusEl.textContent = "Conectando con servidor seguro Tally Cloud...";
+        } else {
+          cloudBtn.textContent = 'Cambiar a Nube';
+          statusEl.textContent = pipelineSteps[stepIndex];
+        }
+      });
+    });
+  </script>
+</body></html>

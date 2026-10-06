@@ -1,0 +1,349 @@
+[
+  {
+    "id": "bootstrap-gradle",
+    "area": "base",
+    "title": "Proyecto multi-módulo compila y lanza en los dos móviles",
+    "user_visible_behavior": "El APK debug instala y arranca en Tab S9+ y realme GT 2: MainActivity con tema Forest Precision y pantalla placeholder (splash del diseño).",
+    "depends_on": [],
+    "status": "accepted",
+    "verification": [
+      "gradlew assembleDebug y gradlew testDebugUnitTest terminan sin errores",
+      "APK instalado y arrancado sin crash en Android (emulador); Tab S9+ y realme GT 2 se reservan para captura-foto y spike-gemma-mediapipe",
+      "Estructura :app :domain:* :framework:* :feature:* :test:unit creada según AGENTS.md"
+    ],
+    "evidence": [
+      "2026-09-30 gradlew.bat assembleDebug: BUILD SUCCESSFUL; APK en app/build/outputs/apk/debug/app-debug.apk",
+      "2026-09-30 gradlew.bat testDebugUnitTest: BUILD SUCCESSFUL (sin errores)",
+      "2026-09-30 gradlew.bat :test:unit:test: BUILD SUCCESSFUL; SmokeTest pasa",
+      "2026-09-30 adb install -r en emulator-5554 (sdk_gphone64_x86_64): Success",
+      "2026-09-30 am start -W com.robertomr.tally/.MainActivity: Status ok, COLD 1384 ms; topResumedActivity=MainActivity, pid 5085 vivo tras 3 s; 0 FATAL EXCEPTION en logcat",
+      "2026-09-30 Screenshot docs/evidence/bootstrap-gradle-emulator.png (1080x2400); revisión visual del placeholder/tema a mano (el agente no puede inspeccionar imágenes)",
+      "2026-09-30 Estructura verificada en settings.gradle.kts: :app :domain:core :domain:expenses :framework:database :framework:ai :feature:common :feature:resumen :test:unit + build-logic con 4 convention plugins",
+      "2026-10-06 bash init.sh (variante bootstrapped): ejecuta assembleDebug + testDebugUnitTest → BUILD SUCCESSFUL; sale con error si fallan; imprime :app:installDebug como seguimiento manual",
+      "2026-10-06 docs/architecture.md creado (diagrama de módulos + regla de dependencias); referencia de AGENTS.md ya no está rota"
+    ],
+    "notes": "Bootstrap del stack (AGENTS.md: módulos y stack). En Windows los comandos van con gradlew.bat. Versiones solo en gradle/libs.versions.toml. Criterio de dispositivo enmendado a emulador (decisión del usuario 2026-09-30): el emulador valida arranque sin crash; los dos móviles físicos se exigen en features de cámara y Gemma. Repair de validación 2026-10-06 aplicado (init.sh bootstrapped + docs/architecture.md). Accepted 2026-10-06 (validación independiente, 1 finding Low: módulos feature sin plugin Hilt aún)."
+  },
+  {
+    "id": "spike-gemma-mediapipe",
+    "area": "ia",
+    "title": "Spike: Gemma 3n corre en la Tab S9+ con MediaPipe",
+    "user_visible_behavior": "Verificación técnica (sin UI): el modelo Gemma 3n carga off-main-thread y produce una extracción de prueba en la Tab S9+ (12 GB); latencia medida. Si no funciona, plan B documentado.",
+    "depends_on": ["bootstrap-gradle"],
+    "status": "not_started",
+    "verification": [
+      "El modelo carga fuera del hilo principal y responde a un texto de prueba en la Tab S9+",
+      "Latencia registrada en PROGRESS.md",
+      "Decisión go/no-go y plan B anotados en docs/risks-and-open-questions.md"
+    ],
+    "evidence": [],
+    "notes": "Riesgo R1 (bloqueante de la semana 1). Solo integración mínima; nada de pantallas. Fuente del modelo: Hugging Face, fuera del APK."
+  },
+  {
+    "id": "navegacion-base",
+    "area": "base",
+    "title": "Navegación con bottom bar de 3 destinos",
+    "user_visible_behavior": "Resumen / Gastos / Escanear en la bottom bar (mockup 02), con pill activa según diseño y pantallas placeholder navegables sin crash.",
+    "depends_on": ["bootstrap-gradle"],
+    "status": "not_started",
+    "verification": [
+      "Navegación entre los 3 destinos en ambos móviles",
+      "Rutas tipadas con sealed class en :app",
+      "Las pantallas no reciben NavController (solo callbacks): revisión de código"
+    ],
+    "evidence": [],
+    "notes": "AGENTS.md sección Navegación; mockups 01-03."
+  },
+  {
+    "id": "persistencia-room",
+    "area": "persistencia",
+    "title": "Tickets y líneas persisten en Room con borrado en cascada",
+    "user_visible_behavior": "Un ticket con N líneas se guarda en una transacción; borrar el ticket elimina sus líneas y su foto del disco; las consultas por rango de fechas alimentan la UI vía Flow.",
+    "depends_on": ["bootstrap-gradle"],
+    "status": "not_started",
+    "verification": [
+      "Tests de DAO (Room in-memory): guardado transaccional, borrado en cascada, consulta por rango",
+      "Repositorio con tests usando dobles de :test:unit"
+    ],
+    "evidence": [],
+    "notes": "docs/domain-model.md (estados y reglas). Entidades Room en framework/<área>/database; DAOs devuelven Flow."
+  },
+  {
+    "id": "captura-foto",
+    "area": "captura",
+    "title": "Captura con encuadre guiado y foto guardada al instante",
+    "user_visible_behavior": "El usuario encuadra con la retícula guiada (mockup 04) y al capturar la foto (orientación corregida, comprimida ~1280 px) queda ya en filesDir aunque la app muera después.",
+    "depends_on": ["navegacion-base"],
+    "status": "not_started",
+    "verification": [
+      "Foto de prueba visible en la pantalla 05 con orientación correcta",
+      "Unit test del pipeline de compresión y orientación EXIF con imagen de recursos"
+    ],
+    "evidence": [],
+    "notes": "Regla de dominio: la foto se persiste en el momento de la captura (el Borrador no se persiste). Mockups 04-05."
+  },
+  {
+    "id": "ocr-mlkit",
+    "area": "ia",
+    "title": "Texto crudo del ticket con ML Kit",
+    "user_visible_behavior": "De la foto capturada se obtiene el texto crudo (ML Kit Text Recognition v2, latin) y queda guardado con el borrador para extracción y reintentos.",
+    "depends_on": ["captura-foto"],
+    "status": "not_started",
+    "verification": [
+      "Con 5 fotos reales de tickets, el texto crudo coincide razonablemente con el papel",
+      "El texto crudo queda registrado con el borrador (visible en debug)"
+    ],
+    "evidence": [],
+    "notes": "ADR 0002 (OCR en dos etapas). On-device, sin clave de API."
+  },
+  {
+    "id": "extraccion-nube",
+    "area": "ia",
+    "title": "Extracción en nube con Gemini (TextEngine)",
+    "user_visible_behavior": "El texto crudo se convierte en TicketExtraido validado (comercio, fecha, total, líneas, categoría de la enum fija) con Gemini vía Firebase AI Logic, sin clave en el APK.",
+    "depends_on": ["ocr-mlkit"],
+    "status": "not_started",
+    "verification": [
+      "Con los 5 textos crudos reales, la salida valida el schema y la enum de categorías",
+      "Unit test del parser/validador con respuestas malformadas",
+      "Revisión: ninguna clave de API en el APK ni en BuildConfig"
+    ],
+    "evidence": [],
+    "notes": "Contrato TextEngine en domain/expenses/data (AGENTS.md). Prompt con schema y enum; ADR 0001 y 0002."
+  },
+  {
+    "id": "procesado-ui",
+    "area": "revision",
+    "title": "Pantalla de procesado con progreso, pasos y cancelación",
+    "user_visible_behavior": "Tras capturar se muestra el estado de procesado (mockup 06): pasos Encuadre→OCR→Categorización, progreso circular, cancelar y badge del motor en uso; cancelar conserva la foto.",
+    "depends_on": ["extraccion-nube"],
+    "status": "not_started",
+    "verification": [
+      "Flujo captura→procesado→resultado en el realme GT 2 (motor nube)",
+      "Cancelar aborta la extracción sin dejar datos huérfanos",
+      "El badge muestra el motor real; sin % de confianza inventado (CONTEXT.md)"
+    ],
+    "evidence": [],
+    "notes": "Mockup 06; la decoración ficticia está prohibida por DESIGN.md. Toggle del mockup = reintento con el otro motor (feature reintento-otro-motor)."
+  },
+  {
+    "id": "revision-datos",
+    "area": "revision",
+    "title": "Revisión del ticket digitalizado y guardado",
+    "user_visible_behavior": "El usuario revisa el ticket digitalizado (mockup 07): comercio, fecha, total, líneas y categoría corregible con chips; Guardar persiste y vuelve al listado; también funciona con campos vacíos (vía manual).",
+    "depends_on": ["procesado-ui", "persistencia-room"],
+    "status": "not_started",
+    "verification": [
+      "Escenario: extracción vacía → rellenar a mano → guardar → ticket en el listado",
+      "Categoría elegible solo entre las 6 de la enum",
+      "Unit test del guardado (ticket + líneas + ruta de foto, @Transaction)"
+    ],
+    "evidence": [],
+    "notes": "Mockup 07 (Reintentar/Editar/Guardar). Borrador no persistido; la foto ya está en disco (captura-foto)."
+  },
+  {
+    "id": "edicion-lineas",
+    "area": "revision",
+    "title": "Edición completa de líneas con total recalculado",
+    "user_visible_behavior": "En edición (mockup 08) se añaden, eliminan y editan concepto/cantidad/precio de las líneas; el footer muestra el total recalculado como referencia sin sobrescribir el total del ticket.",
+    "depends_on": ["revision-datos"],
+    "status": "not_started",
+    "verification": [
+      "Añadir/quitar/editar líneas persiste al guardar cambios",
+      "El total del ticket no cambia al editar líneas salvo guardado explícito",
+      "Unit tests de la lógica de líneas (sumas, cantidad ≥ 1)"
+    ],
+    "evidence": [],
+    "notes": "Regla total vs líneas de docs/domain-model.md. Decisión del usuario: añadir/quitar líneas SI está en el MVP."
+  },
+  {
+    "id": "descarga-modelo",
+    "area": "ia",
+    "title": "Descarga del modelo local con progreso y estado",
+    "user_visible_behavior": "El usuario puede descargar el modelo local (~2-3 GB) desde la app (solo WiFi, con progreso y aviso de espacio) y ver su estado (descargado/no).",
+    "depends_on": ["spike-gemma-mediapipe"],
+    "status": "not_started",
+    "verification": [
+      "Descarga completa probada en la Tab S9+ con reanudación básica",
+      "Con red móvil, aviso y sin descarga (política WiFi)",
+      "Estado del modelo visible en Ajustes"
+    ],
+    "evidence": [],
+    "notes": "El archivo NO va en el APK. Fuente Hugging Face (ver risks). Carga del modelo nunca en hilo principal."
+  },
+  {
+    "id": "extraccion-local",
+    "area": "ia",
+    "title": "Extracción local con Gemma 3n (TextEngine)",
+    "user_visible_behavior": "El mismo contrato TextEngine en el dispositivo: texto crudo → TicketExtraido validado con Gemma 3n/MediaPipe, sin red, con el motor registrado.",
+    "depends_on": ["spike-gemma-mediapipe", "ocr-mlkit"],
+    "status": "not_started",
+    "verification": [
+      "Los mismos 5 textos crudos producen extracciones válidas en local (Tab S9+)",
+      "Parser/validador compartido con la vía nube (unit tests)",
+      "Latencia medida y registrada en PROGRESS.md"
+    ],
+    "evidence": [],
+    "notes": "Comparativa honesta: mismo input para ambos motores (ADR 0002). GemaLocalEngine internal en framework/ai."
+  },
+  {
+    "id": "router-automatico",
+    "area": "ia",
+    "title": "Router automático de motor con indicador visible",
+    "user_visible_behavior": "La app elige motor sola (Local si el dispositivo puede y el modelo está descargado; si no Nube); el motor queda registrado con la extracción y visible (badge en procesado y ticket).",
+    "depends_on": ["extraccion-local", "extraccion-nube"],
+    "status": "not_started",
+    "verification": [
+      "En directo: Tab S9+ usa Local y realme GT 2 usa Nube",
+      "Unit tests del router con combinaciones de capacidad/modelo/override",
+      "El badge refleja el motor realmente usado en cada extracción"
+    ],
+    "evidence": [],
+    "notes": "ADR 0001. Fallback automático silencioso no existe: el reintento es acción explícita del usuario."
+  },
+  {
+    "id": "reintento-otro-motor",
+    "area": "revision",
+    "title": "Reintentar extracción con el otro motor",
+    "user_visible_behavior": "Con un resultado inservible, el usuario reintenta cambiando de motor (Local↔Nube) sobre el mismo texto crudo; el nuevo motor queda registrado.",
+    "depends_on": ["router-automatico"],
+    "status": "not_started",
+    "verification": [
+      "En directo: extracción nube mala → reintento local (y viceversa) en la Tab S9+",
+      "El texto crudo se reutiliza: no se repite el OCR"
+    ],
+    "evidence": [],
+    "notes": "Decisión de producto del descubrimiento (reintento + revisión manual como última vía)."
+  },
+  {
+    "id": "ajustes-motor",
+    "area": "ajustes",
+    "title": "Ajustes básicos: forzar motor y estado del modelo",
+    "user_visible_behavior": "Pantalla de ajustes mínima: forzar motor (Auto/Local/Nube) y estado del modelo local; el override cambia el comportamiento del router.",
+    "depends_on": ["router-automatico", "descarga-modelo"],
+    "status": "not_started",
+    "verification": [
+      "Forzar Nube en la Tab S9+ fuerza Nube en la siguiente extracción (y viceversa)",
+      "El ajuste persiste entre ejecuciones",
+      "Unit test de la preferencia y su efecto en el router"
+    ],
+    "evidence": [],
+    "notes": "Alcance cerrado en descubrimiento: no pantalla de preferencias genérica."
+  },
+  {
+    "id": "periodo-selector",
+    "area": "seguimiento",
+    "title": "Selector de período Día/Semana/Mes con rangos correctos",
+    "user_visible_behavior": "El usuario alterna Día/Semana/Mes en el segmented control (mockup 02) y el rango derivado filtra por fecha de emisión.",
+    "depends_on": ["persistencia-room"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests de bordes: semanas que cruzan mes, meses de 28/29/30/31 días, cambio de hora en España",
+      "Con datos sembrados de prueba, el total cambia al alternar período"
+    ],
+    "evidence": [],
+    "notes": "docs/domain-model.md: Período por fecha de emisión, no de captura."
+  },
+  {
+    "id": "resumen-total",
+    "area": "seguimiento",
+    "title": "Tarjeta de total del período con métricas",
+    "user_visible_behavior": "El resumen muestra total del período, promedio diario, nº de tickets y comparativa vs período anterior (mockup 02).",
+    "depends_on": ["periodo-selector"],
+    "status": "not_started",
+    "verification": [
+      "Unit tests de métricas con datasets conocidos (incluido período anterior vacío)",
+      "Formato español 1.428,50 € con cifras tabulares (tnum)"
+    ],
+    "evidence": [],
+    "notes": "Mockup 02. El badge comparativo se incluyó por decisión del descubrimiento (barato: suma del rango previo)."
+  },
+  {
+    "id": "grafica-donut",
+    "area": "seguimiento",
+    "title": "Gráfica de distribución por categoría (donut)",
+    "user_visible_behavior": "Donut por categoría con leyenda y desglose con barras para el período activo; estado vacío sin tickets.",
+    "depends_on": ["periodo-selector"],
+    "status": "not_started",
+    "verification": [
+      "Donut con Canvas de Compose renderiza proporciones correctas con dataset de prueba",
+      "Estado vacío sin datos",
+      "Colores de categoría según la decisión pendiente de DESIGN.md resuelta aquí"
+    ],
+    "evidence": [],
+    "notes": "Mockup 02. Aquí se decide Open Design Question #1 (paleta semántica vs rampa verde)."
+  },
+  {
+    "id": "listado-gastos",
+    "area": "seguimiento",
+    "title": "Listado de tickets del período",
+    "user_visible_behavior": "Debajo de la gráfica (y en la pestaña Gastos) se listan los tickets del período con comercio, fecha, total y categoría; al tocar se abre el detalle.",
+    "depends_on": ["periodo-selector"],
+    "status": "not_started",
+    "verification": [
+      "El listado refleja exactamente los tickets del rango (contraste con semilla de prueba)",
+      "Navegación a detalle sin crash",
+      "Estado vacío coherente"
+    ],
+    "evidence": [],
+    "notes": "Mockup 03. DAO Flow → la UI se actualiza sola al guardar."
+  },
+  {
+    "id": "detalle-ticket",
+    "area": "revision",
+    "title": "Detalle de ticket guardado con foto y borrado en cascada",
+    "user_visible_behavior": "Desde el listado se abre el ticket guardado (vista del mockup 07): ver foto original, editar (reutiliza edición) y borrar con confirmación; al borrar desaparecen ticket, líneas y foto.",
+    "depends_on": ["revision-datos", "edicion-lineas"],
+    "status": "not_started",
+    "verification": [
+      "Borrado confirmado elimina registro y fichero de foto (comprobado en filesDir)",
+      "Editar un ticket guardado persiste los cambios",
+      "Test de borrado en cascada del repositorio"
+    ],
+    "evidence": [],
+    "notes": "docs/domain-model.md: Guardado es editable y borrable, foto en cascada."
+  },
+  {
+    "id": "rango-personalizado",
+    "area": "seguimiento",
+    "title": "Rango de fechas personalizado",
+    "user_visible_behavior": "La opción Personalizado del selector abre el selector de rango (mockup 09) y total, gráfica y listado se filtran por el rango marcado.",
+    "depends_on": ["periodo-selector"],
+    "status": "not_started",
+    "verification": [
+      "Rango marcado a mano se refleja en total, gráfica y listado",
+      "Validación de rango invertido (inicio > fin)"
+    ],
+    "evidence": [],
+    "notes": "Requisito explícito del usuario; Material 3 date range picker."
+  },
+  {
+    "id": "log-extracciones",
+    "area": "observabilidad",
+    "title": "Registro local de extracciones",
+    "user_visible_behavior": "Cada extracción queda registrada localmente (motor, duración, resultado, longitud del texto) y es consultable en debug para la memoria del curso.",
+    "depends_on": ["extraccion-nube"],
+    "status": "not_started",
+    "verification": [
+      "Tras varias extracciones, el log registra motor/duración/resultado correctos",
+      "Unit test del registrador con dobles"
+    ],
+    "evidence": [],
+    "notes": "docs/technical-discovery.md (Observability). Tabla de debug o log persistente."
+  },
+  {
+    "id": "seed-demo",
+    "area": "demo",
+    "title": "Datos de demo sembrados (build debug)",
+    "user_visible_behavior": "En build debug, un control siembra tickets de varias categorías y períodos (más un ticket 'malo' para demostrar la corrección) para la demo en directo.",
+    "depends_on": ["persistencia-room", "grafica-donut"],
+    "status": "not_started",
+    "verification": [
+      "Sembrado idempotente (repetir no duplica)",
+      "La demo puede hacerse sin red con los datos sembrados",
+      "No activo en build release"
+    ],
+    "evidence": [],
+    "notes": "Preparación de la demo según plan de validación (docs/build-brief.md)."
+  }
+]
