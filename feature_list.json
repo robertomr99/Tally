@@ -30,14 +30,27 @@
     "title": "Spike: Gemma 3n corre en la Tab S9+ con MediaPipe",
     "user_visible_behavior": "Verificación técnica (sin UI): el modelo Gemma 3n carga off-main-thread y produce una extracción de prueba en la Tab S9+ (12 GB); latencia medida. Si no funciona, plan B documentado.",
     "depends_on": ["bootstrap-gradle"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "El modelo carga fuera del hilo principal y responde a un texto de prueba en la Tab S9+",
       "Latencia registrada en PROGRESS.md",
       "Decisión go/no-go y plan B anotados en docs/risks-and-open-questions.md"
     ],
-    "evidence": [],
-    "notes": "Riesgo R1 (bloqueante de la semana 1). Solo integración mínima; nada de pantallas. Fuente del modelo: Hugging Face, fuera del APK."
+    "evidence": [
+      "2026-10-11 gradle/libs.versions.toml: mediapipeGenai 0.10.35 (com.google.mediapipe:tasks-genai) + androidx.test (core 1.7.0, runner 1.7.0, ext-junit 1.3.0); sin versiones literales en build files (búsqueda Select-String en **/*.gradle.kts: 0 coincidencias)",
+      "2026-10-11 framework/ai/build.gradle.kts: dependencia MediaPipe + testInstrumentationRunner AndroidJUnitRunner + androidTestImplementation vía catálogo",
+      "2026-10-11 GemmaMediaPipeSpike.kt (internal, framework/ai/spike): carga y generación en Dispatchers.IO (nunca main) con métricas loadMillis/generationMillis/tokens/ranOnMainThread; .gitignore excluye *.task y *.litertlm (modelo fuera del APK y del repo)",
+      "2026-10-11 GemmaMediaPipeSpikeTest.kt (androidTest, sin UI) ejecutado de verdad en la Tab S9+ (SM-X810, gts9pwifi, Android 16/API 36, 11454088 kB RAM): test APK instalado, harness corrió y FALLÓ CONTROLADAMENTE por modelo ausente con mensaje claro; ruta resuelta /storage/emulated/0/Android/data/com.robertomr.tally.framework.ai.test/files/models (logcat GemmaSpike)",
+      "2026-10-11 adb push verificado en esa ruta (fichero probe 17 bytes subido y borrado; 356 GB libres en /storage/emulated); comando manual pendiente: adb push <modelo>.litertlm /storage/emulated/0/Android/data/com.robertomr.tally.framework.ai.test/files/models/",
+      "2026-10-11 Modelo Gemma 3n NO disponible todavía: 0 ficheros *.litertlm/*.task en las unidades locales del PC y en /sdcard de la Tab; Hugging Face google/gemma-3n-E2B-it-litertlm devuelve 401 (gated: aceptar licencia + login) → descarga manual pendiente. SIN RESULTADOS DE LATENCIA (no inventados)",
+      "2026-10-11 gradlew.bat assembleDebug testDebugUnitTest: BUILD SUCCESSFUL (190 tasks); gradlew.bat :test:unit:test: BUILD SUCCESSFUL; init.sh sin cambios (git diff vacío)",
+      "2026-10-12 T6: modelo descargado por el usuario (Hugging Face google/gemma-3n-E2B-it-litertlm) = gemma-3n-E2B-it-int4.litertlm (Gemma 3n E2B-it int4, formato LiteRT-LM, 3655827456 bytes ≈ 3,4 GB) en E:\\AI-Expert\\Modelos (fuera del repo y del APK); comando exacto: adb -s <serial-SM-X810> push E:\\AI-Expert\\Modelos\\gemma-3n-E2B-it-int4.litertlm /storage/emulated/0/Android/data/com.robertomr.tally.framework.ai.test/files/models/ (ADB inalámbrico, 9.7 MB/s, 361 s); adb shell ls -l confirma 3655827456 bytes (md5 en dispositivo 44260a251019aa81594be263681f0928)",
+      "2026-10-12 T6: ANDROID_SERIAL=<serial-SM-X810> gradlew.bat :framework:ai:connectedDebugAndroidTest → BUILD SUCCESSFUL, 1 test, 0 fallos en la Tab S9+ (SM-X810, gts9pwifi, Android 16/API 36, MemTotal 11454088 kB): gemmaLoadsOffMainThreadAndResponds (60,117 s, failures=0, errors=0; JUnit XML + logcat per-test en framework/ai/build/outputs/androidTest-results/connected/debug/)",
+      "2026-10-12 T7: latencias crudas (logcat GemmaSpike de la ejecución con artefactos oficiales): ranOnMainThread=false, loadMillis=6517, generationMillis=53208, promptTokens=17, responseTokens=492 (~9,2 tok/s); respuesta del modelo: \"2 + 2 es igual a 4.\" seguida de cola degenerada de tokens <end_of_turn>/<eos> hasta maxTokens=512; muestra corroborante previa en el mismo logcat (PID 8711): loadMillis=6933, generationMillis=53985. Artefacto: com.google.mediapipe:tasks-genai:0.10.35 (LlmInference + LlmInferenceSession)",
+      "2026-10-12 T8: R1 RESUELTA en docs/risks-and-open-questions.md con DECISIÓN GO (Gemma 3n E2B-it int4 + tasks-genai:0.10.35 validado en la Tab S9+) + justificación numérica + plan B concreto (Gemma 2 2B-it .task → Gemma 3n E2B sin visión → E4B-it int4 → nube según ADR 0001); requisito derivado para extraccion-local: stop token/<end_of_turn> (sin él la generación degenera) y re-medición con prompts de extracción largos",
+      "2026-10-12 T10: gradlew.bat assembleDebug testDebugUnitTest → BUILD SUCCESSFUL (190 tasks); gradlew.bat :test:unit:test → BUILD SUCCESSFUL; init.sh sin cambios (git diff vacío); Select-String de versiones literales (x.y.z, version=\"0-9, GAV literal) en los 12 **/*.gradle.kts → 0 coincidencias; 0 ficheros *.litertlm/*.task dentro del repo"
+    ],
+    "notes": "Riesgo R1 (bloqueante de la semana 1) RESUELTO 2026-10-12 con DECISIÓN GO: Gemma 3n E2B-it int4 (LiteRT-LM, 3,4 GB) carga y responde en la Tab S9+ con com.google.mediapipe:tasks-genai:0.10.35, off-main-thread (loadMillis=6517; generationMillis=53208 con 492 tokens, ~9,2 tok/s, incluida cola degenerada de <end_of_turn>/<eos> hasta maxTokens tras una respuesta correcta de una frase). Plan B documentado en R1 (Gemma 2 2B-it .task, E2B sin visión, E4B-it int4 o nube según ADR 0001). Estado sesión 006: T1–T10 completados. Accepted 2026-10-13 (validación independiente con feature-validator: gates re-ejecutados en verde; JUnit XML, logcat y device-info del connectedDebugAndroidTest re-inspeccionados y coherentes con la evidencia; 2 findings Low no bloqueantes — muestra PID 8711 citada sin artefacto preservado, y estimación "~2–3 GB" a actualizar a "~3,4 GB" en doc duradera al planificar descarga-modelo). Requisito derivado para extraccion-local: usar stop token/<end_of_turn> (sin él la generación degenera en tokens especiales) y re-medir latencia con prompts de extracción largos (prefill de tickets)."
   },
   {
     "id": "navegacion-base",

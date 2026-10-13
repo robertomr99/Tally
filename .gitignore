@@ -7,3 +7,7 @@ local.properties
 /captures
 .externalNativeBuild
 .cxx
+
+# Modelos locales de IA (Gemma/MediaPipe): fuera del repo y del APK (~2-3 GB).
+*.task
+*.litertlm
