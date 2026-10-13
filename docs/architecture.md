@@ -12,7 +12,9 @@ dependencias. Las reglas operativas completas están en `AGENTS.md`.
  ├─ :framework:database   (android library internal; implementa interfaces de domain)
  ├─ :framework:ai         (android library internal; implementa interfaces de domain)
  ├─ :feature:common       (compose; tema, tipografía y utilidades de UI)
- └─ :feature:resumen      (compose; pantallas)
+ ├─ :feature:resumen      (compose; pantallas)
+ ├─ :feature:gastos       (compose; pantallas)
+ └─ :feature:escanear     (compose; pantallas)
 
 :test:unit                (librería Kotlin; dobles de prueba compartidos)
 

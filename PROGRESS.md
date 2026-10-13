@@ -9,13 +9,15 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `navegacion-base` (primera de `feature_list.json`
-  con dependencias `accepted`; también quedan desbloqueadas `persistencia-room`,
-  `descarga-modelo` y, parcialmente, `extraccion-local`)
+- Current next ready feature: `navegacion-base` queda `passing` (implementada y
+  auto-verificada en la sesión 008); el siguiente paso es su validación
+  independiente. Después quedan desbloqueadas `persistencia-room`,
+  `descarga-modelo` y, parcialmente, `extraccion-local`/`captura-foto`.
 - Current blocker: ninguno. R1 resuelta 2026-10-12 con decisión **GO**
   (Gemma 3n E2B-it int4 + MediaPipe `tasks-genai:0.10.35` validado en la Tab S9+).
-- Last verified at: 2026-10-13 (sesión 007: validación independiente de
-  `spike-gemma-mediapipe` → veredicto `accept`; gates re-ejecutados en verde)
+- Last verified at: 2026-10-13 (sesión 008: `navegacion-base` implementada y
+  verificada — 4 gates en verde + manual en `emulator-5554` + revisión de
+  código)
 
 ## Session Log
 
@@ -333,3 +335,181 @@
 - Next best step: commit de los cambios del spike (si el usuario lo pide) y
   siguiente feature con dependencias en verde (`navegacion-base` por orden de
   `feature_list.json`).
+
+### Session 008
+
+- Date: 2026-10-13
+- Goal: Implementar y cerrar `navegacion-base` (T1–T9 del plan del spec):
+  shell de navegación con bottom bar de 3 destinos, verificación completa y
+  documentación duradera.
+- Completed:
+  - T1 decisiones (confirmadas por el usuario antes de la implementación):
+    **Decisión A** = crear `:feature:gastos` y `:feature:escanear` (patrón de
+    `:feature:resumen`; registrados en `settings.gradle.kts` y `:app`), y
+    criterio de dispositivo **enmendado a emulador** `emulator-5554` (mismo
+    precedente que `bootstrap-gradle`, decisión del usuario 2026-09-30; los
+    móviles físicos se reservan a `captura-foto` y features de Gemma).
+  - T2 catálogo (`gradle/libs.versions.toml`): `navigationCompose = "2.9.8"`
+    (última estable compatible con compileSdk 36; la 2.10.x exige compileSdk 37
+    vía `lifecycle 2.11.0`), `androidxTestEspresso = "3.7.0"` (fuerza sobre el
+    `3.5.0` transitivo de `ui-test-junit4`, que falla al inyectar eventos en
+    API 35+: `NoSuchMethodException InputManager.getInstance` — las dos
+    decisiones quedan justificadas en esta sesión), `material-icons-extended`
+    y `ui-test-junit4`/`ui-test-manifest` gestionados por el Compose BOM.
+  - T3 placeholders `GastosScreen`/`EscanearScreen` (módulos nuevos) +
+    `testTag` en `ResumenScreen` (`pantalla_resumen`, `pantalla_gastos`,
+    `pantalla_escanear`); sin ViewModel ni `XState` (regla del spec).
+  - T4 `TallyRoute` (sealed class Resumen/Gastos/Escanear) + `TallyApp`
+    (Scaffold + NavHost, start = Resumen) en `:app`; `MainActivity` compone
+    `TallyTheme { TallyApp() }`. El `NavController` solo vive en `:app`.
+  - T5 `TallyBottomBar` + `BottomBarDestino` en `:feature:common` (mockup 02:
+    fila 80dp sobre `surface-container-low`, pill activo
+    `secondary-container`/`on-secondary-container` + label semibold,
+    inactivos `on-surface-variant`, área táctil ≥44dp); solo callbacks, sin
+    `NavController`. Iconos `insights`/`receipt_long`/`document_scanner`.
+  - T6 navegación bottom bar estándar (`launchSingleTop`, `restoreState`,
+    `popUpTo(start) { saveState = true }`); back del sistema vuelve a Resumen
+    y el segundo back sale de la app (escenario 4).
+  - T7 `NavigationTest` en `:app/src/androidTest/` con
+    `createAndroidComposeRule<MainActivity>()` (3 tests: arranque en Resumen +
+    pill, navegación por los 3 destinos + pill, back doble). `:app` gana
+    `testInstrumentationRunner` + `androidTestImplementation` (platform del
+    Compose BOM declarado explícitamente porque `androidTestImplementation`
+    no hereda el platform del convention plugin).
+  - T8 verificación en verde (salidas reales abajo) + manual en `emulator-5554`
+    + revisión de código. Hallazgo corregido: el assert de cierre del
+    `NavigationTest` leía `isFinishing` síncrono y fallaba (tras el segundo
+    back, `finishAfterTransition`/predictive back en API 35+ aplazan `finish()`);
+    el comportamiento real se verificó a mano con `adb` (correcto) y el test
+    pasó a espera activa al cierre. Navegación manual con taps reales verificada
+    vía `uiautomator dump` (placeholder correcto en cada destino, pill activo
+    por atributo `selected`).
+  - T9 `docs/architecture.md` ya actualizado con `:feature:gastos` y
+    `:feature:escanear`; `PROGRESS.md`, `feature_list.json` y spec actualizados.
+- Verification run (todo 2026-10-13, Windows/`gradlew.bat`):
+  - `.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL (233 actionable tasks).
+  - `.\gradlew.bat testDebugUnitTest` → BUILD SUCCESSFUL (regresión).
+  - `.\gradlew.bat :test:unit:test --rerun` → BUILD SUCCESSFUL (re-ejecutado de
+    verdad; JUnit XML `SmokeTest`: tests=1 failures=0 errors=0,
+    `dummyTestPasses`).
+  - `ANDROID_SERIAL=emulator-5554 .\gradlew.bat :app:connectedDebugAndroidTest`
+    → BUILD SUCCESSFUL; `com.robertomr.tally.navigation.NavigationTest`
+    tests=3 failures=0 errors=0 (5,161 s) en
+    `Medium_Phone_API_36.1(AVD) - 16` (= `emulator-5554`):
+    `startsOnResumenWithActivePill` (2,303 s),
+    `bottomBarNavigatesAcrossTheThreeDestinations` (1,556 s),
+    `systemBackReturnsToResumenAndNextBackExitsTheApp` (1,302 s). Primera
+    ejecución: 2/3 en verde y fallo del assert de cierre (hallazgo arriba;
+    corregido en el test, sin tocar producto).
+  - Manual en `emulator-5554`: `adb install -r` Success; `am start -W` COLD
+    1412 ms; taps en la bottom bar (Gastos → Escanear → back → back) con
+    `uiautomator dump` confirmando placeholder y pill por destinos; back del
+    sistema: back → Resumen (`selected="true"` en el item), segundo back →
+    `mCurrentFocus` = launcher (actividad terminada; el proceso queda cacheado,
+    comportamiento normal de Android).
+  - Capturas: `docs/evidence/navegacion-base-resumen.png`,
+    `navegacion-base-gastos.png`, `navegacion-base-escanear.png` (PNG válidos,
+    36–42 KB, `screencap` + `adb pull`; revisión visual del pill a mano, como
+    en `bootstrap-gradle`).
+  - Revisión de código (escenario 3): `TallyRoute` como `sealed class` en
+    `:app`; `NavHost` solo en `:app`; 0 usos de `NavController` en `:feature:*`
+    (solo una cita en un comentario de `TallyBottomBar`); 0 declaraciones con
+    versión literal en los 14 `**/*.gradle.kts` (solo un comentario en español
+    cita "3.7.0/3.5.0"); `git diff init.sh` vacío (esta máquina no invoca
+    `bash`; su contenido equivalente se ejecutó como los gates anteriores);
+    `AGENTS.md`, ADRs y docs de descubrimiento sin diffs.
+- Evidence captured: campo `evidence` de `navegacion-base` en
+  `feature_list.json`; JUnit XML en
+  `app/build/outputs/androidTest-results/connected/debug/` (informe HTML en
+  `app/build/reports/androidTests/connected/debug/`); capturas en
+  `docs/evidence/navegacion-base-*.png`.
+- Files or artifacts updated: `gradle/libs.versions.toml`, `app/build.gradle.kts`,
+  `settings.gradle.kts`, `feature/common/build.gradle.kts`,
+  `feature/common/.../TallyBottomBar.kt`, `feature/gastos/`,
+  `feature/escanear/`, `feature/resumen/.../ResumenScreen.kt`,
+  `app/.../MainActivity.kt`, `app/.../navigation/{TallyRoute,TallyApp}.kt`,
+  `app/src/androidTest/.../NavigationTest.kt`, `docs/architecture.md`,
+  `docs/specs/navegacion-base.md`, `docs/evidence/navegacion-base-*.png`,
+  `PROGRESS.md`, `feature_list.json`.
+- Known risk or unresolved issue:
+  - Revisión visual del pill/tema de la bottom bar: el agente no puede
+    inspeccionar imágenes; la captura queda para revisión humana (mismo
+    criterio que `bootstrap-gradle`). El estado activo del pill sí se verificó
+    programáticamente (semántica `selected` en el E2E y atributo
+    `selected="true"` en `uiautomator dump`).
+  - Los módulos `:feature:gastos` y `:feature:escanear` no llevan `di.kt`:
+    correcto por ahora (placeholders sin Hilt; `tally.hilt` llega con el primer
+    ViewModel, hallazgo Low de la validación de `bootstrap-gradle`).
+  - `navegacion-base` queda en `passing` (implementada y auto-verificada);
+    `accepted` exige validación independiente (feature-validator) que el
+    orquestador debe persistir.
+- Next best step: validación independiente de `navegacion-base` con
+  feature-validator; después, siguiente feature con dependencias aceptadas
+  (`persistencia-room` por orden de `feature_list.json`).
+
+### Session 009
+
+- Date: 2026-10-13
+- Goal: Validación independiente de `navegacion-base` con el subagente
+  `validator` (feature-validator) y persistencia de la aceptación.
+- Completed:
+  - Validación independiente con feature-validator (subagente `validator`):
+    veredicto **`accept`** sin hallazgos Critical/High/Medium.
+  - Gates re-ejecutados por el validador en verde (2026-10-13):
+    `.\gradlew.bat assembleDebug` (BUILD SUCCESSFUL, 233 actionable tasks),
+    `.\gradlew.bat testDebugUnitTest` (BUILD SUCCESSFUL),
+    `.\gradlew.bat :test:unit:test --rerun` (BUILD SUCCESSFUL; JUnit XML
+    `SmokeTest` tests=1 failures=0 errors=0) y
+    `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :app:connectedDebugAndroidTest`
+    (BUILD SUCCESSFUL; JUnit XML fresco `NavigationTest` tests=3 failures=0
+    errors=0 en `Medium_Phone_API_36.1(AVD) - 16`, borrando los resultados
+    previos antes de ejecutar: `startsOnResumenWithActivePill` 2,42 s,
+    `bottomBarNavigatesAcrossTheThreeDestinations` 1,70 s,
+    `systemBackReturnsToResumenAndNextBackExitsTheApp` 1,60 s).
+  - Escenarios 1-4 del spec cumplidos: navegación entre los 3 destinos,
+    pill activo (tokens de `TallyBottomBar.kt` contrastados con el mockup 02 y
+    `DESIGN.md`; semántica `selected` verificada por E2E), rutas `sealed class`
+    en `:app` sin `NavController` en `:feature:*` (grep repo-wide) y back del
+    sistema correcto (back → Resumen; segundo back → la actividad termina).
+  - Hallazgo declarado en la sesión 008 (assert de cierre con `isFinishing`
+    síncrono vs. predictive back en API 35+) **confirmado** como corrección
+    legítima solo de test: cero cambios de producto en el manejo de back,
+    el assert falla igual si la app no sale, y el test corregido pasa en
+    API 36.1.
+  - Arquitectura y reglas verificadas: alcance solo de navegación (sin FAB,
+    ViewModels, Room, cámara, OCR ni IA), `init.sh`/`AGENTS.md`/`build-logic/`/
+    ADRs/docs de descubrimiento sin diffs, módulos nuevos siguiendo el patrón
+    de `:feature:resumen`, sin secretos ni credenciales, versiones solo en el
+    catálogo (única coincidencia literal: un comentario en español en
+    `app/build.gradle.kts`).
+  - Documentación duradera contrastada con artefactos: JUnit XML citado en la
+    evidencia coincide al detalle con lo registrado; `docs/architecture.md`,
+    spec y `feature_list.json` coherentes.
+  - Persistida la aceptación: `feature_list.json` status de `navegacion-base`
+    → `accepted` (nota con fecha, alcance de la validación y findings Low).
+- Verification run: ver "Completed" (gates re-ejecutados por el validador;
+  inspección de JUnit XML en
+  `app/build/outputs/androidTest-results/connected/debug/`).
+- Evidence captured: informe de validación (veredicto `accept`) registrado en
+  las notas de `feature_list.json` y en esta sesión; 2 findings Low
+  no bloqueantes anotados.
+- Files or artifacts updated: `feature_list.json` (status `accepted` + nota),
+  `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - 2 findings Low no bloqueantes: (1) el label de items inactivos de
+    `TallyBottomBar.kt` usa `FontWeight.Medium` mientras que el mockup 02 no
+    fija peso para inactivos (desviación cosmética; `DESIGN.md` solo exige
+    semibold en el activo); (2) las 3 capturas de `docs/evidence/navegacion-base-*.png`
+    no han sido revisadas visualmente por ningún agente (no soportan imagen) —
+    queda revisión humana residual, aunque el pill está verificado
+    semánticamente (E2E `assertIsSelected` + atributo `selected` en
+    `uiautomator`).
+  - Ficheros sin trackear de la feature (`docs/specs/navegacion-base.md`,
+    `feature/gastos/`, `feature/escanear/`,
+    `feature/common/.../TallyBottomBar.kt`,
+    `app/src/main/java/com/robertomr/tally/navigation/`,
+    `app/src/androidTest/`, capturas) + los 8 modificados, pendientes de commit.
+- Next best step: commit de los cambios de `navegacion-base` (si el usuario lo
+  pide) y siguiente feature con dependencias aceptadas (`persistencia-room`
+  por orden de `feature_list.json`; `captura-foto` también queda desbloqueada
+  al depender de `navegacion-base`).

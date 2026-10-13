@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.robertomr.tally.feature.common.theme.TallyTheme
-import com.robertomr.tally.feature.resumen.ResumenScreen
+import com.robertomr.tally.navigation.TallyApp
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -14,7 +14,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TallyTheme {
-                ResumenScreen()
+                TallyApp()
             }
         }
     }
