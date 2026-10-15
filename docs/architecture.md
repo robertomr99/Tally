@@ -44,6 +44,13 @@ app ──────────► feature:* ──────────�
 | Datos / técnicas | `:framework:*` | Room, MediaPipe, Firebase AI Logic |
 | Pruebas | `:test:unit` | Dobles compartidos |
 
+## Persistencia
+
+- Room (en `:framework:database`) es la única fuente de verdad: base `tally.db`
+  con las tablas `tickets` y `lineas` (borrado en cascada de líneas por FK).
+- Los DAO devuelven `Flow` y las escrituras multi-tabla van con `@Transaction`.
+  La foto del ticket vive en `filesDir` y su ruta se guarda en Room.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

@@ -33,6 +33,9 @@ androidxTestEspresso = "3.7.0"
 # de la línea compatible con compileSdk 36 (2.10.x exige compileSdk 37 vía
 # lifecycle 2.11.0; ver sesión 008 de PROGRESS.md).
 navigationCompose = "2.9.8"
+# javax.inject para el @Inject constructor de los repositorios de :domain:*
+# (AGENTS.md); sin dependencias de Android en dominio.
+javaxInject = "1"
 
 [libraries]
 # Artefactos de plugin (los usa build-logic)
@@ -45,6 +48,14 @@ hilt-gradle-plugin = { group = "com.google.dagger", name = "hilt-android-gradle-
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+
+# javax.inject + dagger-compiler para :domain:expenses (TicketRepository con
+# @Inject constructor). dagger y dagger-compiler comparten línea de versión con
+# Hilt (com.google.dagger publica las tres con la misma versión). dagger es el
+# runtime que necesita el código generado (dagger.internal.Factory).
+javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
+dagger = { group = "com.google.dagger", name = "dagger", version.ref = "hilt" }
+dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "hilt" }
 
 # Room (catálogo listo para la feature persistencia-room)
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }

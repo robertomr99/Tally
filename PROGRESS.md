@@ -9,15 +9,18 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `navegacion-base` queda `passing` (implementada y
-  auto-verificada en la sesión 008); el siguiente paso es su validación
-  independiente. Después quedan desbloqueadas `persistencia-room`,
-  `descarga-modelo` y, parcialmente, `extraccion-local`/`captura-foto`.
+- Current next ready feature: `persistencia-room` queda `accepted` (implementada
+  en la sesión 010 y validada de forma independiente en la 011); el siguiente
+  paso es `captura-foto` por orden de `feature_list.json`. Con esta aceptación
+  quedan desbloqueadas `periodo-selector` (además de `captura-foto`, ya
+  desbloqueada); `revision-datos` y `seed-demo` siguen a la espera de sus otras
+  dependencias.
 - Current blocker: ninguno. R1 resuelta 2026-10-12 con decisión **GO**
   (Gemma 3n E2B-it int4 + MediaPipe `tasks-genai:0.10.35` validado en la Tab S9+).
-- Last verified at: 2026-10-13 (sesión 008: `navegacion-base` implementada y
-  verificada — 4 gates en verde + manual en `emulator-5554` + revisión de
-  código)
+- Last verified at: 2026-10-13 (sesión 011: `persistencia-room` validada de
+  forma independiente y aceptada — 5 gates re-ejecutados por el validador en
+  verde, incluidos los instrumentados de `:framework:database` en
+  `emulator-5554`, con JUnit XML contrastados + revisión de código)
 
 ## Session Log
 
@@ -513,3 +516,189 @@
   pide) y siguiente feature con dependencias aceptadas (`persistencia-room`
   por orden de `feature_list.json`; `captura-foto` también queda desbloqueada
   al depender de `navegacion-base`).
+
+### Session 010
+
+- Date: 2026-10-13
+- Goal: Implementar y cerrar `persistencia-room` (T1–T9 del plan del spec):
+  capa de persistencia local con Room (`tickets`/`lineas`, borrado en cascada),
+  repositorio en dominio, verificación completa (con tests instrumentados en
+  `emulator-5554`) y documentación duradera.
+- Completed:
+  - Revisión del código ya presente en el árbol de trabajo contra el spec
+    (escenarios 1–4) **sin desviaciones que corregir**: upsert transaccional con
+    reemplazo del conjunto de líneas, borrado en cascada por FK + foto
+    best-effort con orden DB-antes-foto y no-op para id inexistente,
+    `observeByDateRange` como `Flow` con rango inclusivo por fecha de emisión
+    (codificación epoch-millis UTC coherente entre `Converters` y la consulta),
+    dominio sin imports de Android/Room, `Flow` en DAO, `@Transaction` en la
+    escritura multi-tabla, implementaciones `internal` en `framework` y un solo
+    `di.kt` por módulo. Se completó/verificó lo existente sin duplicar trabajo
+    (0 ficheros de producto reescritos).
+  - T1 catálogo (`gradle/libs.versions.toml`): `javaxInject = 1`
+    (`javax.inject`) + `dagger` y `dagger-compiler` (comparten la línea de
+    versión `hilt` 2.60.1; `com.google.dagger` publica las tres juntas).
+    `:domain:expenses` gana `javax.inject` + plugin ksp + `ksp(libs.dagger.compiler)`
+    + `implementation(libs.dagger)` para las fábricas generadas del
+    `@Inject constructor` de `TicketRepository` (no hizo falta la contingencia
+    `@Provides` en `DatabaseModule`).
+  - T2–T3 dominio `:domain:expenses`: entidades `Ticket`/`Linea`/`Categoria`/
+    `Motor` (nombres de dominio según `CONTEXT.md`) en `entities/` y
+    `TicketDataSource`/`PhotoFileStore`/`TicketRepository` (`@Inject constructor`)
+    en `data/`; `delete(id)` = `getById` → `dataSource.delete` (cascada) →
+    `photoFileStore.delete(rutaFoto)` best-effort (DB-antes-foto).
+  - T4–T5 Room `:framework:database`: `TicketEntity`/`LineaEntity` (FK
+    `ON DELETE CASCADE` + índice en `ticket_id`, columnas snake_case),
+    `TicketDao` (`@Transaction suspend fun upsert` con delete/insert del conjunto
+    de líneas; lecturas `Flow` con `distinctUntilChanged`), `TallyDatabase` v1
+    (`exportSchema = true`, esquema en `schemas/.../1.json`), `Converters`
+    (`LocalDateTime` ↔ epoch millis UTC), `TicketWithLineas` (relación 1-N),
+    `TicketLocalDataSource`/`PhotoFileStoreImpl` `internal` y bindings
+    `@Provides` en `di/di.kt` (patrón de `framework/ai`).
+  - T6–T7 dobles `FakeTicketDataSource`/`FakePhotoFileStore` en
+    `test/unit/src/main/kotlin/` (`:test:unit` con `api(:domain:expenses)`) y
+    `TicketRepositoryTest` (6 tests con Turbine; sin ciclo de dependencias:
+    `:test:unit` solo es `testImplementation` en `:domain:expenses`).
+  - T8 `TicketDaoTest` (5 tests, Room in-memory) + `PhotoFileStoreTest`
+    (4 tests, fichero real en `filesDir`) en `framework/database/src/androidTest/`.
+  - T9 verificación completa en verde (abajo) + revisión de código (escenario 4) +
+    `docs/architecture.md` (sección Persistencia: tablas `tickets`/`lineas` y
+    "Room es la única fuente de verdad") + `PROGRESS.md` + `feature_list.json`.
+- Verification run (todo 2026-10-13, Windows/`gradlew.bat`):
+  - `.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL (236 actionable tasks).
+  - `.\gradlew.bat testDebugUnitTest` → BUILD SUCCESSFUL (regresión).
+  - `.\gradlew.bat :test:unit:test --rerun` → BUILD SUCCESSFUL (JUnit XML
+    `SmokeTest`: tests=1 failures=0 errors=0, `dummyTestPasses`, 0,056 s).
+  - `.\gradlew.bat :domain:expenses:test --rerun` → BUILD SUCCESSFUL (JUnit XML
+    `TicketRepositoryTest`: tests=6 failures=0 errors=0, 0,083 s):
+    `saveAssignsIdAndReturnsAggregateFromGetById`,
+    `saveWithExistingIdUpdatesTicketInPlace`,
+    `deleteRemovesTicketAndDeletesPhotoFile`,
+    `deleteWithUnknownIdIsNoOpAndDoesNotTouchPhotoStore`,
+    `deleteRemovesTicketEvenIfPhotoDeletionFails`,
+    `observeByDateRangeEmitsInRangeTicketsIncludingBoundariesAndUpdatesOnSave`.
+  - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :framework:database:connectedDebugAndroidTest`
+    → BUILD SUCCESSFUL (9 tests, 0 fallos) en `Medium_Phone_API_36.1(AVD) - 16`
+    (= `emulator-5554`): `TicketDaoTest` tests=5 failures=0 errors=0
+    (`upsertSavesTicketWithLinesAsAggregate`, `upsertReplacesTheWholeLineSetOnResave`,
+    `deleteByIdRemovesTicketAndLinesInCascade`, `deleteByIdIsNoOpForUnknownId`,
+    `observeByDateRangeFiltersByEmissionDateAndEmitsOnSave`) + `PhotoFileStoreTest`
+    tests=4 failures=0 errors=0 (`deleteRemovesExistingFileGivenRelativeName`,
+    `deleteRemovesExistingFileGivenAbsolutePath`,
+    `deleteReturnsFalseForMissingFileWithoutCrashing`,
+    `deleteReturnsFalseForBlankPath`).
+  - Revisión de código (escenario 4): 0 imports de Android/Room en `domain/**`;
+    DAO con `Flow` y `@Transaction` en la escritura multi-tabla;
+    `TicketLocalDataSource`/`PhotoFileStoreImpl`/`DatabaseModule` `internal` en
+    `framework`; un solo `di.kt` por módulo; 0 declaraciones con versión literal
+    en los `**/*.gradle.kts` (única coincidencia del patrón de búsqueda: un
+    comentario en español en `app/build.gradle.kts`, sin declaración); `git diff`
+    de `init.sh`/`AGENTS.md`/`build-logic/`/ADRs/docs de descubrimiento vacío
+    (esta máquina no invoca `bash`; equivalente = los gates anteriores).
+- Evidence captured: campo `evidence` de `persistencia-room` en
+  `feature_list.json`; JUnit XML en
+  `domain/expenses/build/test-results/test/`,
+  `test/unit/build/test-results/test/` y
+  `framework/database/build/outputs/androidTest-results/connected/debug/`
+  (informe HTML en `framework/database/build/reports/androidTests/connected/debug/`).
+- Files or artifacts updated: fuentes de la feature (dominio, Room, dobles y
+  tests ya en el árbol; 0 correcciones necesarias), `docs/specs/persistencia-room.md`
+  (T1–T9 `[x]`), `docs/architecture.md` (sección Persistencia), `PROGRESS.md`,
+  `feature_list.json` (status `passing` + evidence).
+- Known risk or unresolved issue:
+  - `persistencia-room` queda en `passing` (implementada y auto-verificada);
+    `accepted` exige validación independiente (feature-validator) que el
+    orquestador debe persistir.
+  - El wiring de `di/di.kt` (Hilt en runtime) no tiene test instrumentado
+    propio: se verifica por compilación y agregación Hilt en `assembleDebug`
+    (mismo criterio que features anteriores); los tests de DAO construyen la
+    base con `Room.inMemoryDatabaseBuilder` directamente.
+  - Borradores (estado Borrador del domain-model) no se persisten: fuera de
+    scope del spec (riesgo conocido, llega con `procesado-ui`).
+- Next best step: validación independiente de `persistencia-room` con
+  feature-validator; después, siguiente feature con dependencias aceptadas
+  (`captura-foto` por orden de `feature_list.json`; `periodo-selector` queda
+  desbloqueada al aceptarse esta).
+
+### Session 011
+
+- Date: 2026-10-13
+- Goal: Validación independiente de `persistencia-room` con el subagente
+  `validator` (feature-validator) y persistencia de la aceptación.
+- Completed:
+  - Validación independiente con feature-validator (subagente `validator`):
+    veredicto **`accept`** sin hallazgos Critical/High/Medium.
+  - Gates re-ejecutados por el validador en verde (2026-10-13, borrando antes
+    resultados de tests previos para asegurar frescura):
+    `.\gradlew.bat assembleDebug` (BUILD SUCCESSFUL, 236 actionable tasks),
+    `.\gradlew.bat testDebugUnitTest` (BUILD SUCCESSFUL),
+    `.\gradlew.bat :test:unit:test --rerun` (BUILD SUCCESSFUL; JUnit XML
+    `SmokeTest` tests=1 failures=0 errors=0),
+    `.\gradlew.bat :domain:expenses:test --rerun` (BUILD SUCCESSFUL; JUnit XML
+    `TicketRepositoryTest` tests=6 failures=0 errors=0) y
+    `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :framework:database:connectedDebugAndroidTest`
+    (BUILD SUCCESSFUL; JUnit XML fresco `TicketDaoTest` tests=5 failures=0
+    errors=0 + `PhotoFileStoreTest` tests=4 failures=0 errors=0 en
+    `Medium_Phone_API_36.1(AVD) - 16`, timestamp 2026-10-13T20:52:51). Nota: el
+    validador detectó un dispositivo físico conectado además del emulador y fijó
+    `ANDROID_SERIAL` para garantizar el dispositivo de referencia.
+  - Escenarios 1-4 del spec cumplidos y contrastados con los asserts leídos
+    (no solo con nombres): upsert `@Transaction` con reemplazo del conjunto de
+    líneas, cascada FK `ON DELETE CASCADE` confirmada en
+    `schemas/.../1.json` + borrado best-effort de la foto (orden DB-antes-foto,
+    no-op para id inexistente, robusto si falla la foto), `observeByDateRange`
+    por `Flow` con rango inclusivo por fecha de emisión (bordes 01-10 00:00 y
+    31-10 23:59) y `distinctUntilChanged`, y límites de módulos verificados
+    (0 imports de Android/Room en `domain/**`, DAOs con `Flow`, `@Transaction`,
+    implementaciones `internal`, un `di.kt` por módulo).
+  - Evidencia contrastada: las 9 entradas de `evidence` de `feature_list.json`
+    y la sesión 010 coinciden 1:1 con los JUnit XML reales (nombres de test,
+    counts, dispositivo; única divergencia: tiempos de ejecución, deriva
+    normal entre corridas).
+  - Arquitectura, alcance y documentación verificados: diff igual a
+    `Expected File Changes` del spec (sin UI, usecases/ViewModels, captura,
+    OCR/IA, migraciones ni seeds), 0 versiones literales fuera del toml
+    (única coincidencia: comentario en español en `app/build.gradle.kts`),
+    `init.sh`/`AGENTS.md`/`build-logic/`/ADRs/docs de descubrimiento sin diffs,
+    `docs/architecture.md` con la sección Persistencia correcta, sin secretos
+    ni credenciales.
+  - Cobertura E2E persistente "no aplica" verificada como justificación
+    legítima y registrada (feature sin UI ni flujos de usuario; superficie
+    cubierta por tests instrumentados de DAO y por las features consumidoras).
+  - Persistida la aceptación: `feature_list.json` status de
+    `persistencia-room` → `accepted` (nota con fecha, alcance de la
+    validación y findings Low); Validator Checklist del spec completado.
+- Verification run: ver "Completed" (gates re-ejecutados por el validador;
+  inspección de JUnit XML en
+  `framework/database/build/outputs/androidTest-results/connected/debug/`,
+  `domain/expenses/build/test-results/test/` y `test/unit/build/test-results/test/`).
+- Evidence captured: informe de validación (veredicto `accept`) registrado en
+  las notas de `feature_list.json` y en esta sesión; 2 findings Low
+  no bloqueantes y 1 nota teórica anotados.
+- Files or artifacts updated: `feature_list.json` (status `accepted` + nota),
+  `PROGRESS.md`, `docs/specs/persistencia-room.md` (Validator Checklist).
+- Known risk or unresolved issue:
+  - 2 findings Low no bloqueantes: (1) `TicketRepositoryTest` usa `runTest`
+    directo en vez del `CoroutineTestRule` que pide `AGENTS.md` (sin impacto
+    funcional: nada bajo prueba toca `Dispatchers.Main`; si se quiere pureza,
+    añadir la regla compartida en `:test:unit` cuando lleguen los ViewModels);
+    (2) `Expected File Changes` del spec omite `entity/TicketWithLineas.kt` y
+    la ruta de tests del plan (`src/test/kotlin/`) no coincide con la
+    implementación (`src/test/java/`) — nit de documentación a corregir al
+    cerrar la spec.
+  - Nota teórica de seguridad: `PhotoFileStoreImpl` acepta y borra rutas
+    absolutas (intencional y testeado; la ruta viene de la BD privada). Cuando
+    se implemente `captura-foto`, guardar nombres relativos bajo `filesDir`
+    (el código ya lo soporta).
+  - Desviación ya auto-declarada y confirmada: el wiring Hilt de `di/di.kt`
+    se verifica solo por compilación/agregación Hilt (los tests DAO usan
+    `Room.inMemoryDatabaseBuilder` directamente); mismo criterio que features
+    anteriores.
+  - Ficheros sin trackear de la feature (`docs/specs/persistencia-room.md`,
+    `domain/expenses/src/`, `framework/database/schemas/`,
+    `framework/database/src/androidTest/`, fuentes nuevas de
+    `framework/database/` y `test/unit/src/main/`) + los 5 modificados,
+    pendientes de commit.
+- Next best step: commit de los cambios de `persistencia-room` (si el usuario
+  lo pide) y siguiente feature con dependencias aceptadas (`captura-foto` por
+  orden de `feature_list.json`; `periodo-selector` también queda desbloqueada).
