@@ -27,6 +27,11 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
+    // Orientacion EXIF del pipeline de foto (spec captura-foto).
+    implementation(libs.exifinterface)
+
+    // Unit tests JVM de la matematica pura del pipeline (PhotoPipelineMath).
+    testImplementation(libs.junit)
 
     // Tests instrumentados sin UI (Room in-memory + fichero real en filesDir).
     androidTestImplementation(libs.coroutines.core)

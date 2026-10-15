@@ -40,6 +40,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    // GrantPermissionRule del CapturaFlujoTest (spec captura-foto).
+    androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

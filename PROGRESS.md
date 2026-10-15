@@ -9,18 +9,9 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `persistencia-room` queda `accepted` (implementada
-  en la sesión 010 y validada de forma independiente en la 011); el siguiente
-  paso es `captura-foto` por orden de `feature_list.json`. Con esta aceptación
-  quedan desbloqueadas `periodo-selector` (además de `captura-foto`, ya
-  desbloqueada); `revision-datos` y `seed-demo` siguen a la espera de sus otras
-  dependencias.
-- Current blocker: ninguno. R1 resuelta 2026-10-12 con decisión **GO**
-  (Gemma 3n E2B-it int4 + MediaPipe `tasks-genai:0.10.35` validado en la Tab S9+).
-- Last verified at: 2026-10-13 (sesión 011: `persistencia-room` validada de
-  forma independiente y aceptada — 5 gates re-ejecutados por el validador en
-  verde, incluidos los instrumentados de `:framework:database` en
-  `emulator-5554`, con JUnit XML contrastados + revisión de código)
+- Current next ready feature: `captura-foto` está `accepted` (validación independiente 2026-10-15, sesión 014). Siguientes por orden de `feature_list.json`: `ocr-mlkit` (desbloqueada al aceptarse) y `periodo-selector` (desbloqueada por `persistencia-room`).
+- Current blocker: ninguno. Pendientes operativos menores: revisión visual humana de las capturas de `docs/evidence/captura-foto-*` (el agente no inspecciona imágenes) y commit de la feature si el usuario lo pide.
+- Last verified at: 2026-10-15 (sesión 014: `captura-foto` validada y aceptada por el feature-validator — gates JVM 23/23, instrumentados 17/17 en emulador `emulator-5554` y Tab S9+, y E2E 6/6 con instalación limpia, todo re-ejecutado en verde; check S2 de persistencia re-verificado en la Tab S9+)
 
 ## Session Log
 
@@ -702,3 +693,306 @@
 - Next best step: commit de los cambios de `persistencia-room` (si el usuario
   lo pide) y siguiente feature con dependencias aceptadas (`captura-foto` por
   orden de `feature_list.json`; `periodo-selector` también queda desbloqueada).
+
+### Session 012
+
+- Date: 2026-10-15
+- Goal: Terminar `captura-foto` (tercera reanudación): validar el trabajo
+  previo sin commit del árbol, arreglar los gates que fallaban, ejecutar la
+  verificación en emulador y dispositivo físico, actualizar docs durables y
+  cerrar la feature con evidencia real.
+- Completed:
+  - Validación del árbol previo frente a `Expected File Changes` del spec:
+    todos los ficheros previstos estaban presentes (dominio `PhotoProcessor` /
+    `PhotoFileStore.save` / `GuardarFotoCapturada`, framework
+    `PhotoPipelineMath` + `CapturedPhotoProcessor` + `PhotoFileStoreImpl.save` +
+    binding en `di/di.kt`, feature `EscanearState`/`EscanearViewModel` /
+    `CameraEncuadre` / `RevisionFotoContent` / `EscanearScreen`, fixture
+    `ticket_exif_rotado.jpg`, tests JVM/instrumentados/E2E).
+  - Arreglo 1 (`EscanearViewModelTest.withoutPermissionStateStaysPending`):
+    el test pedía una emisión nueva a un `StateFlow` cuyo valor no cambia
+    (conflación por igualdad; sin permiso el estado sigue en `PermisoPendiente`).
+    Corregido el test (espera a que la captura termine, `expectNoEvents()` +
+    comprobación de `estado.value`); el producto no cambió.
+  - Arreglo 2 (`CapturedPhotoProcessorTest.processBakesExif...`): el assert
+    "pixel opuesto no debería ser rojo" comparaba `Color.red < 120` y confundía
+    el blanco del fixture (red=255) con rojo; corregido a "no predominantemente
+    rojo". El pipeline ya salía correcto (720x1280, marcador arriba-izquierda).
+  - Arreglo 3 (`CapturaFlujoTest`): el diseño con `pm revoke` en caliente era
+    inviable — Android mata el proceso de la app bajo instrumentación al
+    revocar un permiso runtime (reproducido: logcat `Killing 5629:com.robertomr.tally
+    (adj 0): permissions revoked`, "Process crashed", la tanda entera se abortaba
+    y `NavigationTest` no llegaba a ejecutarse). Diseño final: sin
+    `GrantPermissionRule`, `@FixMethodOrder(NAME_ASCENDING)` con
+    `denegadoMuestraEstadoInAppSinCrash` primero (estado limpio de instalación)
+    y `pm grant` (seguro) en los tests con permiso, antes de navegar a Escanear
+    (el gate se evalúa al componer `EscanearScreen`).
+  - Gates JVM en verde: `assembleDebug`, `testDebugUnitTest`,
+    `:test:unit:test --rerun`, `:domain:expenses:test --rerun`,
+    `:framework:database:testDebugUnitTest` (23 tests JVM, 0 fallos).
+  - Gates instrumentados en verde en `emulator-5554`:
+    `:framework:database:connectedDebugAndroidTest` 17/17 y
+    `:app:connectedDebugAndroidTest` 6/6 (CapturaFlujoTest 3/3 +
+    NavigationTest 3/3). La cámara virtual del emulador SÍ entregó frames: el
+    E2E completo (obturador → pantalla 05 con foto, "Continuar" deshabilitado,
+    "Repetir foto" → encuadre) pasó sin assumption-skip.
+  - Verificación manual en emulador (escenarios 2, 5 y 6): captura real con
+    taps, pantalla 05, persistencia del fichero tras `force-stop`
+    (`files/fotos/captura_6818f724-….jpg`, 104625 bytes, nombre relativo) y
+    foto procesada real de 960x1280 (lado largo 1280); permiso denegado con
+    estado in-app y copy "Permiso denegado…" tras negar el diálogo del sistema,
+    sin crash.
+  - Tests del pipeline en físico: `:framework:database:connectedDebugAndroidTest`
+    17/17 también en la Tab S9+ (SM-X810).
+  - Docs durables actualizadas: `docs/architecture.md` (sección Captura de
+    foto: pipeline → `filesDir/fotos/` con nombre relativo; CameraX en
+    `:feature:escanear`), `docs/domain-model.md` ("Repetir foto" borra la foto
+    del borrador reemplazado best-effort),
+    `docs/risks-and-open-questions.md` (pregunta EXIF/compresión cerrada:
+    EXIF horneada en píxeles, ≤1280 px lado largo, JPEG ~85) y
+    `docs/specs/captura-foto.md` (T1-T11 [x], T12 con estado parcial +
+    Implementation Notes con las desviaciones).
+- Verification run:
+  - `gradlew.bat assembleDebug` → BUILD SUCCESSFUL.
+  - `gradlew.bat testDebugUnitTest` → BUILD SUCCESSFUL.
+  - `gradlew.bat :test:unit:test --rerun` → BUILD SUCCESSFUL (SmokeTest 1/1).
+  - `gradlew.bat :domain:expenses:test --rerun` → BUILD SUCCESSFUL
+    (GuardarFotoCapturadaTest 4/4 + TicketRepositoryTest 6/6).
+  - `gradlew.bat :framework:database:testDebugUnitTest` → BUILD SUCCESSFUL
+    (PhotoPipelineMathTest 6/6).
+  - `ANDROID_SERIAL=emulator-5554 gradlew.bat :framework:database:connectedDebugAndroidTest`
+    → BUILD SUCCESSFUL, 17 tests, 0 fallos.
+  - `ANDROID_SERIAL=emulator-5554 gradlew.bat :app:connectedDebugAndroidTest`
+    → BUILD SUCCESSFUL, 6 tests, 0 fallos, 0 skipped.
+  - `ANDROID_SERIAL=<Tab-SM-X810> gradlew.bat :framework:database:connectedDebugAndroidTest`
+    → BUILD SUCCESSFUL, 17 tests, 0 fallos.
+  - Manual en emulador: install/grant/captura/run-as/force-stop (abajo).
+- Evidence captured:
+  - JUnit XML: `*/build/test-results/` (23 tests JVM, 0 failures),
+    `framework/database/build/outputs/androidTest-results/connected/debug/TEST-SM-X810 - 16-_framework_database-.xml`
+    (17 tests, 0 failures; run del emulador con el mismo contenido registrado en
+    la evidencia de `feature_list.json`),
+    `app/build/outputs/androidTest-results/connected/debug/TEST-Medium_Phone_API_36.1(AVD) - 16-_app-.xml`
+    (6 tests, 0 failures, 0 skipped).
+  - Screenshots: `docs/evidence/captura-foto-05-emulador.png` (898941 bytes,
+    pantalla 05 tras captura real),
+    `docs/evidence/captura-foto-permiso-emulador.png` (66778 bytes, gate de
+    permiso), `docs/evidence/captura-foto-permiso-denegado-emulador.png`
+    (83319 bytes, copy "Permiso denegado…"); revisión visual de las imágenes
+    pendiente de mano humana (el agente no inspecciona imágenes).
+  - Persistencia (escenario 2): `run-as com.robertomr.tally ls -l files/fotos`
+    antes y después de `am force-stop` → mismo fichero
+    `captura_6818f724-9ce9-4d95-a644-0086b7ce2b3a.jpg` (104625 bytes); foto
+    extraída con `exec-out`: JPEG 960x1280.
+  - `uiautomator dump` de los estados de pantalla 05, encuadre, permiso y
+    diálogo de denegación del sistema (textos citados en la evidencia de
+    `feature_list.json`).
+  - Todo registrado con fecha 2026-10-15 en `feature_list.json` (9 entradas de
+    `evidence`, sin inventar nada).
+- Files or artifacts updated:
+  - Producto: `feature/escanear/src/test/.../EscanearViewModelTest.kt` (arreglo
+    de carrera), `framework/database/src/androidTest/.../CapturedPhotoProcessorTest.kt`
+    (arreglo de assert), `app/src/androidTest/.../CapturaFlujoTest.kt`
+    (rediseño del E2E de permisos).
+  - Docs: `docs/architecture.md`, `docs/domain-model.md`,
+    `docs/risks-and-open-questions.md`, `docs/specs/captura-foto.md`.
+  - Harness: `feature_list.json` (`captura-foto` → `passing` + evidencia),
+    `PROGRESS.md` (esta sesión).
+  - Evidencia: `docs/evidence/captura-foto-*.png` (3 ficheros nuevos).
+- Known risk or unresolved issue:
+  - Verificación física PENDIENTE de revisión humana (T12): la Tab S9+
+    (SM-X810) está conectada por ADB inalámbrico y acepta install/grant/start,
+    pero su pantalla está bloqueada y no despierta vía adb
+    (`mWakefulness=Dozing`, `mState=OFF`, `locksettings get-disabled=false`,
+    batería al 8% sin cargar) → sin captura de cámara física de papel ni
+    `captura-foto-05-tab.png`; el realme GT 2 no está conectado a esta máquina.
+    Los tests instrumentados no-UI sí pasaron en la Tab (17/17). Los E2E de UI
+    en la Tab fallan con "No compose hierarchies found in the app" por la
+    pantalla apagada (limitación ambiental, no bug de producto). Pasos para la
+    revisión humana en el T12 del spec.
+  - Desviación auto-declarada: `androidx.test:rules` queda en el catálogo (T2
+    del spec) aunque `CapturaFlujoTest` final no use `GrantPermissionRule` (el
+    `pm revoke` en caliente mata el proceso bajo test; ver Implementation Notes
+    del spec).
+  - Revisión visual de los 3 screenshots pendiente de mano humana (patrón del
+    repo: el agente no inspecciona imágenes).
+  - `EscanearViewModelTest` usa esperas activas acotadas (Thread.sleep con
+    timeout) para el borrado best-effort en `Dispatchers.IO`; determinista pero
+    no ideal si algún día hay muchos tests.
+  - Todo el árbol de la feature sigue sin commit (decisión de este flujo).
+- Next best step: ejecutar `feature-validator` sobre `captura-foto` (paso de
+  aceptación independiente) y, en paralelo, la revisión humana de la
+  verificación física (encender/desbloquear Tab S9+, capturar ticket real,
+  screenshots `captura-foto-05-tab.png` / `captura-foto-05-realme.png`).
+
+## Session 013 (2026-10-15) — Verificación física T12 de captura-foto en Tab S9+
+
+- Goal: completar la verificación física pendiente (T12) de `captura-foto` en la
+  Tab S9+ (SM-X810) con ticket de papel real; sin tocar código de producto.
+- Completed:
+  - Estado del dispositivo: desbloqueada, `mWakefulness=Awake`, batería 14 % y
+    subiendo por AC (antes 8 % en la sesión 012), Android 16/API 36, 1752x2800.
+  - `gradlew.bat :app:installDebug` con `ANDROID_SERIAL=adb-R52W60AFAPZ-...`
+    → instalada; `pm grant ... CAMERA`; arranque COLD 895 ms; pestaña Escanear
+    → encuadre mockup 04 con hint y "Cerrar".
+  - Escenario 1/5 (captura vertical): obturador → pantalla 05 ("Repetir foto" +
+    "Continuar"), `docs/evidence/captura-foto-05-tab.png`; foto
+    `fotos/captura_79d34873-e0c0-4d3f-afea-c52ba395b10e.jpg` (363972 bytes),
+    JPEG 960x1280 (lado largo 1280) con 0 segmentos EXIF APP1 (parser JPEG
+    propio sobre la cabecera).
+  - Escenario 2 (persistencia): tras `am force-stop`, `run-as ... ls -l
+    files/fotos` muestra el mismo fichero con el mismo tamaño.
+  - Escenario 3 end-to-end (girada): `user_rotation 1` (actividad recreada;
+    primer tap de obturador no capturó, reintento OK) → pantalla 05,
+    `docs/evidence/captura-foto-05-tab-girada.png`; foto
+    `captura_7e753987-...jpg` (262304 bytes), JPEG 1280x960 (dimensiones
+    intercambiadas, lado largo 1280) con 0 EXIF. Rotación automática restaurada.
+  - Escenario 7 ("Repetir foto"): el borrador reemplazado se borra de disco
+    (best-effort) y la captura siguiente solo deja la nueva
+    (`captura_41d02c1c-...jpg`, 153345 bytes).
+- Verification run: comandos adb exactos en `feature_list.json` (evidencia
+  "2026-10-15 T12 ..."); análisis JPEG (dimensiones + segmentos EXIF) con
+  script PowerShell inline; sin cambios de código → no se reejecutó
+  `connectedDebugAndroidTest` (regresión NavigationTest 3/3 de la sesión 012
+  sigue válida).
+- Evidence: `docs/evidence/captura-foto-05-tab.png` (5413375 bytes),
+  `captura-foto-05-tab-foto.jpg` (363972), `captura-foto-05-tab-girada.png`
+  (2890852), `captura-foto-05-tab-girada-foto.jpg` (262304),
+  `captura-foto-preview-tab.png` (5413656, encuadre con la escena del ticket).
+  Cuidado operativo: `adb exec-out screencap -p > file` en PowerShell 5.1
+  corrompe el binario (UTF-16); usar `adb shell screencap` + `adb pull`.
+- Files updated: `docs/specs/captura-foto.md` (T12 [x] + nota 6),
+  `feature_list.json` (5 evidencias T12 + nota), `PROGRESS.md` (esta sesión).
+  Cero cambios en código de producto.
+- Known risks: revisión visual de los PNG/JPG pendiente de mano humana (este
+  agente no puede inspeccionar imágenes; la verificación "foto derecha" se hizo
+  por dimensiones intercambiadas + ausencia de EXIF + pantalla 05 en uiautomator);
+  la huérfana `captura_79d34873-...jpg` queda en `files/fotos` de la tablet como
+  resto de la prueba de persistencia; realme GT 2 sigue sin conectar.
+- Next best step: `feature-validator` sobre `captura-foto` (aceptación
+  independiente) y revisión humana de los screenshots nuevos.
+
+### Session 014
+
+- Date: 2026-10-15
+- Goal: Validación independiente de `captura-foto` con el subagente `validator`
+  (feature-validator) y persistencia de la aceptación.
+- Completed:
+  - Validación independiente con feature-validator (subagente `validator`):
+    veredicto **`accept`** sin hallazgos Critical/High/Medium; 4 findings Low
+    no bloqueantes (detalle en "Known risk").
+  - Gates re-ejecutados por el validador en verde (2026-10-15, sin fiarse de la
+    evidencia del implementer):
+    - `.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL.
+    - `.\gradlew.bat testDebugUnitTest --rerun` → BUILD SUCCESSFUL.
+    - `.\gradlew.bat :test:unit:test --rerun` → BUILD SUCCESSFUL (JUnit XML
+      `SmokeTest` tests=1 failures=0 errors=0).
+    - `.\gradlew.bat :domain:expenses:test --rerun` → BUILD SUCCESSFUL (JUnit
+      XML `GuardarFotoCapturadaTest` tests=4 + `TicketRepositoryTest` tests=6,
+      0 failures).
+    - `.\gradlew.bat :framework:database:testDebugUnitTest --rerun` → BUILD
+      SUCCESSFUL (JUnit XML `PhotoPipelineMathTest` tests=6 failures=0).
+    - JUnit XML frescos (19:30) de `*/build/test-results/`: 23 tests JVM,
+      0 failures — coincide 1:1 con la evidencia declarada (4+6+6+6+1).
+    - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat
+      :framework:database:connectedDebugAndroidTest` → BUILD SUCCESSFUL,
+      "Starting 17 tests / Finished 17 tests" en `Medium_Phone_API_36.1(AVD) - 16`.
+    - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat
+      :app:connectedDebugAndroidTest` → BUILD SUCCESSFUL, 6 tests, 0 failures,
+      0 skipped con INSTALACIÓN LIMPIA (la app no estaba instalada en el
+      emulador, así que `denegadoMuestraEstadoInAppSinCrash` se ejecutó de
+      verdad y no saltó). JUnit XML fresco (19:35): `CapturaFlujoTest` 3/3 +
+      `NavigationTest` 3/3 (regresión de navegacion-base intacta).
+    - `$env:ANDROID_SERIAL="adb-R52W60AFAPZ-izULbK._adb-tls-connect._tcp";
+      .\gradlew.bat :framework:database:connectedDebugAndroidTest` (Tab S9+)
+      → BUILD SUCCESSFUL; JUnit XML fresco (19:36:37)
+      `TEST-SM-X810 - 16-_framework_database-.xml`: `CapturedPhotoProcessorTest`
+      4/4 + `PhotoFileStoreTest` 8/8 + `TicketDaoTest` 5/5 = 17/17.
+    - Check S2 de persistencia re-verificado de forma independiente en la Tab
+      S9+: `run-as com.robertomr.tally ls -l files/fotos` idéntico antes y
+      después de `am force-stop` (mismo `captura_79d34873-…jpg` 363972 bytes +
+      `captura_dd72dd37-…jpg` 320403 bytes; nombres relativos bajo
+      `files/fotos`; `pidof` vacío tras force-stop).
+    - `bash init.sh`: `git diff init.sh` vacío (bash no disponible en esta
+      máquina; gates equivalentes re-ejecutados directamente — patrón de las
+      sesiones 007/009/011).
+  - Evidencia de imágenes verificada de forma independiente por metadatos
+    (System.Drawing, sin inspección visual): fixture `ticket_exif_rotado.jpg`
+    (62021 bytes, 1600x900, EXIF Orientation=6 — coherente con T8),
+    `captura-foto-05-tab-foto.jpg` (960x1280, sin EXIF, 363972 bytes — coherente
+    con la evidencia T12 y con el fichero aún presente en el dispositivo),
+    `captura-foto-05-tab-girada-foto.jpg` (1280x960, sin EXIF, 262304 bytes —
+    dimensiones intercambiadas = escenario 3 end-to-end) y screenshots con
+    resolución coherente (Tab 1752x2800 / 2800x1752 girada; emulador
+    1080x2400) y tamaños idénticos a los citados en `feature_list.json`.
+  - Escenarios 1-7 contrastados con los asserts leídos (no solo nombres):
+    encuadre guiado → pantalla 05 (E2E + manual emulador/Tab), persistencia al
+    instante con nombre relativo (tests + `run-as`), EXIF horneada (fixture
+    Orientation=6 → 720x1280 + captura girada 1280x960 sin tags), compresión
+    ≤1280 px lado largo JPEG 85 sin guardar el original (CameraX escribe en
+    `ByteArrayOutputStream`, sin fichero temporal), pantalla 05 con testTags
+    `captura_revision`/`captura_foto`/`captura_repetir`/`captura_continuar` y
+    "Continuar" deshabilitado (assertIsNotEnabled), permiso denegado in-app en
+    español sin crash con `pantalla_escanear` presente, y "Repetir foto" que
+    borra el borrador reemplazado (VM test + huellas en la Tab).
+  - Alcance, arquitectura y seguridad verificados: diff igual a `Expected File
+    Changes` del spec; sin OCR/IA ni MediaStore (búsqueda), sin Room/
+    `TicketRepository`/schemas tocados, sin decoración ficticia del mockup 04/05
+    (solo comentarios que la declaran NO implementada), sin módulos Gradle
+    nuevos (`settings.gradle.kts` sin diff) ni rutas nuevas en `:app`, contratos
+    `PhotoProcessor`/`PhotoFileStore.save` en `domain/expenses/data` con
+    implementaciones `internal` en `framework/database`, caso de uso con
+    `operator fun invoke` + `@Inject constructor`, VM sin imports de Compose y
+    estado derivado con `combine`/`flatMapLatest`, 0 versiones literales en
+    `**/*.gradle.kts` (única coincidencia: comentario en español de Espresso),
+    `save` devuelve SIEMPRE `fotos/captura_<uuid>.jpg` relativo bajo `filesDir`
+    (contrato + tests + `run-as`), fuentes UTF-8 válidas (UI sin mojibake).
+  - Docs durables coherentes con el código: `docs/architecture.md` (sección
+    Captura de foto), `docs/domain-model.md` ("Repetir foto" best-effort),
+    `docs/risks-and-open-questions.md` (pregunta EXIF/compresión cerrada).
+  - Persistida la aceptación: `feature_list.json` status de `captura-foto` →
+    `accepted` (evidencia de validación + nota con fecha); Validator Checklist
+    del spec completado.
+- Verification run: ver "Completed" (gates re-ejecutados por el validador;
+  inspección de JUnit XML en `*/build/test-results/` y
+  `*/build/outputs/androidTest-results/connected/debug/`; metadatos de imagen
+  con System.Drawing; `run-as`/`force-stop` en Tab S9+).
+- Evidence captured: informe de validación (veredicto `accept`) registrado en
+  las notas/evidencia de `feature_list.json` y en esta sesión; 4 findings Low
+  no bloqueantes anotados.
+- Files or artifacts updated: `feature_list.json` (status `accepted` +
+  evidencia de validación), `PROGRESS.md` (Current Verified State + esta
+  sesión), `docs/specs/captura-foto.md` (Validator Checklist). Cero cambios en
+  código de producto.
+- Known risk or unresolved issue:
+  - 4 findings Low no bloqueantes:
+    (1) revisión visual de los PNG/JPG de `docs/evidence/captura-foto-*`
+    pendiente de mano humana (patrón del repo; precedentes sesiones 009/011 —
+    la verificación "foto derecha" queda apoyada por dimensiones intercambiadas
+    + 0 EXIF + `uiautomator`, pero el contenido visual no lo ha visto nadie);
+    (2) deriva del estado final de `files/fotos` en la Tab S9+: la evidencia
+    declara que tras "Repetir foto" quedaban `captura_41d02c1c` (153345 bytes) +
+    la huérfana `captura_79d34873`, pero hoy figuran `captura_79d34873` +
+    `captura_dd72dd37` (320403 bytes, 19:24) — hubo capturas posteriores al
+    registrar la evidencia (probablemente para `captura-foto-preview-tab.png`);
+    los artefactos extraídos son coherentes; recomendación: congelar el estado
+    del dispositivo tras capturar evidencia y citar el `ls` final;
+    (3) `EscanearViewModel.resultadoDeCaptura` envuelve el guardado en
+    `runCatching`, que también captura `CancellationException` y lo convertiría
+    en estado `Error` (teórico: durante `Procesando` la UI no puede cambiar la
+    entrada; recomendable re-lanzar `CancellationException`);
+    (4) nits de estilo AGENTS.md: `EscanearState.onPermisoDenegado()` es setter
+    público (la regla pide setters privados) y el VM inyecta `PhotoFileStore`
+    directamente para el borrado de "Repetir foto" (un caso de uso
+    `DescartarFoto` encajaría mejor con "casos de uso, uno por acción"; el spec
+    lo sanciona como "vía PhotoFileStore.delete").
+  - Nota teórica reiterada (sesión 011): `PhotoFileStoreImpl.delete` acepta
+    rutas absolutas (pre-existente, intencional y testeado); `save` SIEMPRE
+    devuelve relativo bajo `filesDir/fotos`.
+  - realme GT 2 sigue sin conectar; no bloquea: el spec admite "realme GT 2
+    y/o Tab S9+" y la verificación física se cerró en la Tab.
+  - Todo el árbol de la feature sigue sin commit (decisión de este flujo).
+- Next best step: commit de los cambios de `captura-foto` (si el usuario lo
+  pide) y siguiente feature con dependencias aceptadas: `ocr-mlkit` (por orden
+  de `feature_list.json`) o `periodo-selector` (desbloqueada por
+  `persistencia-room`).

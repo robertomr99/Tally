@@ -1,0 +1,334 @@
+package com.robertomr.tally.feature.escanear
+
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import java.io.ByteArrayOutputStream
+
+/**
+ * Encuadre guiado de la captura (mockup 04, spec captura-foto): preview de
+ * camara en vivo con reticula normativa (scrim ~65% fuera de la zona de
+ * captura + marcas de esquina + hint "Alinea los bordes del ticket dentro del
+ * recuadro"), obturador circular 80dp y "Cerrar".
+ *
+ * Decoracion ficticia del mockup NO implementada (DESIGN.md R4 / non-goals):
+ * flash, modos Auto/Manual, deteccion de luz, galeria, chips OCR.
+ */
+@Composable
+fun CameraEncuadre(
+    onCapturado: (ByteArray) -> Unit,
+    onCapturaFallida: (String) -> Unit,
+    onCerrar: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember {
+        PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
+    }
+    val imageCapture = remember {
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build()
+    }
+    // La captura solo se habilita cuando la camara ya esta vinculada al
+    // preview; pulsar antes evita errores de ImageCapture sin camara activa.
+    var camaraLista by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        camaraLista = false
+        val providerFuture = ProcessCameraProvider.getInstance(context)
+        var disposeado = false
+        val listener = Runnable {
+            if (!disposeado) runCatching {
+                val provider = providerFuture.get()
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+                provider.unbindAll()
+                provider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    imageCapture,
+                )
+                camaraLista = true
+            }.onFailure {
+                // Sin camara utilizable: estado de error sin crash (escenario 6).
+                onCapturaFallida("No se pudo abrir la cámara. Inténtalo de nuevo.")
+            }
+        }
+        val executor = ContextCompat.getMainExecutor(context)
+        providerFuture.addListener(listener, executor)
+        onDispose {
+            disposeado = true
+            camaraLista = false
+            runCatching { providerFuture.get().unbindAll() }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .testTag("captura_encuadre"),
+    ) {
+        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+
+        ReticulaCaptura(modifier = Modifier.fillMaxSize())
+
+        if (!camaraLista) {
+            // Estado de carga de la camara (sincronizacion del E2E de captura).
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .testTag("captura_camara_cargando"),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = Color.White)
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PildoraHint(texto = "Alinea los bordes del ticket dentro del recuadro")
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            // Hueco simetrico del obturador central (sin galeria: non-goal).
+            Spacer(modifier = Modifier.size(56.dp))
+
+            BotonObturador(
+                enabled = camaraLista,
+                onClick = {
+                    capturar(
+                        context = context,
+                        imageCapture = imageCapture,
+                        onCapturado = onCapturado,
+                        onCapturaFallida = onCapturaFallida,
+                    )
+                },
+            )
+
+            BotonCerrar(onClick = onCerrar)
+        }
+    }
+}
+
+/** Dispara [ImageCapture] y entrega los bytes JPEG crudos (con EXIF). */
+private fun capturar(
+    context: Context,
+    imageCapture: ImageCapture,
+    onCapturado: (ByteArray) -> Unit,
+    onCapturaFallida: (String) -> Unit,
+) {
+    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+        PackageManager.PERMISSION_GRANTED
+    ) {
+        onCapturaFallida("Sin permiso de cámara")
+        return
+    }
+    val stream = ByteArrayOutputStream()
+    val opciones = ImageCapture.OutputFileOptions.Builder(stream).build()
+    imageCapture.takePicture(
+        opciones,
+        ContextCompat.getMainExecutor(context),
+        object : ImageCapture.OnImageSavedCallback {
+            override fun onImageSaved(results: ImageCapture.OutputFileResults) {
+                onCapturado(stream.toByteArray())
+            }
+
+            override fun onError(exception: ImageCaptureException) {
+                onCapturaFallida("No se pudo capturar la foto. Inténtalo de nuevo.")
+            }
+        },
+    )
+}
+
+/**
+ * Reticula normativa del mockup 04: scrim ~65% fuera de la zona de captura,
+ * marcas de esquina (24dp x 3dp, secondary-fixed) y sin decoracion ficticia.
+ */
+@Composable
+private fun ReticulaCaptura(modifier: Modifier = Modifier) {
+    val esquinaColor = MaterialTheme.colorScheme.secondaryFixed
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val zona = calcularZonaCaptura(size, this)
+        val recorte = Path().apply {
+            fillType = PathFillType.EvenOdd
+            addRect(Rect(Offset.Zero, size))
+            addRect(zona)
+        }
+        drawPath(path = recorte, color = Color.Black.copy(alpha = 0.65f))
+
+        val largo = 24.dp.toPx()
+        val grosor = 3.dp.toPx()
+        val esquinas = listOf(
+            Triple(zona.left, zona.top, 1 to 1),
+            Triple(zona.right, zona.top, -1 to 1),
+            Triple(zona.left, zona.bottom, 1 to -1),
+            Triple(zona.right, zona.bottom, -1 to -1),
+        )
+        for ((x, y, direccion) in esquinas) {
+            val (dx, dy) = direccion
+            drawLine(
+                color = esquinaColor,
+                start = Offset(x, y),
+                end = Offset(x + dx * largo, y),
+                strokeWidth = grosor,
+            )
+            drawLine(
+                color = esquinaColor,
+                start = Offset(x, y),
+                end = Offset(x, y + dy * largo),
+                strokeWidth = grosor,
+            )
+        }
+    }
+}
+
+/** Zona de captura proporcional al mockup 04 (max-w-xs, 68vh, centrada). */
+private fun calcularZonaCaptura(size: Size, density: Density): Rect = with(density) {
+    val margen = 24.dp.toPx()
+    val ancho = minOf(size.width - 2 * margen, 320.dp.toPx())
+    val alto = minOf(size.height * 0.68f, 500.dp.toPx())
+    val left = (size.width - ancho) / 2
+    val top = (size.height - alto) / 2
+    Rect(left, top, left + ancho, top + alto)
+}
+
+@Composable
+private fun PildoraHint(texto: String) {
+    Row(
+        modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(9999.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(9999.dp))
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .background(MaterialTheme.colorScheme.secondaryFixed, CircleShape),
+        )
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White,
+        )
+    }
+}
+
+/** Obturador circular 80dp del mockup 04 (anillo blanco + nucleo blanco). */
+@Composable
+private fun BotonObturador(
+    onClick: () -> Unit,
+    enabled: Boolean,
+) {
+    Box(
+        modifier = Modifier
+            .size(80.dp)
+            .border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape)
+            .padding(4.dp)
+            .background(Color.White, CircleShape)
+            .clickable(enabled = enabled, onClick = onClick)
+            .testTag("captura_obturador"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.PhotoCamera,
+            contentDescription = "Capturar foto del ticket",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.graphicsLayer(alpha = if (enabled) 1f else 0.4f),
+        )
+    }
+}
+
+@Composable
+private fun BotonCerrar(onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                .clickable(onClick = onClick)
+                .testTag("captura_cerrar"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = "Cancelar captura",
+                tint = Color.White,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Cerrar",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.8f),
+        )
+    }
+}

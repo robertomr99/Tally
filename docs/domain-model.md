@@ -38,6 +38,9 @@ Transiciones:
 - Guardar → Guardado (persiste ticket, líneas y vincula la foto).
 - Editar (Guardado) → edición en memoria → Guardar cambios → Guardado.
 - Borrar → se elimina el ticket, sus líneas y su foto (cascada, con confirmación).
+- Repetir foto → se descarta el Borrador actual y se borra de disco la foto del
+  borrador reemplazado (best-effort); la foto de un ticket Guardado solo se
+  borra en cascada con él.
 
 ## Important Scenarios
 

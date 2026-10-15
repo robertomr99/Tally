@@ -54,8 +54,15 @@
   centralizada en `DESIGN.md` (Open Design Questions #1).
 - **Navegación expandida (Tab S9+)**: decisión de diseño pendiente,
   centralizada en `DESIGN.md` (Open Design Questions #3).
-- **EXIF/rotación y compresión de la foto**: decidir pipeline exacto al
-  implementar la captura (decisión ya tomada: corregir + comprimir).
+- **EXIF/rotación y compresión de la foto**: **RESUELTO 2026-10-15
+  (captura-foto, sesión 012): pipeline decidido y verificado.** La orientación
+  EXIF se hornea en los píxeles (rotaciones 180/90/270 de las orientaciones
+  3/6/8; las de espejo 2/4/5/7 quedan fuera del MVP), la salida se escala a
+  ≤1280 px de lado largo conservando proporción y se recomprime JPEG (~85)
+  sin tag de orientación; el original de cámara NO se guarda. Implementado en
+  `CapturedPhotoProcessor` + `PhotoPipelineMath` (`:framework:database`),
+  verificado con fixture EXIF Orientation=6 (tests instrumentados en emulador
+  y Tab S9+) y con captura real (960×1280 JPEG en `filesDir/fotos/`).
 - **"Frecuentes" de comercios**: chips sugeridos desde el historial (GROUP BY
   comercio). Incluir si es barato; si no, quitar sin drama.
 

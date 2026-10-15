@@ -36,6 +36,19 @@ navigationCompose = "2.9.8"
 # javax.inject para el @Inject constructor de los repositorios de :domain:*
 # (AGENTS.md); sin dependencias de Android en dominio.
 javaxInject = "1"
+# CameraX (solo :feature:escanear, spec captura-foto). Ultima estable de la
+# linea (1.7.0 es alpha); compatible con compileSdk 36. Ver sesion 012 de
+# PROGRESS.md.
+cameraX = "1.6.2"
+# androidx.exifinterface para corregir la orientacion EXIF de la foto capturada
+# (pipeline de captura-foto). Ultima estable.
+exifinterface = "1.4.2"
+# hiltViewModel() en Compose (androidx.hilt:hilt-navigation-compose). Linea
+# 1.2.x: la 1.4.0 exige compileSdk 37 (AAR metadata) y este repo fija 36.
+hiltNavigationCompose = "1.2.0"
+# androidx.test:rules (GrantPermissionRule del E2E de captura). Misma linea
+# 1.7.0 que androidxTestCore/Runner ya en el catalogo.
+androidxTestRules = "1.7.0"
 
 [libraries]
 # Artefactos de plugin (los usa build-logic)
@@ -73,6 +86,9 @@ mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", 
 # AndroidX y Compose
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+# LocalLifecycleOwner para el binding de CameraX (captura-foto); misma linea
+# de version lifecycle.
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -87,6 +103,18 @@ androidx-compose-material-icons-extended = { group = "androidx.compose.material"
 # Navegación de :app (NavHost, rememberNavController, composable por ruta String)
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
+# CameraX (binding de UI de la camara en :feature:escanear; spec captura-foto)
+camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
+camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
+camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
+camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
+
+# EXIF del pipeline de foto (:framework:database; spec captura-foto)
+exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
+
+# hiltViewModel() para las pantallas Compose (:feature:escanear; captura-foto)
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 # Tests instrumentados (androidx.test), usado por el harness del spike Gemma.
@@ -98,6 +126,8 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 # Espresso (fuerza 3.7.0 sobre el 3.5.0 transitivo de ui-test-junit4; API 35+).
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxTestEspresso" }
+# Rules de androidx.test (GrantPermissionRule en CapturaFlujoTest; captura-foto).
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRules" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

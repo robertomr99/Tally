@@ -3,9 +3,11 @@ package com.robertomr.tally.framework.database.di
 import android.content.Context
 import androidx.room.Room
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
+import com.robertomr.tally.domain.expenses.data.PhotoProcessor
 import com.robertomr.tally.domain.expenses.data.TicketDataSource
 import com.robertomr.tally.framework.database.TallyDatabase
 import com.robertomr.tally.framework.database.dao.TicketDao
+import com.robertomr.tally.framework.database.source.CapturedPhotoProcessor
 import com.robertomr.tally.framework.database.source.PhotoFileStoreImpl
 import com.robertomr.tally.framework.database.source.TicketLocalDataSource
 import dagger.Module
@@ -35,4 +37,7 @@ internal object DatabaseModule {
     @Provides
     fun providePhotoFileStore(@ApplicationContext context: Context): PhotoFileStore =
         PhotoFileStoreImpl(context)
+
+    @Provides
+    fun providePhotoProcessor(): PhotoProcessor = CapturedPhotoProcessor()
 }

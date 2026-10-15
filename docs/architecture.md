@@ -51,6 +51,23 @@ app ──────────► feature:* ──────────�
 - Los DAO devuelven `Flow` y las escrituras multi-tabla van con `@Transaction`.
   La foto del ticket vive en `filesDir` y su ruta se guarda en Room.
 
+## Captura de foto
+
+- El pipeline de la foto capturada vive en `:framework:database`
+  (`CapturedPhotoProcessor`, interno; matemática pura en `PhotoPipelineMath`):
+  hornea la orientación EXIF en los píxeles, escala a ≤1280 px de lado largo
+  conservando proporción y recomprime JPEG (~85) sin tag de orientación. El
+  contrato (`PhotoProcessor`) está en `:domain:expenses`; el original de cámara
+  no se guarda.
+- La foto se persiste EN EL MOMENTO DE LA CAPTURA en `filesDir/fotos/` con
+  nombre RELATIVO (`fotos/captura_<uuid>.jpg`), contrato de
+  `PhotoFileStore.save`: nunca se devuelve ni se escribe una ruta absoluta.
+  La foto sobrevive a la muerte de la app; "Repetir foto" borra la foto del
+  borrador reemplazado (best-effort).
+- CameraX vive en `:feature:escanear` (binding de UI: preview + `ImageCapture`
+  en `CameraEncuadre`). No existe `:framework:camera`: crearlo exige
+  aprobación explícita del usuario (AGENTS.md).
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,
