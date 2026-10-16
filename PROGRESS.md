@@ -9,9 +9,9 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `captura-foto` está `accepted` (validación independiente 2026-10-15, sesión 014). Siguientes por orden de `feature_list.json`: `ocr-mlkit` (desbloqueada al aceptarse) y `periodo-selector` (desbloqueada por `persistencia-room`).
-- Current blocker: ninguno. Pendientes operativos menores: revisión visual humana de las capturas de `docs/evidence/captura-foto-*` (el agente no inspecciona imágenes) y commit de la feature si el usuario lo pide.
-- Last verified at: 2026-10-15 (sesión 014: `captura-foto` validada y aceptada por el feature-validator — gates JVM 23/23, instrumentados 17/17 en emulador `emulator-5554` y Tab S9+, y E2E 6/6 con instalación limpia, todo re-ejecutado en verde; check S2 de persistencia re-verificado en la Tab S9+)
+- Current next ready feature: `ocr-mlkit` está `accepted` (validación independiente 2026-10-16, sesión 016). Siguientes por orden de `feature_list.json`: `periodo-selector` (desbloqueada por `persistencia-room`) y `extraccion-nube`/`extraccion-local` (desbloqueadas al aceptarse `ocr-mlkit`).
+- Current blocker: ninguno. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendientes operativos menores: revisión visual humana de capturas (`docs/evidence/captura-foto-*`, `ocr-mlkit-panel-debug-tab.png`) y commit de `ocr-mlkit` si el usuario lo pide.
+- Last verified at: 2026-10-16 (sesión 016: `ocr-mlkit` validada y aceptada por el feature-validator — T6 con 4 fixtures reales `MlKitOcrEngineTest` 7/7 en `emulator-5554` y Tab S9+, contraste humano T9 confirmado, gates JVM 33/33, database 21/21, `:app` 6/6; veredicto inicial `revise` por corrupción de evidencia de `captura-foto` y research task contradictoria, reparadas y con sanity 7/7)
 
 ## Session Log
 
@@ -996,3 +996,192 @@
   pide) y siguiente feature con dependencias aceptadas: `ocr-mlkit` (por orden
   de `feature_list.json`) o `periodo-selector` (desbloqueada por
   `persistencia-room`).
+
+### Session 015
+
+- Date: 2026-10-16
+- Goal: Continuar y cerrar la implementación de `ocr-mlkit` (etapa 1 del
+  ADR 0002) desde el árbol parcial sin commit: verificar lo hecho, implementar
+  el harness de fixtures reales, ejecutar todos los gates, actualizar docs
+  durables y registrar evidencia; sin inventar fixtures ni resultados.
+- Completed:
+  - Validación del árbol parcial frente a `Expected File Changes` del spec: todo
+    estaba presente (dominio `OcrEngine`/`PhotoFileStore.read`/
+    `ReconocerTextoCrudo` + test JVM, `:framework:ai` `MlKitOcrEngine` + `di.kt`
+    + ML Kit, `PhotoFileStoreImpl.read` + tests, dobles `FakeOcrEngine`/
+    `FakePhotoFileStore.read`, feature `Revision(rutaFoto, textoCrudo)` +
+    panel debug, `CapturaFlujoTest` ampliado, catálogo con
+    `mlkitTextRecognition`, `MlKitOcrEngineTest`). No se rehizo trabajo.
+  - T6b **harness de fixtures implementado**: 5 métodos en `MlKitOcrEngineTest`
+    que leen `ticket_real_1..5.jpg` + `ticket_real_1..5.tokens.txt` de
+    `androidTest/assets` y se SALTAN con `assumeTrue` y motivo explícito si
+    faltan. **No había (ni hay) 5 tickets de papel** en la sesión → los 5 tests
+    aparecen `skipped`; no se inventaron fixtures ni tokens. T6b/T9 quedan
+    bloqueados por aportación humana.
+  - Bug corregido en el árbol parcial (bloqueaba 4 tests): `FakePhotoFileStore`
+    no devolvía por `read` lo escrito por `save`, así que `ReconocerTextoCrudo`
+    veía `null` y nunca invocaba el motor → `EscanearViewModelTest` fallaba en
+    los 5 casos de OCR. Arreglado con round-trip (`savedByName`) sin tocar
+    producto. También: `ReconocerTextoCrudoTest.engineErrorPropagatesToTheCaller`
+    devolvía `String` de `runBlocking` y JUnit exige `void` (`: Unit`), y se
+    restauraron los acentos perdidos (U+FFFD) en la KDoc de
+    `PhotoFileStore.delete` (regresión de encoding del árbol parcial).
+  - Gates JVM en verde: `assembleDebug` BUILD SUCCESSFUL; `testDebugUnitTest`
+    BUILD SUCCESSFUL; `:test:unit:test --rerun` (SmokeTest 1/1);
+    `:domain:expenses:test --rerun` (GuardarFotoCapturadaTest 4 +
+    TicketRepositoryTest 6 + **ReconocerTextoCrudoTest 5/5**);
+    `:framework:database:testDebugUnitTest` (PhotoPipelineMathTest 6/6);
+    **EscanearViewModelTest 11/11**.
+  - Gates instrumentados (emulador `emulator-5554` arrancado en esta sesión):
+    `:framework:ai:connectedDebugAndroidTest` filtrado a `MlKitOcrEngineTest`
+    → 8 tests, **0 fallos, 5 skipped** (render con tokens exactos + sin texto +
+    bytes indecodificables en verde); `:framework:database:connectedDebugAndroidTest`
+    → **21/21** (PhotoFileStoreTest 12/12 con los 4 de `read`); `:app:connectedDebugAndroidTest`
+    → **6/6, 0 skipped** (`CapturaFlujoTest` 3/3 con el panel `captura_texto_crudo`
+    presente y `captura_continuar` `assertIsNotEnabled` + `NavigationTest` 3/3).
+  - Gates en la **Tab S9+ (SM-X810)**: `MlKitOcrEngineTest` filtrado → 8 tests
+    0 fallos 5 skipped; `:framework:database:connectedDebugAndroidTest` → 21/21.
+  - T9 parcial en la Tab S9+ (física, despierta): `:app:installDebug` +
+    `pm grant` + captura en vivo por el flujo completo (obturador → pantalla 05)
+    con el panel de debug visible y **"(OCR vacío)"** (la escena no era un
+    ticket): evidencia `docs/evidence/ocr-mlkit-panel-debug-tab.png` +
+    `ocr-mlkit-uiautomator-tab.xml`. Escenario 3 verificado en hardware. Los 5
+    tickets reales + contraste humano siguen pendientes (bloqueo humano).
+  - Búsquedas de regresión: 0 imports de Android/ML Kit/AndroidX en `domain/**`;
+    `schemas/` sin diff; `init.sh` sin diff; `Continuar` `enabled = false`
+    intacto (RevisionFotoContent.kt:205); 0 versiones literales fuera de
+    `gradle/libs.versions.toml` (única coincidencia: comentario en
+    `app/build.gradle.kts`); ML Kit solo vía `libs.mlkit.text.recognition`.
+  - Docs durables actualizadas: `docs/architecture.md` (sección "OCR (texto
+    crudo)"), `docs/domain-model.md` (el Borrador lleva el texto crudo),
+    `docs/technical-discovery.md` (aclaración columna `texto_crudo_ocr` vs
+    fichero sidecar), `docs/risks-and-open-questions.md` (research task ML Kit
+    = integración verificada + 5 tickets pendientes; R3 anotada como abierta),
+    `docs/specs/ocr-mlkit.md` (T1–T5/T7/T8/T10 `[x]`; T6a `[x]`, T6b/T9
+    pendientes con Implementation Notes/Desviaciones).
+- Verification run: ver "Completed" (JUnit XML en
+  `domain/expenses/build/test-results/test/`,
+  `feature/escanear/build/test-results/testDebugUnitTest/`,
+  `framework/ai/build/outputs/androidTest-results/connected/debug/`,
+  `framework/database/build/outputs/androidTest-results/connected/debug/` y
+  `app/build/outputs/androidTest-results/connected/debug/`).
+- Evidence captured: `feature_list.json` (`ocr-mlkit` con 11 entradas de
+  `evidence`, sin inventar nada); `docs/evidence/ocr-mlkit-panel-debug-tab.png`
+  (1663169 bytes) y `docs/evidence/ocr-mlkit-uiautomator-tab.xml` (11825 bytes).
+- Files or artifacts updated: `framework/ai/src/androidTest/.../MlKitOcrEngineTest.kt`
+  (harness de fixtures), `test/unit/src/main/kotlin/.../FakePhotoFileStore.kt`
+  (round-trip save→read), `domain/expenses/src/test/.../ReconocerTextoCrudoTest.kt`
+  (`: Unit`), `domain/expenses/src/main/.../PhotoFileStore.kt` (acentos
+  restaurados), `docs/architecture.md`, `docs/domain-model.md`,
+  `docs/technical-discovery.md`, `docs/risks-and-open-questions.md`,
+  `docs/specs/ocr-mlkit.md`, `feature_list.json`, `PROGRESS.md`. Cero cambios
+  de producto (el árbol ya traía la implementación).
+- Known risk or unresolved issue:
+  - **`ocr-mlkit` queda en `in_progress` (NO `passing`)**: la implementación y
+    todos los gates ejecutables están en verde, pero la verificación 1 del spec
+    (5 fotos reales de tickets con contraste humano "coincide razonablemente con
+    el papel") NO se ha ejecutado. Sin esos datos, marcar `passing` sería falso.
+  - Paso manual pendiente (bloqueante): aportar 5 tickets de papel → guardarlos
+    como `framework/ai/src/androidTest/assets/ticket_real_1..5.jpg` con su tabla
+    `ticket_real_1..5.tokens.txt` (un token de comercio/total por línea) →
+    re-ejecutar el gate del OCR en emulador y Tab S9+; y capturar en vivo por el
+    flujo completo para registrar los 5 textos crudos + veredicto humano (T9).
+  - Gate `:framework:ai:connectedDebugAndroidTest` sin filtro en emulador falla
+    por `GemmaMediaPipeSpikeTest` (exige el `.litertlm` de 3,4 GB, solo Tab);
+    se ejecuta filtrado a `MlKitOcrEngineTest`. Es un test de otra feature
+    (`spike-gemma-mediapipe`, `accepted`), no un fallo de `ocr-mlkit`.
+  - El mismo fichero JUnit XML por módulo se regenera en cada `connected...`
+    (Gradle limpia el directorio): los counts del run del emulador se citan con
+    su timestamp en `feature_list.json`.
+  - Revisión visual de `ocr-mlkit-panel-debug-tab.png` pendiente de mano humana
+    (el agente no inspecciona imágenes); el texto del panel sí se verificó con
+    `uiautomator` ("Texto crudo (debug)" + "(OCR vacío)").
+  - Todo el árbol de la feature sigue sin commit (decisión de este flujo).
+- Next best step: aportar los 5 tickets reales (harness + tokens) y ejecutar
+  T6b/T9 para poder marcar la verificación 1; después, validación independiente
+  con feature-validator. Mientras, `periodo-selector` es la siguiente feature
+  con dependencias aceptadas.
+
+### Session 016
+
+- Date: 2026-10-16
+- Goal: cerrar la parte pendiente de `ocr-mlkit` (T6b) con fixtures reales:
+  el usuario aportó 4 fotos de tickets y delegó la generación de los tokens al
+  agente; añadir los assets, ajustar el harness, re-ejecutar gates y registrar
+  la desviación (4 fotos en vez de 5) sin inventar datos.
+- Completed:
+  - El usuario aportó 4 fotos reales (`ticket_real_1..4.jpeg` en el escritorio).
+    Copiadas a `framework/ai/src/androidTest/assets/ticket_real_1..4.jpg`
+    (355703/364343/362735/421481 bytes) con su tabla de tokens
+    `ticket_real_1..4.tokens.txt` (un token "razonable" por línea: comercio/total).
+  - Tokens derivados de la salida real de ML Kit (logcat tag `MlKitOcr`,
+    `texto_crudo_real_<n>`) y **corroborados con un OCR independiente** del de la
+    app (Windows.Media.Ocr vía WinRT) para que el test no sea tautológico:
+    `HOLA`/`ALMIRANTE`/`PROFORMA`/`32,09` · `AEROPUERTO`/`TOTAL`/`SEVILLA`/`3,36`
+    · `OZONE`/`TACOS`/`POLLO`/`12,64` · `GRUPO`/`LECHE`/`PISTACHO`/`7,91`.
+  - **Desviación acordada** (decisión del usuario 2026-10-16): el spec y la
+    verificación planificaban 5 fotos reales; se aceptan **4**. El harness pasó
+    de 5 a 4 métodos para no dejar un `skipped` permanente.
+  - T6 instrumentado con fixtures en verde: `MlKitOcrEngineTest` **7 tests,
+    0 fallos, 0 skipped** en `emulator-5554` (JUnit XML
+    `TEST-Medium_Phone_API_36.1(AVD) - 16-_framework_ai-.xml`) y en la Tab S9+
+    (`TEST-SM-X810 - 16-_framework_ai-.xml`), cada `realTicket<1..4>` con sus
+    tokens reales.
+  - Textos crudos reales exportados a `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt`
+    (UTF-8 con `€` y acentos; 592/610/422/885 bytes) como insumo declarado de
+    `extraccion-nube`/`extraccion-local`.
+  - Bug del harness corregido: el `id` de `ocr-mlkit` en `feature_list.json`
+    había quedado corrupto como `"  "`; restaurado a `"ocr-mlkit"` (JSON validado
+    con `ConvertFrom-Json`, 23 entradas).
+- Verification run: `ANDROID_SERIAL=emulator-5554` y `ANDROID_SERIAL=<SM-X810>`
+  `gradlew.bat :framework:ai:connectedDebugAndroidTest
+  -Pandroid.testInstrumentationRunnerArguments.class=<...MlKitOcrEngineTest>` →
+  BUILD SUCCESSFUL, "Starting/Finished 7 tests", 0 skipped. (Los gates JVM,
+  database y E2E ya quedaron en verde en la sesión 015; no se reejecutaron porque
+  no hubo cambios de producto.)
+- Evidence captured: `feature_list.json` (evidencia T6b/T6 con dispositivos y
+  conteos); `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt`; fixtures y tokens
+  en `framework/ai/src/androidTest/assets/`.
+- Files or artifacts updated: fixtures + tokens
+  (`framework/ai/src/androidTest/assets/ticket_real_1..4.jpg` / `.tokens.txt`),
+  `framework/ai/src/androidTest/.../MlKitOcrEngineTest.kt` (harness 4 fixtures +
+  KDoc), `docs/specs/ocr-mlkit.md` (T6 `[x]`, T9 pendiente de contraste humano,
+  notas/evidencia 5→4), `feature_list.json` (id restaurado, verification 5→4,
+  evidencia T6b + nota de desviación), `PROGRESS.md` (esta sesión + estado).
+- Contraste humano (T9) **CONFIRMADO por el usuario** (2026-10-16): los 4 textos
+  crudos contienen comercio, fecha, productos y totales y "coinciden
+  razonablemente con el papel". Observación registrada como deuda de la etapa 2
+  (`extraccion-nube`/`extraccion-local`): el precio relevante es el **total con
+  IVA**, no la base; el texto crudo trae base/cuota/total por separado
+  (documentado en `docs/domain-model.md` y `docs/risks-and-open-questions.md`).
+- `ocr-mlkit` → **`passing`** en `feature_list.json` (T6 y T9 cerrados).
+- Validación independiente con `feature-validator` (subagente `validator`):
+  veredicto inicial **`revise`** por **2 findings Medium** + **2 Low**:
+  1. (Medium) La evidencia de `captura-foto` en `feature_list.json` quedó
+     corrupta en una edición previa: se borró la entrada del "escenario 6" y se
+     truncó el prefijo de la de "seguridad y regresión" (`2026-10-15 revisión` →
+     `202   `). **Reparado**: restauradas ambas líneas desde `HEAD` (evidencia
+     `captura-foto` de vuelta a 15 entradas; `git diff feature_list.json` ya solo
+     toca `ocr-mlkit`).
+  2. (Medium) La research task "ML Kit Text Recognition v2" de
+     `docs/risks-and-open-questions.md` seguía diciendo "5 tickets reales
+     pendiente de aportación humana", contradiciendo R3. **Reparado** (4
+     fixtures + contraste humano confirmado + desviación 5→4).
+  3. (Low) Tamaños de `texto_crudo_1..4.txt` declarados mal. **Reparado**:
+     570/601/391/871 bytes.
+  4. (Low) Restos de "5 fotos/tickets" en el spec y mensaje de skip del harness.
+     **Reparado** (spec alineado a 4; mensaje del harness actualizado).
+  Gates re-ejecutados por el validador en verde (JVM 33; `MlKitOcrEngineTest`
+  7/7 en emulador y Tab; `database` 21/21; `:app` 6/6) y sanity del OCR 7/7 tras
+  las reparaciones. Sin cambios de producto.
+- Persistida la aceptación: `feature_list.json` `ocr-mlkit` → **`accepted`** con
+  nota; Validator Checklist del spec marcado.
+- Known risk or unresolved issue:
+  - Verificación 1 con desviación: 4 fotos reales en vez de 5 (registrada en
+    `feature_list.json` verification[0] y en el spec).
+  - Revisión visual de `ocr-mlkit-panel-debug-tab.png` pendiente de mano humana.
+  - Todo el árbol de la feature sigue sin commit (decisión de este flujo).
+- Next best step: commit de los cambios de `ocr-mlkit` (si el usuario lo pide) y
+  siguiente feature con dependencias aceptadas (`periodo-selector` por orden de
+  `feature_list.json`; `extraccion-nube`/`extraccion-local` quedan desbloqueadas
+  al aceptarse `ocr-mlkit`).

@@ -23,6 +23,17 @@ interface PhotoFileStore {
     suspend fun save(jpeg: ByteArray): String
 
     /**
+     * Lee los bytes JPEG de la foto ya guardada.
+     *
+     * Misma semantica de rutas que [delete] (relativa bajo `filesDir`; se
+     * acepta tambien ruta absoluta).
+     *
+     * @return los bytes del fichero o `null` si no existe (el OCR sobre una
+     * foto ausente no es un error: la politica vive en `ReconocerTextoCrudo`).
+     */
+    suspend fun read(path: String): ByteArray?
+
+    /**
      * Borra el fichero de la foto.
      *
      * @return true si se borró un fichero; false si no existía, la ruta estaba

@@ -25,7 +25,9 @@ El Ticket tiene dos estados:
 
 - **Borrador** (no persistido): desde la captura hasta pulsar Guardar. Vive en
   memoria. La foto **sí** se guarda en disco al capturarla, para no perderla
-  si la app muere durante la revisión.
+  si la app muere durante la revisión. El Borrador lleva también el texto crudo
+  del OCR (etapa 1 del ADR 0002), que se recupera tal cual para extraer y
+  reintentar sin repetir el OCR.
 - **Guardado** (persistido en Room): cuenta en el resumen. Es editable
   siempre (reutiliza la pantalla de edición) y borrable.
 
@@ -56,6 +58,11 @@ Transiciones:
 - **Total vs líneas**: el total es el dato autoritativo para el seguimiento;
   la suma de líneas se muestra como referencia ("Total recalculado") y puede
   no coincidir (OCR imperfecto). No hay error ni sobrescritura automática.
+- **Total con IVA**: el precio que le cuesta al usuario es el total **con
+  impuestos incluidos**. El texto crudo del OCR trae base, cuota y total por
+  separado; la extracción estructurada (`extraccion-nube`/`extraccion-local`)
+  debe preferir el total con IVA, no la base (confirmado en `ocr-mlkit`,
+  sesión 016).
 
 ## Edge Cases
 

@@ -1,5 +1,6 @@
 package com.robertomr.tally.feature.escanear
 
+import android.content.pm.ApplicationInfo
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -12,10 +13,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Replay
@@ -29,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,13 +53,16 @@ import kotlinx.coroutines.withContext
  * lleva "Repetir foto" (borra la foto del borrador reemplazado) y "Continuar"
  * DESHABILITADO hasta que `procesado-ui` lo cablee (non-goal de esta feature).
  *
- * Decoracion ficticia del mockup NO implementada (DESIGN.md R4): chip "Foto
- * nitida / Recorte automatico", boton de esquinas (crop), zoom/rotar, badge de
- * conceptos identificados.
+ * Panel de debug del texto crudo (spec ocr-mlkit): SOLO en builds debug
+ * (`ApplicationInfo.FLAG_DEBUGGABLE`), testTag `captura_texto_crudo`. Es una
+ * superficie de diagnostico, NO diseno (sin decoracion ficticia del mockup,
+ * DESIGN.md R4).
  */
 @Composable
 fun RevisionFotoContent(
     rutaFoto: String,
+    textoCrudo: String,
+    ocrNoDisponible: Boolean,
     onRepetirFoto: () -> Unit,
     onContinuar: () -> Unit,
     modifier: Modifier = Modifier,
@@ -74,12 +82,59 @@ fun RevisionFotoContent(
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         )
 
+        PanelDebugTextoCrudo(
+            textoCrudo = textoCrudo,
+            ocrNoDisponible = ocrNoDisponible,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp),
+        )
+
         DockAcciones(
             onRepetirFoto = onRepetirFoto,
             onContinuar = onContinuar,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+        )
+    }
+}
+
+/**
+ * Panel SOLO debug del texto crudo del OCR (spec ocr-mlkit): muestra el texto
+ * registrado con el Borrador, "(OCR vacio)" si el motor no detecto texto o
+ * "OCR no disponible" si el motor fallo (la captura no se bloquea nunca). En
+ * builds release no se compone nada (el texto viaja igual con el Borrador).
+ */
+@Composable
+private fun PanelDebugTextoCrudo(
+    textoCrudo: String,
+    ocrNoDisponible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val esDebug = remember(context) {
+        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
+    if (!esDebug) return
+
+    Column(modifier = modifier.testTag("captura_texto_crudo")) {
+        Text(
+            text = "Texto crudo (debug)",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = when {
+                ocrNoDisponible -> "OCR no disponible"
+                textoCrudo.isBlank() -> "(OCR vac\u00edo)"
+                else -> textoCrudo
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .heightIn(max = 96.dp)
+                .verticalScroll(rememberScrollState()),
         )
     }
 }

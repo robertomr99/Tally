@@ -29,6 +29,13 @@ internal class PhotoFileStoreImpl(
         "$CARPETA_FOTOS/$nombreFichero"
     }
 
+    override suspend fun read(path: String): ByteArray? = withContext(Dispatchers.IO) {
+        if (path.isBlank()) return@withContext null
+        val file = File(path)
+        val target = if (file.isAbsolute) file else File(context.filesDir, path)
+        if (target.isFile) target.readBytes() else null
+    }
+
     override fun delete(path: String): Boolean {
         if (path.isBlank()) return false
         val file = File(path)

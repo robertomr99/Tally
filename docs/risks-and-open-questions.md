@@ -95,6 +95,20 @@
   (tethering), límites conocidos de antemano, datos sembrados de reserva.
 - **R3 — Calidad de OCR en tickets reales**: arrugas, térmicos descoloridos.
   Mitigación: encuadre guiado en cámara, flujo de corrección manual sólido.
+  **Estado 2026-10-16 (`ocr-mlkit`, sesión 016)**: la etapa 1 del ADR 0002 está
+  implementada y verificada on-device (ML Kit `text-recognition` 16.0.1 bundled;
+  OCR real en emulador y Tab S9+). Se aportaron **4 fixtures reales** (desviación
+  acordada; el spec planificaba 5) en
+  `framework/ai/src/androidTest/assets/ticket_real_1..4.jpg` + `.tokens.txt`
+  (`MlKitOcrEngineTest` 7/7 verde en emulador y Tab S9+) y el usuario confirmó el
+  **contraste humano**: los 4 textos crudos contienen comercio, fecha, productos
+  y totales y "coinciden razonablemente con el papel" (ruido típico de térmicos).
+  Los textos están en `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt`. **Deuda
+  anotada para la etapa 2** (`extraccion-nube`/`extraccion-local`): el texto
+  crudo trae base, cuota y total por separado; la extracción debe preferir el
+  **total con IVA** (lo que paga el usuario), no la base. R3 se considera
+  mitigada para la etapa 1 con esta verificación; sigue abierta end-to-end hasta
+  que la extracción estructurada funcione sobre estos 4 textos.
 - **R4 — Scope creep de UI**: el diseño de Stitch tiene decoración no
   realizable (hash, IRPF, verificación). Mitigación: DESIGN.md marca lo
   normativo y lo decorativo.
@@ -108,5 +122,5 @@
 | --- | --- | --- |
 | Gemma 3n + MediaPipe en Android | Modelo corriendo con "hola mundo" en Tab S9+ (hecho 2026-10-12, decisión GO) | S1 |
 | Firebase AI Logic con Gemini | Extracción de ejemplo desde el realme | S1 |
-| ML Kit Text Recognition v2 | Texto crudo de 5 tickets reales | S1–S2 |
+| ML Kit Text Recognition v2 | Integración (etapa 1 ADR 0002) implementada y verificada on-device; 4 tickets reales aportados (desviación acordada 2026-10-16 respecto a 5) con contraste humano confirmado "coincide razonablemente con el papel"; textos en `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt` | S1–S2 |
 | Medición de latencia local/nube | Números reales para el indicador y la memoria | S3 |

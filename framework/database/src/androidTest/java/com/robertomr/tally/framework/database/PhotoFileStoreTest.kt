@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -133,5 +134,37 @@ class PhotoFileStoreTest {
         val fichero = File(context.filesDir, ruta)
         assertEquals("fotos/${fichero.name}", ruta)
         assertTrue(fichero.isFile && fichero.length() == 2L)
+    }
+
+    // --- read (spec ocr-mlkit): la foto ya guardada se lee para el OCR ---
+
+    @Test
+    fun readReturnsTheStoredBytesGivenRelativeName() = runBlocking {
+        val ruta = store.save(byteArrayOf(10, 20, 30))
+        guardados += ruta
+
+        val bytes = store.read(ruta)
+
+        assertArrayEquals(byteArrayOf(10, 20, 30), bytes)
+    }
+
+    @Test
+    fun readReturnsTheStoredBytesGivenAbsolutePath() = runBlocking {
+        val ruta = store.save(byteArrayOf(40, 50))
+        guardados += ruta
+
+        val bytes = store.read(File(context.filesDir, ruta).absolutePath)
+
+        assertArrayEquals(byteArrayOf(40, 50), bytes)
+    }
+
+    @Test
+    fun readReturnsNullForMissingFileWithoutCrashing() = runBlocking {
+        assertNull(store.read("fotos/no_existe.jpg"))
+    }
+
+    @Test
+    fun readReturnsNullForBlankPath() = runBlocking {
+        assertNull(store.read(""))
     }
 }

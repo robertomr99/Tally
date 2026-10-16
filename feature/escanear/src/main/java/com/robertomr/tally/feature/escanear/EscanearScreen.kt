@@ -100,6 +100,8 @@ fun EscanearScreen() {
 
             is CapturaUiState.Revision -> RevisionFotoContent(
                 rutaFoto = actual.rutaFoto,
+                textoCrudo = actual.textoCrudo,
+                ocrNoDisponible = actual.ocrNoDisponible,
                 onRepetirFoto = viewModel::onRepetirFoto,
                 onContinuar = { /* cableado con procesado-ui (non-goal aqui) */ },
             )

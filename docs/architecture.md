@@ -68,6 +68,26 @@ app ──────────► feature:* ──────────�
   en `CameraEncuadre`). No existe `:framework:camera`: crearlo exige
   aprobación explícita del usuario (AGENTS.md).
 
+## OCR (texto crudo)
+
+- Etapa 1 del ADR 0002 (`ocr-mlkit`): de la foto ya persistida se obtiene el
+  **texto crudo** con ML Kit Text Recognition v2 (latin, variante **bundled**:
+  modelo en el APK, on-device, sin Play Services, red ni clave de API).
+- El contrato `OcrEngine` (`suspend fun recognize(image: ByteArray): String`)
+  vive en `:domain:expenses/data/` y no conoce Android ni ML Kit. La
+  implementación `MlKitOcrEngine` es `internal` en `:framework:ai` (decode +
+  OCR en `Dispatchers.IO`, Task envuelta en `suspendCancellableCoroutine`) y se
+  binding con `@Provides OcrEngine` en el `di.kt` del módulo.
+- `PhotoFileStore.read(path)` (en `:framework:database`) lee los bytes de la
+  foto guardada; el caso de uso `ReconocerTextoCrudo` (dominio) encadena
+  `read` → `recognize`.
+- El texto crudo se registra con el Borrador en memoria (`(rutaFoto, textoCrudo)`
+  en `EscanearViewModel`); viaja en `Ticket.textoCrudoOcr` / columna
+  `tickets.texto_crudo_ocr` cuando `revision-datos` persista, sin ficheros
+  sidecar. OCR vacío o fallo del motor **no bloquean** la captura (la foto ya
+  está en disco). "Continuar" sigue deshabilitado; el texto es visible en un
+  panel **solo debug** de la pantalla 05 (`captura_texto_crudo`).
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

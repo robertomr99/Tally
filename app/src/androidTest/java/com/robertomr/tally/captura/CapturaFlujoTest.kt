@@ -110,6 +110,15 @@ class CapturaFlujoTest {
         composeRule.onNodeWithTag("captura_continuar").assertIsDisplayed()
         composeRule.onNodeWithTag("captura_continuar").assertIsNotEnabled()
 
+        // Escenario 1/3/4 de ocr-mlkit: el panel de debug del texto crudo esta
+        // presente en builds debug (el test instala el build debug) con el
+        // texto, "(OCR vacio)" o "OCR no disponible". La espera de arriba
+        // (TIMEOUT_CAPTURA_MS) absorbe la latencia del OCR, que corre dentro
+        // del estado Procesando antes de abrir la revision. La escena de la
+        // camara virtual no contiene un ticket real, asi que solo se comprueba
+        // la PRESENCIA del panel (la calidad del texto es verificacion fisica).
+        composeRule.onNodeWithTag("captura_texto_crudo").assertIsDisplayed()
+
         // Escenario 7: "Repetir foto" vuelve al encuadre (el borrado en disco de
         // la foto reemplazada esta cubierto por EscanearViewModelTest).
         composeRule.onNodeWithTag("captura_repetir").performClick()

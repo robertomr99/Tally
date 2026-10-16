@@ -28,9 +28,12 @@ Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
 
 - Room como única fuente de verdad: tablas `tickets` y `lineas` (borrado en
   cascada por FK), escrituras multi-tabla con `@Transaction`.
-- Fotos y texto crudo: ficheros en el directorio privado de la app
-  (`filesDir`), ruta guardada en Room. Nada en MediaStore (evita exposición
-  en la galería).
+- Fotos: ficheros en el directorio privado de la app (`filesDir/fotos/`), ruta
+  guardada en Room. Nada en MediaStore (evita exposición en la galería).
+- Texto crudo del OCR: **no** es un fichero sidecar. Vive con el Borrador en
+  memoria y, al guardar, en la columna `tickets.texto_crudo_ocr` (esquema v1)
+  del ticket, junto a su foto. Aclarado al implementar `ocr-mlkit` (esta era la
+  discrepancia frente al esquema aceptado en `persistencia-room`).
 - Fotos comprimidas a un máximo razonable (~1280 px lado largo, JPEG ~85)
   tras corregir orientación EXIF; no se guarda el original en resolución
   de cámara completa.
