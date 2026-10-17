@@ -241,7 +241,7 @@
       "Unit test del guardado (ticket + líneas + ruta de foto, @Transaction)"
     ],
     "evidence": [],
-    "notes": "Mockup 07 (Reintentar/Editar/Guardar). Borrador no persistido; la foto ya está en disco (captura-foto)."
+    "notes": "Mockup 07 (Reintentar/Editar/Guardar). Borrador no persistido; la foto ya está en disco (captura-foto). PLANIFICACIÓN 2026-10-17 (sesión 024): spec creada en docs/specs/revision-datos.md (T-series). Decisiones con DEFAULT: (1) navegación tras Guardar SIN rutas nuevas: subflujo interno de :feature:escanear + callback EscanearScreen(onGastoGuardado) que :app usa para ir a la pestaña Gastos (placeholder hasta listado-gastos, posterior); (2) mapeo TicketExtraido->Ticket/Linea en un caso de uso de dominio nuevo GuardarTicket (TicketRepository.save, @Transaction ya en TicketDao.upsert), testeable en JVM; (3) alcance de 'Editar' = solo cabecera (comercio, fecha, total, categoría con chips de la enum de 6); líneas en solo lectura (edicion-lineas, posterior); 'Reintentar' en la revisión = non-goal (ya existe mismo-motor en procesado-ui). 'Ticket en el listado' verificable vía TicketRepository.observeByDateRange + E2E de navegación a pantalla_gastos (R-REV1). Extracción vacía -> total 0.0/fecha hoy sin bloquear (R-REV2). Reset del subflujo a Encuadre tras Guardar (R-REV3). CancellationException siempre re-lanzada (R-REV4). Sin dependencias/módulos/rutas nuevas. Lista para feature-implementer."
   },
   {
     "id": "edicion-lineas",

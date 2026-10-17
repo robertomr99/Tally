@@ -9,12 +9,14 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `revision-datos` (deps `procesado-ui` y
-  `persistencia-room` aceptadas; spec pendiente de planificar). `captura-recorte-encuadre`
-  quedó **`accepted`** en la sesión 023. Después, `descarga-modelo`/`extraccion-local`.
-  Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendiente operativo:
-  reintentar la cancelación FÍSICA de `procesado-ui` (verificación 2) cuando se
-  restablezca la cuota free tier de Gemini (agotada 2026-10-17).
+- Current next ready feature: `revision-datos` — planificada en la sesión 024
+  (spec lista en `docs/specs/revision-datos.md`, T-series; deps `procesado-ui` y
+  `persistencia-room` aceptadas), lista para `feature-implementer`. Después,
+  `descarga-modelo`/`extraccion-local`/`edicion-lineas`. `captura-recorte-encuadre`
+  quedó **`accepted`** en la sesión 023. Desviación registrada 2026-10-16: 4 fotos
+  reales en vez de 5. Pendiente operativo: reintentar la cancelación FÍSICA de
+  `procesado-ui` (verificación 2) cuando se restablezca la cuota free tier de
+  Gemini (agotada 2026-10-17).
 - Current blocker: ninguno bloqueante. `procesado-ui` en `accepted` con la
   cancelación física pendiente por cuota Gemini agotada (reintentar al
   restablecerse). Pendientes operativos menores: revisión visual humana de
@@ -1798,3 +1800,41 @@
     `inSampleSize` si molesta.
 - Next best step: planificar `revision-datos` (deps aceptadas) o `extraccion-local`;
   y commit/push del arbol si el usuario lo pide.
+
+### Session 024
+
+- Date: 2026-10-17
+- Goal: Commit + push de `captura-recorte-encuadre` (hecho) y planificar la
+  siguiente feature por orden de `feature_list.json` con dependencias aceptadas
+  (`revision-datos`) con el subagente `planner` (skill feature-spec).
+- Completed:
+  - Commit + push: `9602a03 feat: captura-recorte-encuadre - recorte de la foto al
+    recuadro guiado (accepted)` (subido a `origin/master`).
+  - Selección de `revision-datos` (index 9; deps `procesado-ui` y
+    `persistencia-room` = accepted).
+  - Spec creada: `docs/specs/revision-datos.md` (~410 líneas; 6 escenarios,
+    Repository Research con ficheros reales, T-series, U1-U9 con DEFAULT).
+  - Decisiones de diseño (DEFAULT, no bloqueantes): navegación tras Guardar SIN
+    rutas nuevas (subflujo interno de `:feature:escanear` + callback
+    `EscanearScreen(onGastoGuardado)` que `:app` usa para ir a la pestaña Gastos,
+    placeholder hasta `listado-gastos`); mapeo `TicketExtraido`→`Ticket`/`Linea` en
+    un caso de uso de dominio nuevo `GuardarTicket` (`TicketRepository.save`;
+    `@Transaction` ya en `TicketDao.upsert`); alcance de "Editar" = solo cabecera
+    (comercio/fecha/total/categoría con chips de la enum de 6), líneas en solo
+    lectura (`edicion-lineas` posterior); "Reintentar" en la revisión = non-goal
+    (ya existe mismo-motor en `procesado-ui`). "Ticket en el listado" verificable
+    vía `TicketRepository.observeByDateRange` + E2E de navegación a `pantalla_gastos`
+    (R-REV1). Extracción vacía → total 0.0/fecha hoy sin bloquear (R-REV2). Reset del
+    subflujo a Encuadre tras Guardar (R-REV3). `CancellationException` siempre
+    re-lanzada (R-REV4). `edicion-lineas` aislado como non-goal (R-REV5).
+- Verification run: planificación (sin gates de producto; cero cambios de código).
+- Evidence captured: `docs/specs/revision-datos.md`.
+- Files or artifacts updated: `docs/specs/revision-datos.md` (nuevo),
+  `feature_list.json` (nota de planificación de `revision-datos`), `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - "Ticket en el listado" no tiene listado real todavía (`listado-gastos` es
+    posterior): se verifica por repositorio + E2E de navegación a la pestaña Gastos.
+  - Las decisiones U1-U9 tienen DEFAULT no bloqueante; confirmar con el usuario si
+    alguna no encaja.
+- Next best step: `feature-implementer` sobre `docs/specs/revision-datos.md` y,
+  después, validación independiente con `feature-validator`.
