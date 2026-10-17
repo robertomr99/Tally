@@ -9,9 +9,10 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `edicion-lineas` (dep `revision-datos` aceptada) o
-  `descarga-modelo`/`extraccion-local`; spec pendiente. `revision-datos` quedó
-  **`accepted`** en la sesión 026 (tras repair M1/L1-L3 y re-validación). `captura-recorte-encuadre` quedó `accepted`
+- Current next ready feature: `edicion-lineas` — planificada en la sesión 027
+  (spec lista en `docs/specs/edicion-lineas.md`; dep `revision-datos` accepted),
+  lista para `feature-implementer`. Después, `descarga-modelo`/`extraccion-local`.
+  `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
   Pendiente operativo: reintentar la cancelación FÍSICA de `procesado-ui`
   (verificación 2) cuando se restablezca la cuota free tier de Gemini (agotada
@@ -1939,3 +1940,36 @@
   - L4/L5 no bloqueantes (nombre de evento; back bloqueado durante Guardando).
 - Next best step: planificar/implementar `edicion-lineas` (dep `revision-datos`
   accepted) o `descarga-modelo`/`extraccion-local`; y commit/push del árbol.
+
+### Session 027
+
+- Date: 2026-10-17
+- Goal: Commit + push de `revision-datos` (hecho) y planificar la siguiente
+  feature (`edicion-lineas`, dep `revision-datos` accepted) con `planner`.
+- Completed:
+  - Commit + push: `25017d1 feat: revision-datos - revision y guardado del ticket
+    (accepted)` (a `origin/master`).
+  - Seleccion de `edicion-lineas` (index 10; dep `revision-datos` = accepted).
+  - Spec creada: `docs/specs/edicion-lineas.md` (~380 lineas).
+  - Decisiones con DEFAULT (no bloqueantes): MISMA pantalla y MISMO estado
+    (`RevisionDatos`) sin ruta nueva (la pantalla 07 evoluciona al mockup 08);
+    modelo de edicion en dominio puro `LineaEditable(id, concepto, cantidad,
+    precioUnitario)` + helpers puros (`totalRecalculado`, `lineasEditablesIniciales`,
+    `nuevaLineaEditable`, `aLineas`); el **total del ticket NUNCA se sobrescribe**
+    con el recalculado (footer solo referencia; sin boton "usar total calculado");
+    persistencia: ampliar `DatosRevision` con `lineas` y `GuardarTicket` persiste
+    `datos.lineas.aLineas()` (upsert `@Transaction` ya reemplaza el conjunto; sin
+    tocar Room/`schemas`); UI sin decoracion ficticia del mockup 08 (contador real
+    de articulos). Validacion cantidad >= 1 / precio >= 0, parseo tolerante,
+    filtrado de vacias. E2E enfocado en `RevisionDatosFlujoTest`.
+- Verification run: planificacion (sin gates de producto; cero cambios de codigo).
+- Evidence captured: `docs/specs/edicion-lineas.md`.
+- Files or artifacts updated: `docs/specs/edicion-lineas.md` (nuevo),
+  `feature_list.json` (nota de planificacion), `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - Ampliar `DatosRevision`/`GuardarTicket` desincroniza tests de `revision-datos`
+    (se actualizan a proposito; sin tocar Room).
+  - "Lineas persistidas" no verificable por E2E (no hay listado real hasta
+    `listado-gastos`): se cubre en JVM por `TicketRepository.observeByDateRange`.
+- Next best step: `feature-implementer` sobre `docs/specs/edicion-lineas.md` y,
+  despues, `feature-validator`; o commit/push del arbol si el usuario lo pide.

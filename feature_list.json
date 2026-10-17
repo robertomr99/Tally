@@ -264,7 +264,7 @@
       "Unit tests de la lógica de líneas (sumas, cantidad ≥ 1)"
     ],
     "evidence": [],
-    "notes": "Regla total vs líneas de docs/domain-model.md. Decisión del usuario: añadir/quitar líneas SI está en el MVP."
+    "notes": "Regla total vs líneas de docs/domain-model.md. Decisión del usuario: añadir/quitar líneas SI está en el MVP. PLANIFICACIÓN 2026-10-17 (sesión 027): spec creada en docs/specs/edicion-lineas.md. Decisiones con DEFAULT: (1) MISMA pantalla y MISMO estado (CapturaUiState.RevisionDatos), sin estado/ruta nueva; la pantalla 07 evoluciona al mockup 08 (editor de líneas + 'Añadir producto o línea' + footer Total recalculado + dock Descartar/Guardar cambios); (2) modelo de edición en dominio puro: LineaEditable(id de cliente, concepto, cantidad, precioUnitario) + helpers (totalRecalculado, lineasEditablesIniciales, nuevaLineaEditable, aLineas()); (3) el total del ticket NUNCA se sobrescribe con el recalculado (footer solo referencia; sin botón 'usar total calculado'; el total solo cambia editando el campo 'Total (con IVA)'); (4) mapeo/persistencia: ampliar DatosRevision con lineas: List<LineaEditable> y GuardarTicket persiste datos.lineas.aLineas() (upsert @Transaction ya reemplaza el conjunto; NO se toca Room/schemas); (5) UI sin decoración ficticia del mockup 08 (contador 'N artículos' real; se mantiene el campo editable Total (con IVA)). Validación cantidad >= 1 y precio >= 0, parseo tolerante, filtrado de vacías. E2E enfocado en RevisionDatosFlujoTest (añadir->editar->eliminar->Guardar cambios->Gastos). Sin dependencias/módulos/rutas nuevas. Lista para feature-implementer."
   },
   {
     "id": "descarga-modelo",
