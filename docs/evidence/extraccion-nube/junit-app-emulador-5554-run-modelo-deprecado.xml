@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="5" failures="4" errors="0" skipped="0" time="4.219" timestamp="2026-10-17T11:36:39" hostname="localhost">
+  <testsuite name="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" tests="5" failures="4" errors="0" skipped="0" time="3.621" timestamp="2026-10-17T11:36:39" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="ticket1ExtractionIsValidWithTotal3209" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="2.359">
+      <failure>com.google.firebase.ai.type.ServerException: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://ai.google.dev/gemini-api/docs/get-started).
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket2ExtractionUsesTheTotalWithVatNotTheBase" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.514">
+      <failure>com.google.firebase.ai.type.ServerException: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://ai.google.dev/gemini-api/docs/get-started).
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket4ExtractionIsValidWithTotal791" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.489">
+      <failure>com.google.firebase.ai.type.ServerException: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://ai.google.dev/gemini-api/docs/get-started).
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket3ExtractionIsLoggedOnlyBecauseOfTheOcrAmbiguity" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.258">
+      <failure>com.google.firebase.ai.type.ServerException: This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features and improvements. We recommend you to use the Interactions API (https://ai.google.dev/gemini-api/docs/get-started).
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="theInjectedEngineIsTheCloudOne" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.001" />
+  </testsuite>
+</testsuites>

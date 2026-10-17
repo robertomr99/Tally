@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
 
@@ -17,6 +18,10 @@ kotlin {
 dependencies {
     // Flow/suspend forman parte de la API pública del dominio.
     api(libs.coroutines.core)
+    // TicketExtraidoParser (spec extraccion-nube): DTOs internos serializables
+    // para parsear la respuesta del modelo (tolerante en el contenedor, estricto
+    // en el schema). Kotlin puro, sin Android.
+    implementation(libs.kotlinx.serialization.json)
     // @Inject constructor de TicketRepository (AGENTS.md) + runtime Dagger para
     // las fábricas generadas (dagger.internal.Factory).
     implementation(libs.javax.inject)

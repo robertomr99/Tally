@@ -43,6 +43,27 @@ Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
 - Solo dos salidas externas: descarga inicial del modelo local (Hugging Face)
   e inference en nube (Firebase AI Logic). Nada más: sin REST propio, sin
   analíticas, sin crash reporting obligatorio (valorar más adelante).
+- **Firebase AI Logic (Gemini en nube, `extraccion-nube`)**: SDK `firebase-ai`
+  gestionado por el Firebase BoM (`gradle/libs.versions.toml`), backend
+  `googleAI` (free tier; `vertexAI` descartado por exigir facturación) y modelo
+  `gemini-3.8-flash` (U3 resuelta: el servidor deprecó `gemini-2.5-flash` para
+  proyectos nuevos). La config viaja SOLO en `app/google-services.json`
+  (gitignoreado; lo aporta el humano — prerrequisito U1 de la spec) mediante el
+  plugin `com.google.gms.google-services`, aplicado **condicionalmente** en
+  `:app` (`if (file("google-services.json").exists())`) para que el build siga
+  en verde sin credenciales. Sin claves de API en el código ni en `BuildConfig`
+  (0 `buildConfigField` en el repo; el único material de config del APK son los
+  recursos estándar que inyecta el plugin).
+- **App Check (obligatorio para Firebase AI Logic desde 2026-11-02)**: de
+  momento solo el **debug provider** (`firebase-appcheck-debug`, en androidTest
+  y en la variante debug de `:app`; su componente Firebase tiene que
+  empaquetarse en el APK de la app para que el descubrimiento de componentes lo
+  encuentre). El debug token es **fijo y local**
+  (`app/appcheck-debug-token.txt`, gitignoreado, mismo patrón que
+  `google-services.json`) porque AGP desinstala la app al terminar cada
+  `connectedDebugAndroidTest` y el token generado por instalación no sobrevive;
+  hay que registrarlo una vez a mano en la consola (App Check > Manage debug
+  tokens). Provider de producción (Play Integrity) pendiente de decisión futura.
 
 ## Authentication and Authorization
 

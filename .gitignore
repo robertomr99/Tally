@@ -11,3 +11,15 @@ local.properties
 # Modelos locales de IA (Gemma/MediaPipe): fuera del repo y del APK (~2-3 GB).
 *.task
 *.litertlm
+
+# Config de Firebase (extraccion-nube): la aporta el humano (prerrequisito U1
+# del spec); fuera del control de versiones por defecto. No es un secreto
+# autoral, pero no viaja en el repo.
+app/google-services.json
+/google-services.json
+
+# Debug token FIJO de App Check (extraccion-nube T7): es un secreto de debug (el
+# SDK avisa de no subirlo a control de versiones). Lo aporta el humano tras
+# registrarlo en Firebase Console > App Check > Manage debug tokens; el test real
+# de nube lo lee via testInstrumentationRunnerArguments (app/build.gradle.kts).
+app/appcheck-debug-token.txt

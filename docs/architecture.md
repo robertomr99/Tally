@@ -88,6 +88,45 @@ app ──────────► feature:* ──────────�
   está en disco). "Continuar" sigue deshabilitado; el texto es visible en un
   panel **solo debug** de la pantalla 05 (`captura_texto_crudo`).
 
+## Extracción estructurada (TextEngine)
+
+- Etapa 2 del ADR 0002 (`extraccion-nube`): del texto crudo se obtiene un
+  `TicketExtraido` **validado** (comercio, fecha de emisión, **total con IVA**,
+  líneas y categoría de la enum fija de 6) con Gemini vía **Firebase AI Logic**.
+- El contrato `TextEngine` (`val motor: Motor` +
+  `suspend fun extract(textoCrudo: String): TicketExtraido`) vive en
+  `:domain:expenses/data/` sin imports de Android ni Firebase. El motor usado
+  queda **registrado dentro del resultado** (`TicketExtraido.motor`), lo que deja
+  listo el badge/router de `router-automatico`.
+- El **parser/validador compartido** `TicketExtraidoParser` (dominio, Kotlin
+  puro: kotlinx-serialization) es el mismo que reutilizará `extraccion-local`:
+  tolerante en el contenedor (fences ```json, prosa, coma decimal española) y
+  estricto en el schema; lo malformado lanza `InvalidExtractionException` con
+  motivo claro (sin resultados inventados). La regla **total con IVA** (deuda
+  R3) está en el prompt y en el validador.
+- `GeminiCloudEngine` es `internal` en `:framework:ai/extraccion/`
+  (`Dispatchers.IO`, modelo lazy, `responseMimeType` + `responseSchema`, backend
+  `googleAI`, `gemini-3.8-flash` — el servidor deprecó `gemini-2.5-flash` para
+  proyectos nuevos; U3 del spec); se binding con `@Provides TextEngine` en el
+  `di.kt` del módulo. Errores de red/cuota/config se propagan al llamador y una
+  `CancellationException` jamás se convierte en resultado.
+- El caso de uso `ExtraerTicket` (dominio) envuelve el motor: texto blank →
+  `TicketExtraido` vacío **sin invocar el motor** (sin gastar cuota); es el
+  punto de extensión futuro de `log-extracciones`.
+- **Firebase sin claves autorales**: la config viaja solo en
+  `app/google-services.json` (fuera de VCS; lo aporta el humano) mediante el
+  plugin `com.google.gms.google-services`, aplicado **condicionalmente** en
+  `:app` (`if (file("google-services.json").exists())`) para que los gates estén
+  en verde sin credenciales. El único material de config del APK son los
+  recursos estándar que inyecta ese plugin (verificación 3 de `extraccion-nube`:
+  0 `buildConfigField`, 0 claves autorales).
+- App Check: Firebase AI Logic exige **App Check enforced** (obligatorio desde
+  2026-11-02). El test real instala el **debug provider** de App Check
+  (`firebase-appcheck-debug`, solo en androidTest + variante debug de `:app`;
+  sin provider de producción todavía) con un **debug token fijo** aportado por
+  el humano (`app/appcheck-debug-token.txt`, fuera de VCS) y registrado a mano
+  en la consola de Firebase; ver `docs/evidence/extraccion-nube/`.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

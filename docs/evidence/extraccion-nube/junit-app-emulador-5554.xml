@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="11" failures="4" errors="0" skipped="0" time="16.892" timestamp="2026-10-17T10:43:57" hostname="localhost">
+  <testsuite name="com.robertomr.tally.captura.CapturaFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="7.344" timestamp="2026-10-17T10:43:57" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="denegadoMuestraEstadoInAppSinCrash" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.602" />
+    <testcase name="obturadorAbreLaRevisionDeLaFotoYRepetirVuelveAlEncuadre" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.959" />
+    <testcase name="permisoConcedidoMuestraElEncuadreGuiado" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="1.783" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" tests="5" failures="4" errors="0" skipped="0" time="3.105" timestamp="2026-10-17T10:43:57" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="ticket1ExtractionIsValidWithTotal3209" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="2.02">
+      <failure>com.google.firebase.ai.type.ServerException: Firebase App Check token is invalid.
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket2ExtractionUsesTheTotalWithVatNotTheBase" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.412">
+      <failure>com.google.firebase.ai.type.ServerException: Firebase App Check token is invalid.
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket4ExtractionIsValidWithTotal791" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.463">
+      <failure>com.google.firebase.ai.type.ServerException: Firebase App Check token is invalid.
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="ticket3ExtractionIsLoggedOnlyBecauseOfTheOcrAmbiguity" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.209">
+      <failure>com.google.firebase.ai.type.ServerException: Firebase App Check token is invalid.
+at com.google.firebase.ai.common.APIControllerKt.validateResponse(APIController.kt:482)
+at com.google.firebase.ai.common.APIControllerKt.access$validateResponse(APIController.kt:1)
+at com.google.firebase.ai.common.APIController.generateContent(APIController.kt:178)
+at com.google.firebase.ai.common.APIController$generateContent$1.invokeSuspend(Unknown Source:15)
+at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:124)
+at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:586)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:820)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:717)
+at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:704)
+</failure>
+    </testcase>
+    <testcase name="theInjectedEngineIsTheCloudOne" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.001" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.navigation.NavigationTest" tests="3" failures="0" errors="0" skipped="0" time="5.82" timestamp="2026-10-17T10:43:57" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="startsOnResumenWithActivePill" classname="com.robertomr.tally.navigation.NavigationTest" time="1.989" />
+    <testcase name="systemBackReturnsToResumenAndNextBackExitsTheApp" classname="com.robertomr.tally.navigation.NavigationTest" time="1.226" />
+    <testcase name="bottomBarNavigatesAcrossTheThreeDestinations" classname="com.robertomr.tally.navigation.NavigationTest" time="2.605" />
+  </testsuite>
+</testsuites>

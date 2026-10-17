@@ -24,6 +24,15 @@ dependencies {
     // de ocr-mlkit, ADR 0002 etapa 1). Sin Play Services ni red.
     implementation(libs.mlkit.text.recognition)
 
+    // Firebase AI Logic (Gemini en nube, spec extraccion-nube, ADR 0001/0002
+    // etapa 2): versiones gestionadas por el BoM (sin version literal). Sin
+    // claves de API en el codigo: la config viaja en app/google-services.json.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.ai)
+
+    // TicketExtractionPromptTest (JVM) de extraccion-nube.
+    testImplementation(libs.junit)
+
     // Harness instrumentado sin UI del spike (se ejecuta a mano con la Tab S9+).
     androidTestImplementation(libs.coroutines.core)
     androidTestImplementation(libs.androidx.test.core)

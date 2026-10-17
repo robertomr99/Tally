@@ -109,6 +109,19 @@
   **total con IVA** (lo que paga el usuario), no la base. R3 se considera
   mitigada para la etapa 1 con esta verificación; sigue abierta end-to-end hasta
   que la extracción estructurada funcione sobre estos 4 textos.
+  **Estado 2026-10-17 (`extraccion-nube`, sesión 018, cierre)**: la etapa 2 está
+  implementada (prompt con la regla explícita "total con IVA", test trampa
+  ticket 2 → 3.50 en `ExtraccionNubeRealTest`, validador estricto) y la
+  extracción real sobre los 4 textos crudos pasó **5/5** en `emulator-5554`.
+  **Contraste humano con el papel DECIDIDO por el usuario (2026-10-17, U4 del
+  spec — el papel manda sobre el test)**: totales CON IVA reales
+  **35,30 / 3,50 / 13,90 / 7,91** (ticket 1 = 35,30, no el 32,09 del OCR: la
+  foto trae dos bloques; ticket 3 = 13,90 por 50,00−36,10 de cambio, no el
+  12,64 etiquetado "Total (impuestos incl.)" en el OCR). El modelo extrajo
+  exactamente esos 4 totales (4/4 correctos) y las expectativas del test se
+  corrigieron al papel (32,09→35,30; 12,64→13,90). R3 queda **cerrada
+  end-to-end** para estos 4 tickets reales; tabla citable en
+  `docs/evidence/extraccion-nube/verificacion-1-estado.md`.
 - **R4 — Scope creep de UI**: el diseño de Stitch tiene decoración no
   realizable (hash, IRPF, verificación). Mitigación: DESIGN.md marca lo
   normativo y lo decorativo.
@@ -121,6 +134,6 @@
 | Tarea | Entregable | Semana |
 | --- | --- | --- |
 | Gemma 3n + MediaPipe en Android | Modelo corriendo con "hola mundo" en Tab S9+ (hecho 2026-10-12, decisión GO) | S1 |
-| Firebase AI Logic con Gemini | Extracción de ejemplo desde el realme | S1 |
+| Firebase AI Logic con Gemini | Extracción REAL probada 2026-10-17 (sesión 018, `extraccion-nube` T7) en Tab S9+ (SM-X810) y emulador `emulator-5554` (imagen con GMS verificada): wiring completo en verde (`google-services.json` + plugin `google-services` condicional + `firebase-ai` vía BoM 35.0.2, backend `googleAI`, `responseSchema`); modelo final **`gemini-3.8-flash`** (el servidor deprecó `gemini-2.5-flash` para proyectos nuevos) con App Check debug registrado por el usuario; `ExtraccionNubeRealTest` **5/5** con los 4 tickets reales y totales 4/4 según contraste humano (35,30 / 3,50 / 13,90 / 7,91) (evidencia en `docs/evidence/extraccion-nube/`). Cuota sin medir; latencias observadas por testcase 4-36 s (R2: medición formal pendiente, S3) | S1 |
 | ML Kit Text Recognition v2 | Integración (etapa 1 ADR 0002) implementada y verificada on-device; 4 tickets reales aportados (desviación acordada 2026-10-16 respecto a 5) con contraste humano confirmado "coincide razonablemente con el papel"; textos en `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt` | S1–S2 |
 | Medición de latencia local/nube | Números reales para el indicador y la memoria | S3 |

@@ -1,0 +1,1 @@
+TicketExtraido(comercio=SANTOMÁS, fechaEmision=2026-10-07T09:54:18, total=3.5, lineas=[Linea(concepto=BARRA 200G, cantidad=1, precioUnitario=0.5), Linea(concepto=VIENA 60G, cantidad=6, precioUnitario=0.25), Linea(concepto=VIENA SALVADO 60G, cantidad=6, precioUnitario=0.25)], categoria=ALIMENTACION, motor=NUBE)

@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="11" failures="0" errors="0" skipped="0" time="45.611" timestamp="2026-10-17T12:10:51" hostname="localhost">
+  <testsuite name="com.robertomr.tally.captura.CapturaFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="6.781" timestamp="2026-10-17T12:10:51" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="denegadoMuestraEstadoInAppSinCrash" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.589" />
+    <testcase name="obturadorAbreLaRevisionDeLaFotoYRepetirVuelveAlEncuadre" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.891" />
+    <testcase name="permisoConcedidoMuestraElEncuadreGuiado" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="1.301" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" tests="5" failures="0" errors="0" skipped="0" time="32.515" timestamp="2026-10-17T12:10:51" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="ticket1ExtractionIsValidWithTotal3530" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="13.188" />
+    <testcase name="ticket2ExtractionUsesTheTotalWithVatNotTheBase" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="4.836" />
+    <testcase name="ticket4ExtractionIsValidWithTotal791" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="9.585" />
+    <testcase name="ticket3ExtractionIsValidWithTotal1390" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="4.904" />
+    <testcase name="theInjectedEngineIsTheCloudOne" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.002" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.navigation.NavigationTest" tests="3" failures="0" errors="0" skipped="0" time="5.76" timestamp="2026-10-17T12:10:51" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="startsOnResumenWithActivePill" classname="com.robertomr.tally.navigation.NavigationTest" time="1.069" />
+    <testcase name="systemBackReturnsToResumenAndNextBackExitsTheApp" classname="com.robertomr.tally.navigation.NavigationTest" time="2.163" />
+    <testcase name="bottomBarNavigatesAcrossTheThreeDestinations" classname="com.robertomr.tally.navigation.NavigationTest" time="2.528" />
+  </testsuite>
+</testsuites>

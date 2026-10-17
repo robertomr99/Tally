@@ -1,0 +1,1 @@
+TicketExtraido(comercio=FOOD COURT OZONE S.L., fechaEmision=2026-08-15T23:16, total=13.9, lineas=[Linea(concepto=TACOS EMMY, cantidad=1, precioUnitario=6.95), Linea(concepto=TACOS POLLO, cantidad=1, precioUnitario=6.95)], categoria=ALIMENTACION, motor=NUBE)

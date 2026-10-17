@@ -9,9 +9,32 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `ocr-mlkit` está `accepted` (validación independiente 2026-10-16, sesión 016). Siguientes por orden de `feature_list.json`: `periodo-selector` (desbloqueada por `persistencia-room`) y `extraccion-nube`/`extraccion-local` (desbloqueadas al aceptarse `ocr-mlkit`).
-- Current blocker: ninguno. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendientes operativos menores: revisión visual humana de capturas (`docs/evidence/captura-foto-*`, `ocr-mlkit-panel-debug-tab.png`) y commit de `ocr-mlkit` si el usuario lo pide.
-- Last verified at: 2026-10-16 (sesión 016: `ocr-mlkit` validada y aceptada por el feature-validator — T6 con 4 fixtures reales `MlKitOcrEngineTest` 7/7 en `emulator-5554` y Tab S9+, contraste humano T9 confirmado, gates JVM 33/33, database 21/21, `:app` 6/6; veredicto inicial `revise` por corrupción de evidencia de `captura-foto` y research task contradictoria, reparadas y con sanity 7/7)
+- Current next ready feature: `procesado-ui` (deps: `extraccion-nube` =
+  accepted, sesión 019). También quedan desbloqueadas `descarga-modelo` y
+  `extraccion-local` (deps aceptadas) por orden posterior en
+  `feature_list.json`. Desviación registrada 2026-10-16: 4 fotos reales en vez
+  de 5.
+- Current blocker: ninguno. Pendientes operativos menores: revisión visual
+  humana de capturas (`docs/evidence/captura-foto-*`,
+  `ocr-mlkit-panel-debug-tab.png`); al cerrar las pruebas de nube, revocar el
+  debug token de App Check (`983ba4d7-…`) en Firebase Console y borrar
+  `app/appcheck-debug-token.txt` (finding Low sesión 019); 2 findings Low de la
+  validación (envoltorio de errores de `GeminiCloudEngine`) como mantenimiento
+  no bloqueante.
+- Last verified at: 2026-10-17 (sesión 019: `extraccion-nube` **accepted** por
+  feature-validator — veredicto `accept`; gates re-ejecutados por el validador
+  en verde, `:app:connectedDebugAndroidTest` 11/11 con llamadas reales a
+  Gemini, degradación sin `google-services.json` verificada; 2 findings Low no
+  bloqueantes; ver sesión 019)
+- Previous verified at: 2026-10-17 (sesión 018, cierre: `extraccion-nube`
+  verificación 1 REAL en `emulator-5554` — `ExtraccionNubeRealTest` tests=5
+  failures=0 skipped=0 con App Check válido y modelo `gemini-3.8-flash`;
+  contraste humano de los 4 totales vs papel 4/4 (35,30 / 3,50 / 13,90 / 7,91);
+  expectativas del test corregidas por contraste (32,09→35,30; ticket 3
+  12,64→13,90); extracciones reales exportadas; regresión E2E 11/11
+  (`CapturaFlujoTest` 3/3 + `NavigationTest` 3/3 + real 5/5) + gates JVM en
+  verde; ver sesión 018)
+
 
 ## Session Log
 
@@ -1185,3 +1208,300 @@
   siguiente feature con dependencias aceptadas (`periodo-selector` por orden de
   `feature_list.json`; `extraccion-nube`/`extraccion-local` quedan desbloqueadas
   al aceptarse `ocr-mlkit`).
+
+### Session 017
+
+- Date: 2026-10-16
+- Goal: Planificar `extraccion-nube` (siguiente feature por orden de
+  `feature_list.json` con `depends_on` aceptados) con el subagente `planner`
+  (skill feature-spec): spec de implementación lista para feature-implementer.
+- Completed:
+  - Selección de `extraccion-nube` (deps: `ocr-mlkit` = accepted) por la regla de
+    AGENTS.md (primera de `feature_list.json` con dependencias listas). Corrección:
+    la sesión 016 mencionaba `periodo-selector` como "siguiente por orden de
+    `feature_list.json`", inconsistente con el orden real del fichero
+    (`extraccion-nube` aparece antes); corregido en "Current next ready feature".
+  - Spec creada: `docs/specs/extraccion-nube.md` (patrón de `ocr-mlkit`/
+    `captura-foto`) con tareas T1-T10, Expected File Changes, sección de
+    prerrequisito humano, Implementation Notes y Validator Checklist.
+  - Decisiones técnicas de la spec: `TextEngine`, `TicketExtraido`,
+    `TicketExtraidoParser`/`InvalidExtractionException` y caso de uso
+    `ExtraerTicket` en `:domain:expenses` (parser/validador compartido para
+    `extraccion-local`; `CancellationException` re-lanzada); `GeminiCloudEngine`
+    `internal` en `framework/ai/extraccion/` vía Firebase AI Logic (`firebase-ai`
+    + BoM, `gemini-2.5-flash`, `responseSchema`, prompt con la regla R3 "total
+    con IVA", test trampa: ticket 2 -> 3.50); plugin `google-services` condicional
+    (build verde sin credenciales); test real en `:app` androidTest con Hilt y
+    `assumeTrue` sin configuración (patrón `MlKitOcrEngineTest`); única
+    dependencia nueva en dominio `kotlinx-serialization-json`.
+  - Desviación registrada: `verification[0]` de `extraccion-nube` ajustada de 5 a
+    4 textos crudos reales (misma desviación acordada 2026-10-16 que `ocr-mlkit`).
+  - Prerrequisito humano U1 documentado en la spec (bloquea T7 y la verificación
+    1): proyecto Firebase, registrar `com.robertomr.tally`, habilitar Gemini y
+    aportar `app/google-services.json` (fuera de VCS por defecto, U2). Preguntas
+    abiertas U2-U5 con DEFAULTs en la spec (modelo `gemini-2.5-flash`, contraste
+    humano del total del ticket 3 (OZONE 12,64 vs 13,90), backend `googleAI`).
+  - Nota operativa: el subagente `planner` solo tenía permisos de escritura bajo
+    `docs/specs/*`; la actualización de `feature_list.json` y `PROGRESS.md` la
+    aplicó el orquestador con el contenido preparado por el planner.
+- Verification run: planificación (sin gates de producto; cero cambios de código).
+- Evidence captured: `docs/specs/extraccion-nube.md` (spec completa).
+- Files or artifacts updated: `docs/specs/extraccion-nube.md` (nuevo),
+  `feature_list.json` (`extraccion-nube`: verification[0] 5->4 + nota de
+  planificación), `PROGRESS.md` (esta sesión + "Current next ready feature").
+- Known risk or unresolved issue:
+  - T7 y la verificación 1 quedan bloqueadas hasta que el usuario aporte el
+    `google-services.json` de un proyecto Firebase real (U1); T1-T6 son
+    ejecutables sin ello (plugin condicional + test real con `assumeTrue`).
+  - La verificación 3 (sin claves en APK/BuildConfig) exige revisión al
+    implementar; `google-services.json` fuera de VCS por defecto (U2).
+- Next best step: `feature-implementer` sobre `docs/specs/extraccion-nube.md`
+  (T1-T6 sin bloqueo) y, en paralelo, aportación humana del proyecto Firebase
+  para T7.
+
+### Session 018
+
+- Date: 2026-10-17
+- Goal: Continuar e implementar la feature planificada `extraccion-nube`
+  (`docs/specs/extraccion-nube.md`, T1-T10), retomando el trabajo T1-T6 a medias
+  de la sesión anterior, ejecutar la extracción real en nube (T7/verificación 1)
+  y dejar el repo listo para `feature-validator`.
+- Completed:
+  - Prerrequisito humano U1 YA cumplido por el usuario: `app/google-services.json`
+    existe (gitignoreado; `git check-ignore` → `.gitignore:18`). La sesión anterior
+    había dejado T1-T6 implementados sin cerrar (dominio
+    `TicketExtraido`/`TicketExtraidoParser`/`InvalidExtractionException`/
+    `TextEngine`/`ExtraerTicket` + `FakeTextEngine`; `GeminiCloudEngine`/
+    `TicketExtractionPrompt`/binding en `AiModule`; `ExtraccionNubeRealTest` +
+    assets `texto_crudo_1..4.txt` + `TextEngineEntryPoint`; build con plugin
+    `google-services` condicional); todo verificado aquí.
+  - T7 ejecución REAL en nube (sin skips): `ExtraccionNubeRealTest` corrió con
+    config sobre los 4 textos crudos reales en la Tab S9+ (SM-X810, ADB
+    inalámbrico, WiFi + ping a `generativelanguage.googleapis.com` 16-33 ms) y
+    en `emulator-5554` (`Medium_Phone_API_36.1`, imagen CON GMS verificada con
+    `pm list packages`). Resultado real: `theInjectedEngineIsTheCloudOne` pasa
+    (`motor == NUBE`) y los 4 tickets fallan con
+    `com.google.firebase.ai.type.ServerException: Firebase App Check token is
+    invalid` — Firebase AI Logic exige **App Check enforced**. NO se han inventado
+    extracciones: no hay `extraccion_1..4.json` hasta que la ejecución pase.
+  - Dos defectos del harness de App Check encontrados y corregidos (sin tocar
+    alcance de producto): (1) `firebase-appcheck-debug` 20.0.0 debe ir también
+    en `debugImplementation` de `:app` (su `DebugAppCheckProviderFactory.create()`
+    resuelve el provider vía `FirebaseApp.get(DebugAppCheckProvider.class)` y el
+    descubrimiento de componentes solo lee el paquete de la app; con la librería
+    solo en androidTest devolvía `null` → "No AppCheckProvider installed"); (2)
+    AGP desinstala la app al terminar cada `connectedDebugAndroidTest` (probado
+    con `pm list packages` antes/después) y el token generado por instalación no
+    sobrevive (3 ejecuciones → 3 tokens distintos), así que el test fija el debug
+    token vía `testInstrumentationRunnerArguments` desde
+    `app/appcheck-debug-token.txt` (local, gitignoreado — mismo patrón que
+    `google-services.json`); verificado en logcat que el mismo UUID se usa en
+    ejecuciones consecutivas y en ambos dispositivos.
+  - T8 verificación 3 (seguridad): informe citable en
+    `docs/evidence/extraccion-nube/verificacion-3-seguridad.md` —
+    `AIza|api[_-]?key|buildConfigField|GEMINI_API` = 0 en fuentes/recursos,
+    0 `buildConfigField`, único material de config = recursos estándar del plugin
+    `google-services` desde `google-services.json` fuera de VCS, token de App
+    Check fuera de VCS y sin viajar en el APK, 0 imports de Android/Firebase en
+    `domain/**`.
+  - T9 regresión: gates JVM en verde (`assembleDebug` + `testDebugUnitTest` =
+    equivalencia de `init.sh` en esta máquina sin `bash`; `git diff init.sh`
+    vacío) y suite instrumentada en `emulator-5554` con `CapturaFlujoTest` 3/3 +
+    `NavigationTest` 3/3 (sin cambios de UI; "Continuar" `enabled=false` intacto);
+    0 versiones literales fuera del toml; `schemas/` de Room sin cambios.
+  - T10 cierre: Implementation Notes de la spec con las desviaciones
+    (EntryPointAccessors/`AndroidJUnitRunner` en vez de `HiltTestRunner`
+    (R-NUBE6), App Check debug provider + `debugImplementation` + token fijo,
+    versiones fijadas 1.11.0/4.5.0/35.0.2), docs durables actualizados y
+    evidencia registrada.
+  - **CIERRE de la sesión 018 (2026-10-17, continuación)**: T7/T9 cerradas y
+    verificación 1 CUMPLIDA con el test real **5/5 failures=0 skipped=0** en
+    `emulator-5554` (App Check válido tras el registro manual del token por el
+    usuario; modelo final `gemini-3.8-flash` — U3 resuelta: el servidor deprecó
+    `gemini-2.5-flash` para proyectos nuevos, evidencia en
+    `junit-app-emulador-5554-run-modelo-deprecado.xml`).
+  - CONTRASTE HUMANO CON EL PAPEL (decisión del usuario 2026-10-17, R3/U4 — el
+    papel manda sobre el test): ticket 1 (HOLA ALMIRANTE) = **35,30** (la
+    expectativa 32,09 del test estaba MAL derivada del OCR: la foto trae dos
+    bloques y el texto crudo ambos importes); ticket 2 (SANTOMÁS) = **3,50**
+    con IVA (caso trampa: nunca la base 3,36); ticket 3 (OZONE) = **13,90**
+    (50,00 − 36,10 de cambio; el "Total (impuestos incl.) 12,64" del OCR era
+    engañoso — U4 resuelta); ticket 4 (GRUPO DIA) = **7,91**. Modelo vs papel:
+    4/4 correctos (tolerancia 0,01).
+  - Corrección de expectativas en `ExtraccionNubeRealTest.kt` (evidencia del
+    papel > test): `ticket1ExtractionIsValidWithTotal3209` →
+    `ticket1ExtractionIsValidWithTotal3530` (32,09→35,30) y
+    `ticket3ExtractionIsLoggedOnlyBecauseOfTheOcrAmbiguity` →
+    `ticket3ExtractionIsValidWithTotal1390` (de "solo registrado" a assert
+    13,90 con tolerancia 0,01); KDoc actualizado con la decisión humana y su
+    fecha. El modelo devolvió 35,30 y 13,90 en el run final SIN endurecer el
+    prompt (no hizo falta; `TicketExtractionPromptTest` sigue 6/6).
+  - Exportación de evidencia real: `extraccion_1..4.txt` (contenido EXACTO del
+    logcat tag `ExtraccionNube`, toString de `TicketExtraido` → `.txt`, sin
+    reformular) + JUnit XML frescos + tabla de contraste humano de los 4
+    tickets en `docs/evidence/extraccion-nube/verificacion-1-estado.md`
+    (estado "completada").
+- Verification run (Windows: `gradlew.bat`, sin `bash`):
+  - `.\gradlew.bat assembleDebug testDebugUnitTest` → BUILD SUCCESSFUL.
+  - `.\gradlew.bat :test:unit:test --rerun :domain:expenses:test --rerun
+    :framework:ai:testDebugUnitTest --rerun` → BUILD SUCCESSFUL; JUnit XML:
+    SmokeTest 1/1, TicketRepositoryTest 6/6, GuardarFotoCapturadaTest 4/4,
+    ReconocerTextoCrudoTest 5/5, TicketExtraidoParserTest 18/18 (verificación 2),
+    ExtraerTicketTest 4/4, TicketExtractionPromptTest 6/6.
+  - `$env:ANDROID_SERIAL="adb-R52W60AFAPZ-izULbK._adb-tls-connect._tcp";
+    .\gradlew.bat :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.robertomr.tally.extraccion.ExtraccionNubeRealTest`
+    → ExtraccionNubeRealTest tests=5 failures=4 skipped=0 (pasa engine==NUBE;
+    los 4 tickets: App Check token invalid).
+  - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :app:connectedDebugAndroidTest`
+    → CapturaFlujoTest 3/3 + NavigationTest 3/3 + ExtraccionNubeRealTest
+    tests=5 failures=4 skipped=0 (mismo error App Check).
+  - **Cierre 2026-10-17** — `$env:ANDROID_SERIAL="emulator-5554";
+    .\gradlew.bat :app:connectedDebugAndroidTest
+    "-Pandroid.testInstrumentationRunnerArguments.class=com.robertomr.tally.extraccion.ExtraccionNubeRealTest"`
+    → BUILD SUCCESSFUL; JUnit XML: `ExtraccionNubeRealTest` **tests=5
+    failures=0 errors=0 skipped=0** (los 4 tickets extraídos con los totales del
+    contraste humano: 35,30 / 3,50 / 13,90 / 7,91).
+  - **Cierre 2026-10-17** — `$env:ANDROID_SERIAL="emulator-5554";
+    .\gradlew.bat :app:connectedDebugAndroidTest` (suite completa) →
+    **tests=11 failures=0 errors=0 skipped=0** = CapturaFlujoTest 3/3 +
+    NavigationTest 3/3 + ExtraccionNubeRealTest 5/5 (regresión E2E + real).
+  - **Cierre 2026-10-17** — `.\gradlew.bat assembleDebug testDebugUnitTest` →
+    BUILD SUCCESSFUL; `.\gradlew.bat :domain:expenses:test --rerun` →
+    TicketExtraidoParserTest 18/18 + ExtraerTicketTest 4/4 (+ TicketRepositoryTest
+    6/6, GuardarFotoCapturadaTest 4/4, ReconocerTextoCrudoTest 5/5);
+    `.\gradlew.bat :framework:ai:testDebugUnitTest --rerun` →
+    TicketExtractionPromptTest 6/6; `git diff init.sh` → vacío.
+- Evidence captured: `docs/evidence/extraccion-nube/junit-app-tab-sm-x810.xml`,
+  `docs/evidence/extraccion-nube/junit-app-emulador-5554.xml` (JUnit XML crudo),
+  `docs/evidence/extraccion-nube/verificacion-1-estado.md` (comandos, error
+  exacto, logcat del debug provider y paso manual) y
+  `docs/evidence/extraccion-nube/verificacion-3-seguridad.md`. **Cierre
+  2026-10-17**: `docs/evidence/extraccion-nube/extraccion_1..4.txt`
+  (extracciones REALES, contenido exacto del logcat tag `ExtraccionNube`),
+  `junit-app-emulador-5554-run-final.xml` (real 5/5),
+  `junit-app-emulador-5554-suite-completa.xml` (11/11 con E2E),
+  `junit-app-emulador-5554-run-modelo-deprecado.xml` (histórico U3: modelo
+  `gemini-2.5-flash` deprecado por el servidor) y `verificacion-1-estado.md`
+  reescrito a estado "completada" con la **tabla de contraste humano** de los 4
+  tickets (comercio / total extraído / total real del papel / veredicto).
+- Files or artifacts updated: `app/build.gradle.kts` (runner arguments del token
+  fijo + `debugImplementation` de `firebase-appcheck-debug` con su BoM),
+  `gradle/libs.versions.toml` (comentario App Check actualizado),
+  `app/src/androidTest/.../ExtraccionNubeRealTest.kt` (instalación del provider
+  con token fijo), `.gitignore` (+ `app/appcheck-debug-token.txt`),
+  `docs/specs/extraccion-nube.md` (T1-T8 marcadas según estado real + notas),
+  `docs/architecture.md` (sección "Extracción estructurada (TextEngine)"),
+  `docs/technical-discovery.md` (Integrations), `docs/risks-and-open-questions.md`
+  (research task Firebase con resultados reales + R3), `feature_list.json`
+  (evidence + status `blocked` + notes) y este `PROGRESS.md`. **Cierre
+  2026-10-17**: `app/src/androidTest/.../ExtraccionNubeRealTest.kt`
+  (expectativas corregidas 32,09→35,30 y 12,64→13,90 + KDoc con la decisión
+  humana y fecha), `docs/specs/extraccion-nube.md` (T7/T9 `[x]`, U3/U4
+  resueltas, Implementation Notes con las correcciones de expectativa y el
+  modelo `gemini-3.8-flash`), `feature_list.json` (status `passing` + evidencia
+  de cierre), `docs/evidence/extraccion-nube/` (extracciones, JUnit XML frescos,
+  `verificacion-1-estado.md` "completada") y este `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - **BLOQUEO OPERATIVO RESUELTO 2026-10-17 (cierre)**: el usuario registró el
+    debug token de App Check (el de `app/appcheck-debug-token.txt`) en
+    **Firebase Console > proyecto `tally-586d1` > Security > App Check > Apps >
+    Manage debug tokens** y el test real quedó 5/5 sin skips (verificación 1
+    cumplida). Ya no hay pasos manuales pendientes para `extraccion-nube`.
+  - R2 (cuota/latencia Gemini): parcialmente observada en los runs reales
+    (~5-36 s por extracción con `gemini-3.8-flash` en WiFi doméstica; ver
+    tiempos por testcase en los JUnit XML) pero sin medición formal — sigue
+    como tarea propia de la feature de medición (S3).
+  - U4 RESUELTA (contraste humano 2026-10-17): el total del ticket 3 (OZONE) es
+    13,90 (papel); el "12,64" del OCR era engañoso. Expectativa corregida.
+  - Sin provider de App Check de producción (Play Integrity): pendiente futuro.
+- Next best step: validación independiente de `extraccion-nube` con
+  `feature-validator` (status `passing`, evidencia en `feature_list.json` y
+  `docs/evidence/extraccion-nube/`); tras `accept`, siguiente feature
+  `procesado-ui`.
+
+### Session 019
+
+- Date: 2026-10-17
+- Goal: Validación independiente de `extraccion-nube` con el subagente
+  `validator` (feature-validator) y persistencia de la aceptación.
+- Completed:
+  - Validación independiente con feature-validator (subagente `validator`):
+    veredicto **`accept`** sin hallazgos Critical/High/Medium; 2 findings Low
+    no bloqueantes (detalle en "Known risk").
+  - Gates re-ejecutados por el validador en verde (2026-10-17, sobre el árbol
+    de trabajo, sin fiarse del resumen del implementer):
+    `.\gradlew.bat assembleDebug` (BUILD SUCCESSFUL, 240 tasks),
+    `.\gradlew.bat testDebugUnitTest` (BUILD SUCCESSFUL),
+    `.\gradlew.bat :test:unit:test --rerun :domain:expenses:test --rerun
+    :framework:ai:testDebugUnitTest --rerun` (JUnit XML fresco: SmokeTest 1/1,
+    TicketExtraidoParserTest 18/18, ExtraerTicketTest 4/4,
+    TicketRepositoryTest 6/6, GuardarFotoCapturadaTest 4/4,
+    ReconocerTextoCrudoTest 5/5, TicketExtractionPromptTest 6/6) y
+    `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat
+    :app:connectedDebugAndroidTest` (suite completa, **con llamadas reales a
+    Gemini**): tests=11 failures=0 skipped=0 en
+    `Medium_Phone_API_36.1(AVD) - 16` — `ExtraccionNubeRealTest` 5/5 +
+    `CapturaFlujoTest` 3/3 + `NavigationTest` 3/3.
+  - Degradación sin credenciales (T1) verificada de verdad por el validador:
+    renombró `app/google-services.json` → `assembleDebug` BUILD SUCCESSFUL sin
+    el fichero (12 tasks re-ejecutadas) → fichero restaurado.
+  - Evidencia contrastada con artefactos: la **ejecución real propia** volvió a
+    dar 5/5 (el modelo devolvió de nuevo 35.3 / 3.5 / 13.9 / 7.91 → las
+    expectativas corregidas no están "ajustadas a una tirada afortunada");
+    `extraccion_1..4.txt` íntegros (UTF-8 verificado por bytes) y coherentes
+    1:1 con la tabla de contraste humano; assets
+    `app/src/androidTest/assets/texto_crudo_1..4.txt` **byte-idénticos**
+    (SHA-256) a `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt`; JUnit XML
+    citados 1:1 con los ficheros reales, incluidos los runs fallidos
+    históricos (App Check inválido, modelo deprecado — mensaje del servidor
+    *"use models/gemini-3.8-flash"*) coherentes con `verificacion-1-estado.md`;
+    los importes corregidos (35,30 y 13,90 = 50,00−36,10) aparecen
+    literalmente en los textos crudos → expectativas ancladas en datos reales +
+    decisión humana del usuario (2026-10-17).
+  - Escenarios 1-7 cumplidos; verificación 3 sin claves (búsquedas
+    `AIza|api[_-]?key|buildConfigField|GEMINI_API` = 0 en código;
+    `google-services.json` y `appcheck-debug-token.txt` gitignoreados y fuera
+    de `git status`; 0 `buildConfigField`); arquitectura correcta (`TextEngine`
+    en `domain/expenses/data/` sin Android/Firebase, parser compartido en
+    dominio, `GeminiCloudEngine`/`TicketExtractionPrompt` `internal`,
+    `AiModule` único, `TicketExtraido.motor = Motor.NUBE`; `TextEngineEntryPoint`
+    en `:app` evaluado como compliant-in-spirit con "un `di.kt` por módulo": no
+    es `@Module` y debe procesarse en compilación principal — desviación R-NUBE6
+    bien justificada); 0 versiones literales en `**/*.gradle.kts`; `schemas/`
+    de Room sin diff; "Continuar" `enabled=false` intacto; `init.sh` sin diffs.
+  - Persistida la aceptación: `feature_list.json` status de `extraccion-nube`
+    → `accepted` (nota con fecha, alcance y findings Low); Validator Checklist
+    de `docs/specs/extraccion-nube.md` completado.
+- Verification run: ver "Completed" (gates re-ejecutados por el validador;
+  inspección de JUnit XML en `docs/evidence/extraccion-nube/` y
+  `app/build/outputs/androidTest-results/connected/debug/`; SHA-256 de assets;
+  búsquedas de seguridad; prueba de degradación sin credenciales).
+- Evidence captured: informe de validación (veredicto `accept`) registrado en
+  las notas de `feature_list.json` y en esta sesión; 2 findings Low
+  no bloqueantes anotados.
+- Files or artifacts updated: `feature_list.json` (status `accepted` + nota),
+  `PROGRESS.md` (Current Verified State + esta sesión),
+  `docs/specs/extraccion-nube.md` (Validator Checklist). Cero cambios en
+  código de producto.
+- Known risk or unresolved issue:
+  - 2 findings Low no bloqueantes:
+    (1) higiene del debug token de App Check sin paso de revocación
+    documentado: al cerrar las pruebas de nube hay que revocar el token
+    (`983ba4d7-…`) en Firebase Console > proyecto `tally-586d1` > Security >
+    App Check > Manage debug tokens y borrar `app/appcheck-debug-token.txt`
+    (`firebase-appcheck-debug` viaja en la variante debug; superficie de abuso
+    de cuota Spark si el token filtra);
+    (2) envoltorio de errores demasiado amplio en `GeminiCloudEngine`
+    (`catch (Exception)` en el lazy y `catch (IllegalStateException)` en
+    `extract` → "Firebase AI no configurado" enmascara fallos no-config;
+    acotar a las excepciones de config reales; afectará al diagnóstico de
+    `log-extracciones`/`reintento-otro-motor`).
+  - R2 (cuota/latencia Gemini): parcialmente observada (~5-36 s por extracción
+    con `gemini-3.8-flash`) pero sin medición formal — tarea S3.
+  - Sin App Check de producción (Play Integrity): pendiente futuro.
+  - Todo el árbol de la feature queda pendiente de commit hasta este cierre
+    (commit + push a petición del usuario 2026-10-17).
+- Next best step: commit y push del árbol completo de `extraccion-nube`; después
+  siguiente feature por orden de `feature_list.json` con dependencias
+  aceptadas: `procesado-ui` (deps: `extraccion-nube` accepted; también
+  desbloqueadas `descarga-modelo` y `extraccion-local`).

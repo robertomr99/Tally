@@ -54,6 +54,19 @@ androidxTestRules = "1.7.0"
 # de la linea 16.x (16.0.1, 2024-08); coste ~+6 MB de APK aceptado por
 # offline-first. Ver R-OCR3 del spec.
 mlkitTextRecognition = "16.0.1"
+# kotlinx-serialization-json: parser/validador de TicketExtraido en dominio
+# (spec extraccion-nube). El spec citaba la linea 1.9.x; se fija 1.11.0, ultima
+# estable en Maven Central a 2026-10-16 (1.12.0-RC es RC), compatible con Kotlin
+# 2.2.10. Decision registrada en la sesion 018 de PROGRESS.md.
+kotlinxSerializationJson = "1.11.0"
+# Plugin com.google.gms.google-services: SOLO aplica en :app si existe
+# app/google-services.json (extraccion-nube T1: build verde sin credenciales).
+# El spec citaba la linea 4.4.x; se fija 4.5.0, ultima release en Google Maven a
+# 2026-10-16. Decision registrada en la sesion 018 de PROGRESS.md.
+googleServices = "4.5.0"
+# Firebase Android BoM (gestiona firebase-ai sin version literal; extraccion-nube).
+# Ultima release a 2026-10-16 (la doc de Firebase AI Logic recomienda 35.0.1+).
+firebaseBom = "35.0.2"
 
 [libraries]
 # Artefactos de plugin (los usa build-logic)
@@ -74,6 +87,21 @@ hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.r
 javax-inject = { group = "javax.inject", name = "javax.inject", version.ref = "javaxInject" }
 dagger = { group = "com.google.dagger", name = "dagger", version.ref = "hilt" }
 dagger-compiler = { group = "com.google.dagger", name = "dagger-compiler", version.ref = "hilt" }
+# kotlinx-serialization-json: parser/validador TicketExtraidoParser en dominio
+# (spec extraccion-nube; DTOs internos serializables).
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+# Firebase AI Logic (Gemini en nube, spec extraccion-nube): BoM + firebase-ai SIN
+# version literal (la fija el BoM). Config SOLO via app/google-services.json;
+# ninguna clave de API en el codigo ni en BuildConfig.
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
+# App Check debug provider para androidTest y el APK debug de :app (ExtraccionNubeRealTest):
+# Firebase AI Logic exige App Check enforced desde 2026-11-02; el provider de debug tiene
+# que empaquetarse tambien en la variante debug de :app (ver app/build.gradle.kts).
+# Sin version literal: la fija el BoM.
+firebase-appcheck = { group = "com.google.firebase", name = "firebase-appcheck" }
+firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appcheck-debug" }
 
 # Room (catálogo listo para la feature persistencia-room)
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
@@ -144,3 +172,9 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+# Serializacion de Kotlin para TicketExtraidoParser (:domain:expenses). Comparte
+# linea de version con Kotlin.
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# Google services (Firebase AI Logic, extraccion-nube). Se aplica CONDICIONALMENTE
+# en :app solo si existe app/google-services.json (ver T1 del spec).
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
