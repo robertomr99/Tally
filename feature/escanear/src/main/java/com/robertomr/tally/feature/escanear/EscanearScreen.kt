@@ -45,8 +45,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * - Gate de permiso de camara in-app: sin dialogo automatico del sistema al
  *   entrar; boton "Permitir camara" que lanza el launcher. Si se deniega, el
  *   estado queda en espanol con boton para volver a pedirlo (sin bucles).
- * - Subflujo interno Encuadre <-> Revision (BackHandler) SIN rutas nuevas en
- *   :app: la pantalla 05 es un estado interno de esta feature.
+ * - Subflujo interno Encuadre <-> Revision <-> Procesado (BackHandler) SIN
+ *   rutas nuevas en :app (spec procesado-ui): la pantalla 05 y el procesado
+ *   (mockup 06) son estados internos de esta feature.
  */
 @Composable
 fun EscanearScreen() {
@@ -78,6 +79,21 @@ fun EscanearScreen() {
         viewModel.onRepetirFoto()
     }
 
+    // Back durante el procesado = Cancelar (spec procesado-ui, escenario 2):
+    // aborta la extraccion y vuelve a la pantalla 05 con el Borrador intacto.
+    BackHandler(enabled = estado is CapturaUiState.ProcesandoExtraccion) {
+        viewModel.onCancelarProcesado()
+    }
+
+    // Back desde el resultado o el error = "Volver a la foto" (Borrador
+    // intacto; nada se persiste en esta feature).
+    BackHandler(
+        enabled = estado is CapturaUiState.ExtraccionLista ||
+            estado is CapturaUiState.ExtraccionFallida,
+    ) {
+        viewModel.onVolverALaFoto()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -103,7 +119,25 @@ fun EscanearScreen() {
                 textoCrudo = actual.textoCrudo,
                 ocrNoDisponible = actual.ocrNoDisponible,
                 onRepetirFoto = viewModel::onRepetirFoto,
-                onContinuar = { /* cableado con procesado-ui (non-goal aqui) */ },
+                onContinuar = viewModel::onContinuar,
+            )
+
+            // Spec procesado-ui (mockup 06): procesado -> resultado/error como
+            // subflujo interno, sin rutas nuevas en :app.
+            is CapturaUiState.ProcesandoExtraccion -> ProcesandoExtraccionContent(
+                motor = viewModel.motor,
+                onCancelar = viewModel::onCancelarProcesado,
+            )
+
+            is CapturaUiState.ExtraccionLista -> ExtraccionListaContent(
+                extraido = actual.extraido,
+            )
+
+            is CapturaUiState.ExtraccionFallida -> ExtraccionFallidaContent(
+                mensaje = actual.mensaje,
+                motor = viewModel.motor,
+                onReintentar = viewModel::onReintentarExtraccion,
+                onVolverALaFoto = viewModel::onVolverALaFoto,
             )
 
             is CapturaUiState.Error -> ErrorContent(

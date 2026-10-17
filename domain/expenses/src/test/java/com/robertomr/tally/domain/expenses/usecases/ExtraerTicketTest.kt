@@ -36,6 +36,16 @@ class ExtraerTicketTest {
     private val casoDeUso = ExtraerTicket(engine)
 
     @Test
+    fun motorIsAPassthroughOfTheEngineMotorEvenBeforeExtracting() {
+        // Spec procesado-ui T1: el badge necesita el motor ANTES de llamar al
+        // motor (la extraccion puede tardar decenas de segundos, R2).
+        assertEquals(Motor.NUBE, casoDeUso.motor)
+
+        val local = ExtraerTicket(FakeTextEngine(motor = Motor.LOCAL))
+        assertEquals(Motor.LOCAL, local.motor)
+    }
+
+    @Test
     fun blankTextReturnsAnEmptyExtractionWithoutTouchingTheEngine() = runBlocking {
         listOf("", "   ", "\n\t").forEach { texto ->
             val extraido = casoDeUso(texto)

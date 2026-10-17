@@ -3,7 +3,7 @@ package com.robertomr.tally.captura
 import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -103,12 +103,12 @@ class CapturaFlujoTest {
         }
 
         // Escenario 5: pantalla 05 con la foto, "Repetir foto" operativo y
-        // "Continuar" deshabilitado hasta procesado-ui (non-goal aqui).
+        // "Continuar" habilitado (abre el procesado de procesado-ui).
         composeRule.onNodeWithTag("captura_revision").assertIsDisplayed()
         composeRule.onNodeWithTag("captura_foto").assertIsDisplayed()
         composeRule.onNodeWithTag("captura_repetir").assertIsDisplayed()
         composeRule.onNodeWithTag("captura_continuar").assertIsDisplayed()
-        composeRule.onNodeWithTag("captura_continuar").assertIsNotEnabled()
+        composeRule.onNodeWithTag("captura_continuar").assertIsEnabled()
 
         // Escenario 1/3/4 de ocr-mlkit: el panel de debug del texto crudo esta
         // presente en builds debug (el test instala el build debug) con el

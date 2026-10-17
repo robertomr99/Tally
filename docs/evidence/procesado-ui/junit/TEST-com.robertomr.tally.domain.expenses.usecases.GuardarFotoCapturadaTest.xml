@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturadaTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-17T15:16:40.945Z" hostname="DESKTOP-O5DBCC6" time="0.006">
+  <properties/>
+  <testcase name="saveErrorPropagates" classname="com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturadaTest" time="0.003"/>
+  <testcase name="returnedNameIsRelativeNeverAbsolute" classname="com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturadaTest" time="0.001"/>
+  <testcase name="processorErrorPropagatesAndNothingIsSaved" classname="com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturadaTest" time="0.001"/>
+  <testcase name="processRunsBeforeSaveAndSavesProcessedBytes" classname="com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturadaTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-17T15:16:40.778Z" hostname="DESKTOP-O5DBCC6" time="0.119">
+  <properties/>
+  <testcase name="deleteWithUnknownIdIsNoOpAndDoesNotTouchPhotoStore" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.085"/>
+  <testcase name="saveAssignsIdAndReturnsAggregateFromGetById" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.003"/>
+  <testcase name="observeByDateRangeEmitsInRangeTicketsIncludingBoundariesAndUpdatesOnSave" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.024"/>
+  <testcase name="deleteRemovesTicketAndDeletesPhotoFile" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.001"/>
+  <testcase name="saveWithExistingIdUpdatesTicketInPlace" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.001"/>
+  <testcase name="deleteRemovesTicketEvenIfPhotoDeletionFails" classname="com.robertomr.tally.domain.expenses.data.TicketRepositoryTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

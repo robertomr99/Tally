@@ -1,12 +1,20 @@
 package com.robertomr.tally.feature.escanear
 
+import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.Linea
+import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
 import com.robertomr.tally.test.unit.CoroutineTestRule
 import com.robertomr.tally.test.unit.FakeOcrEngine
 import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakePhotoProcessor
+import com.robertomr.tally.test.unit.FakeTextEngine
+import java.time.LocalDateTime
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -16,14 +24,19 @@ import org.junit.Test
 
 /**
  * Tests JVM de [EscanearViewModel] con Turbine, CoroutineTestRule y los dobles
- * de :test:unit (spec captura-foto, T9 + spec ocr-mlkit, T7): permiso,
- * procesando, revision, "repetir" borrando la foto anterior, y la cadena
- * guardar-foto -> OCR con el texto crudo registrado en el Borrador
- * (vacío/fallo sin bloquear, sin re-OCR, descarte en "Repetir foto").
+ * de :test:unit (spec captura-foto, T9 + spec ocr-mlkit, T7 + spec
+ * procesado-ui, T7): permiso, procesando, revision, "repetir" borrando la foto
+ * anterior, la cadena guardar-foto -> OCR con el texto crudo registrado en el
+ * Borrador (vacío/fallo sin bloquear, sin re-OCR, descarte en "Repetir foto") y
+ * el procesado de la extraccion: pasos/estados reales, cancelacion con
+ * [FakeTextEngine.gate] (aborta sin borrar la foto ni tocar `TicketRepository`),
+ * error honesto, texto blank -> resultado rapido "0/5" sin invocar el motor y
+ * badge con el motor real.
  *
- * Las transiciones se observan con Turbine; cuando hace falta ver el estado
- * "Procesando" se retiene el doble del processor con un [CompletableDeferred]
- * para que la observacion sea determinista (sin carreras de conflation).
+ * Las transiciones se observan con Turbine; cuando hace falta ver un estado
+ * intermedio ("Procesando" o "ProcesandoExtraccion") se retiene el doble con un
+ * [CompletableDeferred] para que la observacion sea determinista (sin carreras
+ * de conflation).
  */
 class EscanearViewModelTest {
 
@@ -33,9 +46,20 @@ class EscanearViewModelTest {
     private val processor = FakePhotoProcessor(processedBytes = byteArrayOf(9, 9, 9))
     private val store = FakePhotoFileStore(savedName = "fotos/captura_test.jpg")
     private val engine = FakeOcrEngine(result = "MERCADONA\nTOTAL 12,34")
+    private val textEngine = FakeTextEngine(
+        result = TicketExtraido(
+            comercio = "MERCADONA",
+            fechaEmision = LocalDateTime.of(2026, 10, 15, 12, 0),
+            total = 35.30,
+            lineas = listOf(Linea("LECHE", 2, 1.05)),
+            categoria = Categoria.ALIMENTACION,
+            motor = Motor.NUBE,
+        ),
+    )
     private val viewModel = EscanearViewModel(
         guardarFotoCapturada = GuardarFotoCapturada(processor, store),
         reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
+        extraerTicket = ExtraerTicket(textEngine),
         photoFileStore = store,
     )
 
@@ -167,6 +191,10 @@ class EscanearViewModelTest {
     @Test
     fun emptyOcrResultReachesRevisionAsEmptyTextWithoutBlocking() = runTest {
         engine.result = ""
+        // Se retiene el pipeline de la foto para observar el estado
+        // "Procesando" sin carreras de conflation (mismo patron que
+        // capturingProcessesAndSavesThePhotoAtCaptureTime).
+        processor.gate = CompletableDeferred()
         viewModel.onPermisoCambiado(true)
 
         viewModel.estado.test {
@@ -175,6 +203,7 @@ class EscanearViewModelTest {
             viewModel.onImageCapturado(byteArrayOf(1))
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
+            processor.gate?.complete(Unit)
             val revision = awaitItem() as CapturaUiState.Revision
             // Escenario 3: OCR vacio -> texto "" y sin marca de fallo; la foto
             // NO se considera gastada (sigue en disco y en el borrador).
@@ -188,6 +217,8 @@ class EscanearViewModelTest {
     @Test
     fun ocrFailureDoesNotBlockTheCaptureAndIsMarkedUnavailable() = runTest {
         engine.error = IllegalStateException("motor OCR caido")
+        // Patron de observacion determinista de "Procesando" (sin conflation).
+        processor.gate = CompletableDeferred()
         viewModel.onPermisoCambiado(true)
 
         viewModel.estado.test {
@@ -196,6 +227,7 @@ class EscanearViewModelTest {
             viewModel.onImageCapturado(byteArrayOf(1))
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
+            processor.gate?.complete(Unit)
             val revision = awaitItem() as CapturaUiState.Revision
             // Escenario 4: el fallo del motor NO convierte la captura en error
             // (no hay CapturaUiState.Error) y la foto ya guardada se conserva.
@@ -236,6 +268,174 @@ class EscanearViewModelTest {
         viewModel.onImageCapturado(byteArrayOf(2))
         assertEquals("TEXTO B", esperarRevision().textoCrudo)
         assertEquals(2, engine.received.size)
+    }
+
+    // --- Procesado (spec procesado-ui): extraccion, cancelacion, error ---
+
+    @Test
+    fun continuarAbreElProcesadoYTerminaEnElResultadoConCompletitud() = runTest {
+        textEngine.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1))
+        val revision = esperarRevision()
+
+        viewModel.estado.test {
+            assertEquals(revision, awaitItem())
+
+            viewModel.onContinuar()
+
+            // Procesado en curso: mismo Borrador (foto + texto crudo) y el
+            // motor corriendo (spec T3: pasos Encuadre/OCR Completados porque
+            // ya ocurrieron en la captura; Categorizacion es el paso activo).
+            val procesando = awaitItem() as CapturaUiState.ProcesandoExtraccion
+            assertEquals(revision.rutaFoto, procesando.rutaFoto)
+            assertEquals(revision.textoCrudo, procesando.textoCrudo)
+
+            textEngine.gate?.complete(Unit)
+            val lista = awaitItem() as CapturaUiState.ExtraccionLista
+            assertEquals(textEngine.result, lista.extraido)
+            // Completitud real de campos (CONTEXT.md), nunca % de confianza.
+            assertEquals("5/5 campos extra\u00eddos", etiquetaCompletitud(lista.extraido))
+            expectNoEvents()
+        }
+
+        assertEquals(listOf("MERCADONA\nTOTAL 12,34"), textEngine.received)
+    }
+
+    @Test
+    fun cancelarAbortaLaExtraccionSinBorrarLaFotoYConElBorradorIntacto() = runTest {
+        textEngine.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1))
+        val revision = esperarRevision()
+
+        viewModel.estado.test {
+            assertEquals(revision, awaitItem())
+
+            viewModel.onContinuar()
+            assertTrue(awaitItem() is CapturaUiState.ProcesandoExtraccion)
+            // El motor ya estaba corriendo (retenido en el gate).
+            assertEquals(1, textEngine.received.size)
+
+            // Cancelar (o back del sistema) aborta la corrutina: jamas se
+            // convierte en error ni en resultado (R-PROC4).
+            viewModel.onCancelarProcesado()
+            val trasCancelar = awaitItem()
+            assertEquals(revision, trasCancelar)
+            expectNoEvents()
+
+            // "Continuar" sigue reintentable sobre el mismo Borrador.
+            viewModel.onContinuar()
+            assertTrue(awaitItem() is CapturaUiState.ProcesandoExtraccion)
+            textEngine.gate?.complete(Unit)
+            assertTrue(awaitItem() is CapturaUiState.ExtraccionLista)
+        }
+
+        // Sin datos huerfanos: la foto NO se borra (solo "Repetir foto" la
+        // borra) y este ViewModel ni recibe `TicketRepository` (cero escrituras
+        // posibles en Room; non-goal de la feature).
+        assertTrue("la foto debe conservarse al cancelar", store.deletedPaths.isEmpty())
+        assertEquals(2, textEngine.received.size)
+    }
+
+    @Test
+    fun elErrorDeExtraccionSeMuestraSinInventarDatosYReintentaConElMismoMotor() = runTest {
+        textEngine.error = IllegalStateException("Firebase AI no configurado")
+        textEngine.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1))
+        esperarRevision()
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+            val enCurso = awaitItem()
+            assertTrue(
+                "esperaba ProcesandoExtraccion, fue $enCurso",
+                enCurso is CapturaUiState.ProcesandoExtraccion,
+            )
+            textEngine.gate?.complete(Unit)
+
+            // Escenario 4: el motivo REAL del fallo, sin datos inventados ni
+            // fallback a otro motor (ADR 0001).
+            val fallo = awaitItem() as CapturaUiState.ExtraccionFallida
+            assertEquals("Firebase AI no configurado", fallo.mensaje)
+            assertEquals("fotos/captura_test.jpg", fallo.rutaFoto)
+
+            // "Reintentar" vuelve a invocar el MISMO motor sobre el MISMO texto.
+            textEngine.error = null
+            viewModel.onReintentarExtraccion()
+            val trasReintentar = awaitHastaQue("ExtraccionLista") {
+                it is CapturaUiState.ExtraccionLista
+            }
+            assertTrue(trasReintentar is CapturaUiState.ExtraccionLista)
+        }
+
+        assertEquals(listOf("MERCADONA\nTOTAL 12,34", "MERCADONA\nTOTAL 12,34"), textEngine.received)
+    }
+
+    @Test
+    fun textoBlankDevuelveResultadoRapidoSinInvocarElMotor() = runTest {
+        engine.result = "" // OCR vacio: la foto no es legible (escenario 5)
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1))
+        assertEquals("", esperarRevision().textoCrudo)
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+
+            // ExtraerTicket NO invoca al motor con texto blank y el procesado
+            // termina rapido en el resultado con "0/5 campos extraidos" (el
+            // estado intermedio puede no llegar a verse por conflation).
+            val lista = awaitHastaQue("ExtraccionLista") {
+                it is CapturaUiState.ExtraccionLista
+            } as CapturaUiState.ExtraccionLista
+            assertEquals("", lista.extraido.comercio)
+            assertEquals(null, lista.extraido.fechaEmision)
+            assertEquals(null, lista.extraido.total)
+            assertTrue(lista.extraido.lineas.isEmpty())
+            assertEquals(Categoria.OTROS, lista.extraido.categoria)
+            assertEquals("0/5 campos extra\u00eddos", etiquetaCompletitud(lista.extraido))
+            expectNoEvents()
+        }
+
+        assertTrue("el motor no debe invocarse con texto blank", textEngine.received.isEmpty())
+        // La foto NO queda "gastada": el Borrador sigue vivo y reintentable.
+        assertTrue(store.deletedPaths.isEmpty())
+    }
+
+    @Test
+    fun elBadgeExponeElMotorRealDelMotorDeExtraccion() = runTest {
+        // Passthrough de ExtraerTicket.motor / TextEngine.motor (T1): el badge
+        // muestra el motor ANTES de que termine la extraccion.
+        assertEquals(Motor.NUBE, viewModel.motor)
+
+        val local = EscanearViewModel(
+            guardarFotoCapturada = GuardarFotoCapturada(processor, store),
+            reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
+            extraerTicket = ExtraerTicket(FakeTextEngine(motor = Motor.LOCAL)),
+            photoFileStore = store,
+        )
+        assertEquals(Motor.LOCAL, local.motor)
+    }
+
+    /**
+     * Espera con Turbine hasta el estado indicado, saltandose los intermedios
+     * (p. ej. `ProcesandoExtraccion` cuando la extraccion termina rapido y el
+     * estado intermedio puede llegar o no por conflation).
+     */
+    private suspend fun ReceiveTurbine<CapturaUiState>.awaitHastaQue(
+        descripcion: String,
+        esperado: (CapturaUiState) -> Boolean,
+    ): CapturaUiState {
+        repeat(6) {
+            val item = awaitItem()
+            if (esperado(item)) return item
+        }
+        error("No se alcanzo $descripcion")
     }
 
     private fun esperarEstado(esperado: (CapturaUiState) -> Boolean): CapturaUiState {

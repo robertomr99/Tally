@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-17T15:16:40.900Z" hostname="DESKTOP-O5DBCC6" time="0.03">
+  <properties/>
+  <testcase name="fencedJsonWithSurroundingProseIsTolerated" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.02"/>
+  <testcase name="nonNumericTotalIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.002"/>
+  <testcase name="omittedCantidadDefaultsToOneAndUnknownKeysAreIgnored" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.002"/>
+  <testcase name="cantidadLessThanOneIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="nonIsoFechaEmisionIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="spanishDecimalCommasAndStringNumbersAreNormalized" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="negativePrecioUnitarioIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="missingPrecioUnitarioIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="negativeTotalIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="blankConceptoIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="responseWithoutAJsonObjectIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="infiniteTotalIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="missingCategoriaIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="malformedJsonIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="validResponseParsesIntoANormalizedExtraction" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="categoriaOutsideTheFixedEnumIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.001"/>
+  <testcase name="lineWithoutConceptoIsRejected" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <testcase name="missingOptionalFieldsYieldEmptyValues" classname="com.robertomr.tally.domain.expenses.entities.TicketExtraidoParserTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

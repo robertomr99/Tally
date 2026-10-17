@@ -50,8 +50,9 @@ import kotlinx.coroutines.withContext
 /**
  * Pantalla 05: revision de la foto ya procesada (mockup 05, spec captura-foto).
  * La foto se decodifica con BitmapFactory (sin libreria de imagenes); el dock
- * lleva "Repetir foto" (borra la foto del borrador reemplazado) y "Continuar"
- * DESHABILITADO hasta que `procesado-ui` lo cablee (non-goal de esta feature).
+ * lleva "Repetir foto" (borra la foto del borrador reemplazado) y "Continuar",
+ * que abre el procesado de la extraccion (spec procesado-ui, mockup 06) con el
+ * Borrador vivo (foto + texto crudo).
  *
  * Panel de debug del texto crudo (spec ocr-mlkit): SOLO en builds debug
  * (`ApplicationInfo.FLAG_DEBUGGABLE`), testTag `captura_texto_crudo`. Es una
@@ -199,10 +200,10 @@ private fun DockAcciones(
             Text(text = "Repetir foto")
         }
 
-        // Deshabilitado hasta procesado-ui (non-goal de captura-foto).
+        // "Continuar" abre el procesado de la extraccion (spec procesado-ui).
         Button(
             onClick = onContinuar,
-            enabled = false,
+            enabled = true,
             modifier = Modifier
                 .weight(1.4f)
                 .height(48.dp)

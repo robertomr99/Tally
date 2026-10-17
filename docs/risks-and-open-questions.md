@@ -93,6 +93,25 @@
   de extracción reales. Plan B documentado arriba.
 - **R2 — Quota/latencia de Gemini en la demo**: mitigación: red propia
   (tethering), límites conocidos de antemano, datos sembrados de reserva.
+  **Estado 2026-10-17 (`procesado-ui`, sesión 021)**: la latencia ya es visible
+  al usuario en la pantalla 06 (progreso circular indeterminado + "Cancelar"
+  siempre disponible, sin % inventado). Durante la verificación física se
+  **agotó la cuota diaria del free tier** (`gemini-3.8-flash`, límite 20
+  req/día) tras las pruebas reales acumuladas: la extracción falló con error de
+  cuota honesto en pantalla (sin datos inventados) y la **cancelación en vuelo
+  física** no pudo ejecutarse ese día (la petición fallaba al instante, sin
+  ventana para cancelar). La cancelación queda cubierta por tests JVM
+  (`EscanearViewModelTest` con `FakeTextEngine.gate`). La medición formal de
+  latencia sigue en S3.
+  **Actualización 2026-10-17 (sesión 022)**: por decisión del usuario se cambió el
+  motor de nube a la variante **lite** (`gemini-flash-lite-latest`) para tener más
+  cuota diaria y menor coste; el motor de nube es solo **fallback** (ADR 0001: el
+  principal es Gemma on-device, `router-automatico`). Verificado real:
+  `ExtraccionNubeRealTest` **5/5** en `emulator-5554` con los 4 totales correctos
+  (35,30 / 3,50 / 13,90 / 7,91) y en **9,2 s totales** (frente a los 82 s del
+  ticket 1 con `gemini-3.8-flash`): el lite es bastante más rápido. La cuota
+  concreta del lite queda por medir; el techo diario sigue existiendo (R2 abierta)
+  pero deja de agotarse en ~4 corridas.
 - **R3 — Calidad de OCR en tickets reales**: arrugas, térmicos descoloridos.
   Mitigación: encuadre guiado en cámara, flujo de corrección manual sólido.
   **Estado 2026-10-16 (`ocr-mlkit`, sesión 016)**: la etapa 1 del ADR 0002 está
@@ -134,6 +153,6 @@
 | Tarea | Entregable | Semana |
 | --- | --- | --- |
 | Gemma 3n + MediaPipe en Android | Modelo corriendo con "hola mundo" en Tab S9+ (hecho 2026-10-12, decisión GO) | S1 |
-| Firebase AI Logic con Gemini | Extracción REAL probada 2026-10-17 (sesión 018, `extraccion-nube` T7) en Tab S9+ (SM-X810) y emulador `emulator-5554` (imagen con GMS verificada): wiring completo en verde (`google-services.json` + plugin `google-services` condicional + `firebase-ai` vía BoM 35.0.2, backend `googleAI`, `responseSchema`); modelo final **`gemini-3.8-flash`** (el servidor deprecó `gemini-2.5-flash` para proyectos nuevos) con App Check debug registrado por el usuario; `ExtraccionNubeRealTest` **5/5** con los 4 tickets reales y totales 4/4 según contraste humano (35,30 / 3,50 / 13,90 / 7,91) (evidencia en `docs/evidence/extraccion-nube/`). Cuota sin medir; latencias observadas por testcase 4-36 s (R2: medición formal pendiente, S3) | S1 |
+| Firebase AI Logic con Gemini | Extracción REAL probada 2026-10-17 (sesión 018, `extraccion-nube` T7) en Tab S9+ (SM-X810) y emulador `emulator-5554` (imagen con GMS verificada): wiring completo en verde (`google-services.json` + plugin `google-services` condicional + `firebase-ai` vía BoM 35.0.2, backend `googleAI`, `responseSchema`); modelo final **`gemini-3.8-flash`** (el servidor deprecó `gemini-2.5-flash` para proyectos nuevos) con App Check debug registrado por el usuario; `ExtraccionNubeRealTest` **5/5** con los 4 tickets reales y totales 4/4 según contraste humano (35,30 / 3,50 / 13,90 / 7,91) (evidencia en `docs/evidence/extraccion-nube/`). Cuota sin medir; latencias observadas por testcase 4-36 s (R2: medición formal pendiente, S3). ACTUALIZADO 2026-10-17 (sesión 022): modelo de nube cambiado a `gemini-flash-lite-latest` (lite) por cuota/coste; verificado real 5/5 en 9,2 s | S1 |
 | ML Kit Text Recognition v2 | Integración (etapa 1 ADR 0002) implementada y verificada on-device; 4 tickets reales aportados (desviación acordada 2026-10-16 respecto a 5) con contraste humano confirmado "coincide razonablemente con el papel"; textos en `docs/evidence/ocr-mlkit/texto_crudo_1..4.txt` | S1–S2 |
 | Medición de latencia local/nube | Números reales para el indicador y la memoria | S3 |

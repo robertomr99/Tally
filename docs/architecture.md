@@ -85,8 +85,8 @@ app ──────────► feature:* ──────────�
   en `EscanearViewModel`); viaja en `Ticket.textoCrudoOcr` / columna
   `tickets.texto_crudo_ocr` cuando `revision-datos` persista, sin ficheros
   sidecar. OCR vacío o fallo del motor **no bloquean** la captura (la foto ya
-  está en disco). "Continuar" sigue deshabilitado; el texto es visible en un
-  panel **solo debug** de la pantalla 05 (`captura_texto_crudo`).
+  está en disco). "Continuar" ya está habilitado (`procesado-ui`); el texto es
+  visible en un panel **solo debug** de la pantalla 05 (`captura_texto_crudo`).
 
 ## Extracción estructurada (TextEngine)
 
@@ -106,8 +106,9 @@ app ──────────► feature:* ──────────�
   R3) está en el prompt y en el validador.
 - `GeminiCloudEngine` es `internal` en `:framework:ai/extraccion/`
   (`Dispatchers.IO`, modelo lazy, `responseMimeType` + `responseSchema`, backend
-  `googleAI`, `gemini-3.8-flash` — el servidor deprecó `gemini-2.5-flash` para
-  proyectos nuevos; U3 del spec); se binding con `@Provides TextEngine` en el
+   `googleAI`, `gemini-flash-lite-latest` — variante **lite** elegida por el
+   usuario 2026-10-17 tras deprecar el servidor `gemini-2.5-flash` y agotarse la
+   cuota de `gemini-3.8-flash`; ver R2); se binding con `@Provides TextEngine` en el
   `di.kt` del módulo. Errores de red/cuota/config se propagan al llamador y una
   `CancellationException` jamás se convierte en resultado.
 - El caso de uso `ExtraerTicket` (dominio) envuelve el motor: texto blank →
@@ -125,7 +126,32 @@ app ──────────► feature:* ──────────�
   (`firebase-appcheck-debug`, solo en androidTest + variante debug de `:app`;
   sin provider de producción todavía) con un **debug token fijo** aportado por
   el humano (`app/appcheck-debug-token.txt`, fuera de VCS) y registrado a mano
-  en la consola de Firebase; ver `docs/evidence/extraccion-nube/`.
+  en la consola de Firebase; ver `docs/evidence/extraccion-nube/`. Además, la
+  **variante debug de `:app`** instala ese mismo debug provider al arrancar
+  (`AppCheckDebugInitializer`, un `ContentProvider` declarado solo en
+  `app/src/debug/`), de modo que la app real en debug —no solo el test— puede
+  llamar a Gemini; el token debug lo genera el dispositivo y se registra a mano
+  en la consola (fuera del APK). Nunca viaja en release.
+
+## Procesado de la extracción (pantalla 06)
+
+- `procesado-ui` cablea el procesado como subflujo interno de `:feature:escanear`
+  (sin rutas nuevas en `:app`): "Continuar" en la pantalla 05 abre el estado
+  `ProcesandoExtraccion` del `EscanearViewModel`, que ejecuta `ExtraerTicket` y
+  termina en `ExtraccionLista` (resultado de solo lectura con completitud de
+  campos) o `ExtraccionFallida` (error honesto, sin datos inventados ni fallback,
+  ADR 0001).
+- La cancelación es **estructurada**: la orden de extracción es una entrada
+  `MutableStateFlow<OrdenExtraccion>`; `flatMapLatest` cancela la corrutina activa
+  al cambiar de orden (Continuar/Reintentar/Cancelar/Volver) y
+  `runCatchingLanzandoCancelacion` re-lanza **siempre** `CancellationException`.
+  Cancelar conserva la foto y el Borrador y no escribe en Room.
+- Los pasos del mockup 06 son reales: Encuadre y OCR ya están completados (ocurren
+  en la captura); Categorización es el paso activo mientras corre `ExtraerTicket`.
+  No hay porcentajes de progreso ni de confianza inventados. El **badge de motor**
+  muestra el motor real (`ExtraerTicket.motor`, passthrough de `TextEngine.motor`).
+- La latencia real de Gemini (R2) se hace visible aquí: progreso indeterminado +
+  "Cancelar" siempre disponible.
 
 ## Convenciones de build
 

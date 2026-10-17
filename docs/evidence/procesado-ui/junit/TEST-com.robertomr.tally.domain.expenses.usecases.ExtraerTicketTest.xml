@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-17T15:16:40.932Z" hostname="DESKTOP-O5DBCC6" time="0.01">
+  <properties/>
+  <testcase name="motorIsAPassthroughOfTheEngineMotorEvenBeforeExtracting" classname="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" time="0.001"/>
+  <testcase name="cancellationIsRethrownAndNeverConvertedIntoAResult" classname="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" time="0.007"/>
+  <testcase name="engineErrorPropagatesToTheCaller" classname="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" time="0.001"/>
+  <testcase name="blankTextReturnsAnEmptyExtractionWithoutTouchingTheEngine" classname="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" time="0.0"/>
+  <testcase name="nonBlankTextIsSentVerbatimAndTheResultIsReturnedWithTheEngineMotor" classname="com.robertomr.tally.domain.expenses.usecases.ExtraerTicketTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -9,24 +9,39 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `procesado-ui` (deps: `extraccion-nube` =
-  accepted, sesión 019). También quedan desbloqueadas `descarga-modelo` y
-  `extraccion-local` (deps aceptadas) por orden posterior en
-  `feature_list.json`. Desviación registrada 2026-10-16: 4 fotos reales en vez
-  de 5.
-- Current blocker: ninguno. Pendientes operativos menores: revisión visual
-  humana de capturas (`docs/evidence/captura-foto-*`,
-  `ocr-mlkit-panel-debug-tab.png`); al cerrar las pruebas de nube, revocar el
-  debug token de App Check (`983ba4d7-…`) en Firebase Console y borrar
-  `app/appcheck-debug-token.txt` (finding Low sesión 019); 2 findings Low de la
-  validación (envoltorio de errores de `GeminiCloudEngine`) como mantenimiento
-  no bloqueante.
-- Last verified at: 2026-10-17 (sesión 019: `extraccion-nube` **accepted** por
-  feature-validator — veredicto `accept`; gates re-ejecutados por el validador
-  en verde, `:app:connectedDebugAndroidTest` 11/11 con llamadas reales a
-  Gemini, degradación sin `google-services.json` verificada; 2 findings Low no
+- Current next ready feature: `captura-recorte-encuadre` (spec creada en la
+  sesión 022: `docs/specs/captura-recorte-encuadre.md`, T1-T7; deps `captura-foto`
+  accepted). El usuario pidió arreglar el encuadre ANTES de seguir. Después,
+  `revision-datos` (deps aceptadas) y `descarga-modelo`/`extraccion-local`.
+  Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendiente
+  operativo nuevo: reintentar la cancelación FÍSICA de `procesado-ui` (verificación
+  2) cuando se restablezca la cuota free tier de Gemini (agotada 2026-10-17).
+- Current blocker: ninguno bloqueante. `procesado-ui` en `accepted` con la
+  cancelación física pendiente por cuota Gemini agotada (reintentar al
+  restablecerse). Pendientes operativos menores: revisión visual humana de
+  capturas (`docs/evidence/captura-foto-*`, `ocr-mlkit-panel-debug-tab.png`,
+  `docs/evidence/procesado-ui/*.png`); al cerrar las pruebas de nube, revocar los
+  debug tokens de App Check (`983ba4d7-…` de los tests y `b1b0ab76-…` de la app
+  debug) en Firebase Console y borrar `app/appcheck-debug-token.txt` (finding Low
+  sesión 019); 2 findings Low de la validación de `extraccion-nube` (envoltorio de
+  errores de `GeminiCloudEngine`) como mantenimiento no bloqueante.
+- Last verified at: 2026-10-17 (sesión 022: modelo de nube cambiado a
+  `gemini-flash-lite-latest` (lite) — `ExtraccionNubeRealTest` **5/5** en
+  `emulator-5554` con los 4 totales correctos y en 9,2 s (~9× más rápido) —
+  enmienda registrada en docs/spec/`feature_list.json`; hallazgo de UX del
+  encuadre documentado (el recuadro no recorta; propuesta `captura-recorte-encuadre`);
+  ver sesión 022)
+- Previous verified at: 2026-10-17 (sesión 021: `procesado-ui` **accepted** por
+  feature-validator — veredicto `accept`; gates re-ejecutados en verde (JVM VM
+  16/16 + dominio; `:app` E2E 8/8 sin red); verificación física real en Tab S9+
+  hasta resultado; cancelación física pendiente por cuota; App Check debug cableado
+  en la variante debug de `:app`; solo findings Low/Info)
+- Earlier verified at: 2026-10-17 (sesión 019: `extraccion-nube` **accepted**
+  por feature-validator — veredicto `accept`; gates re-ejecutados por el validador
+  en verde, `:app:connectedDebugAndroidTest` 11/11 con llamadas reales a Gemini,
+  degradación sin `google-services.json` verificada; 2 findings Low no
   bloqueantes; ver sesión 019)
-- Previous verified at: 2026-10-17 (sesión 018, cierre: `extraccion-nube`
+- Earlier verified at: 2026-10-17 (sesión 018, cierre: `extraccion-nube`
   verificación 1 REAL en `emulator-5554` — `ExtraccionNubeRealTest` tests=5
   failures=0 skipped=0 con App Check válido y modelo `gemini-3.8-flash`;
   contraste humano de los 4 totales vs papel 4/4 (35,30 / 3,50 / 13,90 / 7,91);
@@ -1505,3 +1520,210 @@
   siguiente feature por orden de `feature_list.json` con dependencias
   aceptadas: `procesado-ui` (deps: `extraccion-nube` accepted; también
   desbloqueadas `descarga-modelo` y `extraccion-local`).
+
+### Session 020
+
+- Date: 2026-10-17
+- Goal: Planificar `procesado-ui` (siguiente feature por orden de
+  `feature_list.json` con `depends_on` aceptados) con el subagente `planner`
+  (skill feature-spec): spec de implementación lista para feature-implementer.
+- Completed:
+  - Selección de `procesado-ui` (deps: `extraccion-nube` = accepted, sesión 019)
+    por la regla de AGENTS.md. También quedan desbloqueadas `descarga-modelo` y
+    `extraccion-local` por orden posterior.
+  - Spec creada: `docs/specs/procesado-ui.md` (patrón de `captura-foto`/
+    `extraccion-nube`) con tareas T1-T10, Expected File Changes, Implementation
+    Notes vacías y Validator Checklist.
+  - Decisiones técnicas de la spec: procesado como subflujo interno de
+    `:feature:escanear` (sin rutas nuevas ni módulos Gradle, patrón pantalla 05);
+    flujo pantalla 05 → "Continuar" (habilitado por fin, RevisionFotoContent.kt:205)
+    → procesado (mockup 06) → resultado de solo lectura con "Revisar ticket"
+    deshabilitado hasta `revision-datos`; pasos Encuadre→OCR→Categorización con
+    estados REALES (Encuadre/OCR ya completados porque save+OCR ocurren en la
+    captura — moverlo rompería ocr-mlkit); progreso circular indeterminado SIN %
+    inventado (CONTEXT.md); Badge de motor real ("Motor Nube · Gemini") con
+    `ExtraerTicket.motor` como passthrough; cancelar = cancelación estructurada
+    (`flatMapLatest`/`Job`) con `CancellationException` siempre re-lanzada
+    (hallazgo Low recurrente), conserva foto + Borrador y vuelve a pantalla 05,
+    sin escrituras en Room (sin datos huérfanos); error visible sin inventar datos
+    ni fallback silencioso (ADR 0001) con "Reintentar" mismo motor; toggle del
+    mockup NO implementado (= `reintento-otro-motor`).
+  - E2E: `ProcesadoFlujoTest` + actualización de `CapturaFlujoTest` (Continuar
+    habilitado); justificado NO usar `@TestInstallIn` de `TextEngine` (rompería
+    `ExtraccionNubeRealTest` vía `TextEngineEntryPoint`): la determinización de
+    pasos/cancelación es JVM con `FakeTextEngine.gate` (ya existente) y la
+    extracción real por UI se verifica en físico con ticket de papel.
+  - Preguntas abiertas U1-U5 con DEFAULTs en la spec (U1: dispositivo = Tab S9+
+    `SM-X810` en lugar del realme GT 2 citado en verification[0], no conectado a
+    esta máquina, precedente sesiones 012-013/018; U3: no crear
+    `stateAsResultIn`/`AcScaffold` — no existen, mismo gap que documentó
+    captura-foto; U4: botón de resultado deshabilitado hasta `revision-datos`).
+  - Nota operativa: el subagente planner no pudo ejecutar la herramienta de
+    escritura (despacho atascado en `grep`); la spec se entregó en el informe y el
+    orquestador la persistió en `docs/specs/procesado-ui.md` (ver Files).
+- Verification run: planificación (sin gates de producto; cero cambios de código).
+- Evidence captured: `docs/specs/procesado-ui.md` (spec completa).
+- Files or artifacts updated: `docs/specs/procesado-ui.md` (nuevo),
+  `feature_list.json` (`procesado-ui`: nota de planificación), `PROGRESS.md`
+  (esta sesión + "Current next ready feature").
+- Known risk or unresolved issue:
+  - U1 sin confirmar: la verificación 1 cita el realme GT 2 y se propone la Tab S9+
+    como DEFAULT (revisar con el usuario).
+  - R2 (latencia Gemini 5-36 s) se hace visible al usuario en esta pantalla:
+    progreso indeterminado puede parecer colgado; mitigación = copy honesto +
+    Cancelar disponible; medición formal sigue en S3.
+  - El E2E en emulador (cámara virtual, OCR blank) no ejercita extracción real por
+    UI: la verificación 1 real exige dispositivo físico con ticket de papel.
+- Next best step: `feature-implementer` sobre `docs/specs/procesado-ui.md`
+  (T1-T8 ejecutables sin más; T9 con la Tab S9+ conectada y confirmación de U1).
+
+### Session 021
+
+- Date: 2026-10-17
+- Goal: Cerrar la implementación de `procesado-ui` (trabajo previo sin commit en
+  el árbol): verificar contra el spec, ejecutar todos los gates (JVM, E2E emulador
+  y verificación física real en la Tab S9+), actualizar docs durables/evidencia y
+  dejar la feature lista para `feature-validator`.
+- Completed:
+  - Revisión del árbol frente al `Expected File Changes` del spec: todo estaba
+    presente (dominio `ExtraerTicket.motor`; VM con `OrdenExtraccion`
+    Continuar/Reintentar/Cancelar/Volver + `flatMapLatest` +
+    `runCatchingLanzandoCancelacion`; `ProcesadoContent.kt`; cableado en
+    `EscanearScreen`; `RevisionFotoContent` con "Continuar" habilitado;
+    `ProcesadoFlujoTest`; `CapturaFlujoTest` actualizado). El VM NO toca
+    `TicketRepository` (verificado por grep y por test).
+  - **Bug corregido (bloqueaba el E2E)**: el `testTag("procesado_badge_motor")`
+    estaba en el `Row` del badge y `assertTextContains` no lee el texto de los
+    hijos sin merge → `ProcesadoFlujoTest` fallaba en la línea 62. Movido al
+    `Text` de la etiqueta del motor (patrón de `procesado_completitud`). E2E
+    enfocado pasó 2/2 después.
+  - Verificación JVM en verde: `assembleDebug testDebugUnitTest` BUILD
+    SUCCESSFUL; `:test:unit:test` 1/1; `:domain:expenses:test` (ExtraerTicketTest
+    5/5, TicketExtraidoParserTest 18/18, TicketRepositoryTest 6/6,
+    GuardarFotoCapturadaTest 4/4, ReconocerTextoCrudoTest 5/5);
+    `:feature:escanear:testDebugUnitTest` **EscanearViewModelTest 16/16**
+    (continuar→resultado con completitud, cancelar sin borrar la foto ni tocar el
+    repositorio, error sin inventar y reintento con el mismo motor, texto blank →
+    resultado rápido sin invocar el motor, badge = motor real).
+  - E2E emulador `emulator-5554`: focused `ProcesadoFlujoTest` 2/2; suite `:app`
+    `connectedDebugAndroidTest` **13/13** (0 skipped, 0 failed) = CapturaFlujoTest
+    3/3 + ProcesadoFlujoTest 2/2 + NavigationTest 3/3 + ExtraccionNubeRealTest 5/5
+    (Gemini real: 35,3 / 3,5 / 13,9 / 7,91).
+  - **DESVIACIÓN APROBADA POR EL USUARIO (2026-10-17)**: la app normal no
+    instalaba ningún `AppCheckProviderFactory` (solo `ExtraccionNubeRealTest`), así
+    que la extracción real por UI no podía completar ("Firebase App Check token is
+    invalid"). Se añadió `app/src/debug/java/.../appcheck/AppCheckDebugInitializer.kt`
+    (un `ContentProvider`) + `app/src/debug/AndroidManifest.xml` que instalan el
+    `DebugAppCheckProviderFactory` **solo en debug**; sin tocar `src/main`, sin
+    dependencias nuevas, sin secretos en el APK. Tras el cambio se re-ejecutaron
+    los 8 tests E2E no-red en verde (la cuota Gemini ya estaba agotada para el
+    test real).
+  - **Verificación física en la Tab S9+ (SM-X810)**: instalación debug + `pm grant`
+    CAMERA + captura de un ticket real (OCR real: "HOLA ALMIRANTE… Sevilla…").
+    verification 1 CUMPLIDA: extracción REAL a resultado (badge "Motor Nube ·
+    Gemini", comercio HOLA ALMIRANTE, fecha 3/10/2026 15:32, total (con IVA)
+    32,09 €, categoría Alimentación, "4/5 campos extraídos", "Revisar ticket"
+    deshabilitado). verification 3 CUMPLIDA (badge/motor real y estado de error
+    honesto por `uiautomator`, con el motivo real del servidor). verification 2
+    (cancelación en vuelo física) **BLOQUEADA por cuota**: se agotó el free tier de
+    Gemini (`gemini-3.8-flash`, 20 req/día) por las pruebas reales acumuladas y la
+    petición falla al instante (sin ventana de cancelación); cubierta por JVM.
+  - Docs durables: `docs/architecture.md` (sección nueva "Procesado de la
+    extracción (pantalla 06)" + App Check debug en la variante debug de `:app` +
+    "Continuar" habilitado en OCR), `docs/risks-and-open-questions.md` (R2: latencia
+    visible + cuota agotada), `docs/specs/procesado-ui.md` (T1-T8/T10 `[x]`, T9
+    parcial, Implementation Notes/Desviaciones).
+- Verification run (Windows/gradlew.bat, sin `bash`; `git diff init.sh` vacío):
+  - `.\gradlew.bat assembleDebug testDebugUnitTest` → BUILD SUCCESSFUL.
+  - `.\gradlew.bat :test:unit:test --rerun :domain:expenses:test --rerun :feature:escanear:testDebugUnitTest --rerun` → BUILD SUCCESSFUL (conteos arriba).
+  - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.robertomr.tally.captura.ProcesadoFlujoTest"` → 2/2.
+  - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :app:connectedDebugAndroidTest` → 13/13 (0 skipped) con Gemini real.
+  - `$env:ANDROID_SERIAL="emulator-5554"; .\gradlew.bat :app:connectedDebugAndroidTest "-P...class=CapturaFlujoTest,ProcesadoFlujoTest,NavigationTest"` → 8/8 (tras el cambio de App Check).
+  - Físico Tab S9+ (`adb-R52W60AFAPZ-…`): `:app:installDebug`, `pm grant`, captura real, `Continuar`, resultado real; `uiautomator dump` + `screencap`; `run-as com.robertomr.tally ls -l files/fotos` (baseline). Logcat `DebugAppCheckProvider` con el token generado (`b1b0ab76-…`, registrado a mano por el usuario).
+- Evidence captured: `docs/evidence/procesado-ui/` con
+  `procesado-fisico-05.png`, `procesado-fisico-06-procesando.png`,
+  `procesado-fisico-07-resultado.png`, `procesado-fisico-08-error-cuota.png`,
+  `fisico-pantalla05-uia.xml`, `fisico-resultado-uia.xml`,
+  `fisico-resultado-error-uia.xml`, `fisico-error-cuota-uia.xml`,
+  `run-as-fotos-antes.txt`, `run-as-fotos-cancel-antes.txt`; JUnit XML citados en
+  `feature_list.json`; evidencia registrada en `feature_list.json` (status
+  `passing`).
+- Files or artifacts updated: `feature/escanear/.../ProcesadoContent.kt` (testTag
+  del badge movido al `Text`), `app/src/debug/java/.../appcheck/AppCheckDebugInitializer.kt`
+  (nuevo), `app/src/debug/AndroidManifest.xml` (nuevo), `docs/architecture.md`,
+  `docs/risks-and-open-questions.md`, `docs/specs/procesado-ui.md`,
+  `feature_list.json`, `docs/evidence/procesado-ui/`, `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - `procesado-ui` → **`accepted`**: feature-validator devolvió veredicto
+    `accept` (re-ejecutó los gates en verde y no halló Critical/High/Medium). La
+    aceptación la persistió el orquestador en `feature_list.json`.
+  - Cancelación física (verification 2) pendiente por cuota Gemini; reintentar al
+    restablecerse (cubierta por JVM mientras).
+  - Degradación de calidad de extracción: en la captura física real el modelo
+    devolvió 32,09 € para un ticket cuyo contraste humano previo (sesión 018) era
+    35,30: es un problema de precisión del modelo sobre un OCR ruidoso (dos bloques
+    de importes), no del cableado; anotado para `log-extracciones`/prompt.
+  - App Check debug ahora viaja en la variante debug de `:app` (token en allow-list
+    `b1b0ab76-…`): revocar al cerrar las pruebas de nube; en release no hay provider
+    (Play Integrity, pendiente futuro, ya conocido).
+  - Revisión visual humana de los PNG de `docs/evidence/procesado-ui/` pendiente
+    (el agente no inspecciona imágenes).
+- Next best step: planificar con `feature-spec` la siguiente feature por orden de
+  `feature_list.json` con dependencias aceptadas (`descarga-modelo` o
+  `extraccion-local`). Mantenimiento pendiente (no bloqueante): reintentar la
+  cancelación física de `procesado-ui` al restablecerse la cuota de Gemini y
+  anexar el `run-as` antes/después; revocar los debug tokens de App Check
+  (`983ba4d7-…`, `b1b0ab76-…`) al cerrar las pruebas de nube.
+
+### Session 022
+
+- Date: 2026-10-17
+- Goal: Mantenimiento pedido por el usuario — (1) dejar la nube como *fallback*
+  (ADR 0001) y (2) cambiar el modelo de nube a una variante **lite** para aliviar
+  el problema de cuota; además, diagnosticar la queja del encuadre de captura.
+- Completed:
+  - **Cambio de modelo de nube (lite)**: `TicketExtractionPrompt.MODELO` de
+    `gemini-3.8-flash` a **`gemini-flash-lite-latest`** (el flash agotaba el free
+    tier: 20 req/día y ~5 por corrida de suite). Actualizado el KDoc y
+    `TicketExtractionPromptTest.modelConstantIsRegistered`.
+  - **Verificación real del lite**: `:framework:ai:testDebugUnitTest --rerun` en
+    verde (TicketExtractionPromptTest 6/6); `ExtraccionNubeRealTest` en
+    `emulator-5554` → **tests=5 failures=0 errors=0 skipped=0** con los 4 totales
+    correctos (35,30 / 3,50 / 13,90 / 7,91) y en **9,2 s totales** (~9× más
+    rápido que el flash, que tardó 82 s solo en el ticket 1). Evidencia:
+    `docs/evidence/extraccion-nube/junit-app-emulador-5554-lite.xml`.
+  - Docs/enmienda: `docs/architecture.md`, `docs/technical-discovery.md`,
+    `docs/risks-and-open-questions.md` (R2 + research task), y la spec
+    `docs/specs/extraccion-nube.md` (Implementation Notes) actualizadas al modelo
+    lite; `feature_list.json` (`extraccion-nube`: evidence + notes de enmienda).
+  - **Hallazgo de UX de captura (reportado por el usuario)**: el recuadro del
+    mockup 04 es **solo un hint visual**; `CameraEncuadre.capturar()` llama a
+    `ImageCapture.takePicture` **sin recorte ni `ViewPort`** y el pipeline
+    reescala a ≤1280 el fotograma completo, así que el ticket pierde detalle y
+    "alinear en el recuadro" no tiene efecto. Confirmado que el **crop estaba
+    como Non-Goal explícito** de `captura-foto` (spec, línea 36): no es un bug,
+    es una mejora nueva. Por petición del usuario se prioriza **antes de la
+    siguiente feature**: se añadió `captura-recorte-encuadre` a `feature_list.json`
+    (índice 8, primera lista por orden; deps `captura-foto` accepted) y se planificó
+    con `feature-spec` → `docs/specs/captura-recorte-encuadre.md` (T1-T7; DEFAULT
+    `ViewPort` de CameraX, Plan B crop en pipeline). NO implementada en esta sesión.
+- Verification run: `:framework:ai:testDebugUnitTest --rerun` → BUILD SUCCESSFUL;
+  `ANDROID_SERIAL=emulator-5554 gradlew.bat :app:connectedDebugAndroidTest
+  "-P...class=...ExtraccionNubeRealTest"` → 5/5, 0 fallos.
+- Evidence captured: `docs/evidence/extraccion-nube/junit-app-emulador-5554-lite.xml`;
+  enmiendas en los docs citados y en `feature_list.json`.
+- Files or artifacts updated: `framework/ai/.../extraccion/TicketExtractionPrompt.kt`,
+  `framework/ai/.../extraccion/TicketExtractionPromptTest.kt`,
+  `docs/architecture.md`, `docs/technical-discovery.md`,
+  `docs/risks-and-open-questions.md`, `docs/specs/extraccion-nube.md`,
+  `feature_list.json`, `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - La cuota real del lite sigue sin medir (el techo diario existe; R2 abierta),
+    pero deja de agotarse en ~4 corridas.
+  - `procesado-ui` sigue `accepted`; la cancelación física (verificación 2) queda
+    pendiente por cuota y ahora es más viable con el lite.
+  - UX del encuadre: pendiente de planificar `captura-recorte-encuadre` para que el
+    recuadro recorte de verdad y no se degraden los tickets.
+- Next best step: implementar `captura-recorte-encuadre` (spec T1-T7; DEFAULT
+  `ViewPort`) con `feature-implementer`, verificarla (E2E + físico Tab S9+) y
+  pasarla a `feature-validator`. Después, `extraccion-local`/validar lo acumulado.

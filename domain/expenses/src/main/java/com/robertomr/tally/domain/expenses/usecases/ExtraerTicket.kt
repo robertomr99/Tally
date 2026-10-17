@@ -2,6 +2,7 @@ package com.robertomr.tally.domain.expenses.usecases
 
 import com.robertomr.tally.domain.expenses.data.TextEngine
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import javax.inject.Inject
 
@@ -22,6 +23,13 @@ import javax.inject.Inject
 class ExtraerTicket @Inject constructor(
     private val textEngine: TextEngine,
 ) {
+
+    /**
+     * Motor que procesara la extraccion (passthrough de `textEngine.motor`,
+     * spec procesado-ui T1): el badge de motor puede mostrarlo ANTES de que
+     * termine la llamada, que puede tardar decenas de segundos (R2).
+     */
+    val motor: Motor get() = textEngine.motor
 
     /**
      * @param textoCrudo texto tal cual del OCR (etapa 1); `""`/blank →
