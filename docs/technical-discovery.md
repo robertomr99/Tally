@@ -46,7 +46,9 @@ Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
 - **Firebase AI Logic (Gemini en nube, `extraccion-nube`)**: SDK `firebase-ai`
   gestionado por el Firebase BoM (`gradle/libs.versions.toml`), backend
   `googleAI` (free tier; `vertexAI` descartado por exigir facturación) y modelo
-  `gemini-3.8-flash` (U3 resuelta: el servidor deprecó `gemini-2.5-flash` para
+  `gemini-flash-lite-latest` (variante **lite**, elegida 2026-10-17 por su mayor
+  cuota diaria y menor coste; sustituye a `gemini-3.8-flash`, cuyo free tier solo
+  limitaba a 20 req/día, y a `gemini-2.5-flash`, deprecado por el servidor para
   proyectos nuevos). La config viaja SOLO en `app/google-services.json`
   (gitignoreado; lo aporta el humano — prerrequisito U1 de la spec) mediante el
   plugin `com.google.gms.google-services`, aplicado **condicionalmente** en

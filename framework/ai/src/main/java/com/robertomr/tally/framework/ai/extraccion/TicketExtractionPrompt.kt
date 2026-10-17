@@ -15,17 +15,22 @@ import com.google.firebase.ai.type.Schema
 internal object TicketExtractionPrompt {
 
     /**
-     * Modelo Gemini de la via nube (U3 del spec). ORIGINAL: `gemini-2.5-flash`
-     * (rapido y con free tier en el backend `googleAI`). La doc de Firebase AI
-     * Logic (2026-10) marcaba los Gemini 2.5 como limitados a proyectos que ya
-     * los usaron, y asi fue: el primer run real de T7 (2026-10-17) recibio
+     * Modelo Gemini de la via nube (U3 del spec). ORIGINAL: `gemini-2.5-flash`.
+     * El primer run real de T7 (2026-10-17) recibio
      * `ServerException: This model models/gemini-2.5-flash is no longer
      * available to new users. Please update your code to use
-     * models/gemini-3.8-flash` (proyecto nuevo `tally-586d1`). Contingencia ya
-     * prevista aqui: se cambia el modelo al que indica el servidor
-     * (`gemini-3.8-flash`) y se registra en el spec (U3 resuelta).
+     * models/gemini-3.8-flash` (proyecto nuevo `tally-586d1`), asi que se paso a
+     * `gemini-3.8-flash`.
+     *
+     * DECISION DEL USUARIO (2026-10-17): usar una variante **lite** (via nube).
+     * `gemini-3.8-flash` agoto el free tier muy rapido (limite 20 req/dia; una
+     * sola corrida de la suite real gasta ~5), lo que hacia inviable verificar
+     * sin quedarse sin cuota. Las variantes lite tienen una cuota diaria bastante
+     * mayor y menor coste por token. Encaja con el plan de producto: el motor
+     * **Local (Gemma on-device)** es el principal y la nube es solo el
+     * **fallback** (ADR 0001, `router-automatico`).
      */
-    const val MODELO = "gemini-3.8-flash"
+    const val MODELO = "gemini-flash-lite-latest"
 
     /** Claves del schema JSON, en el mismo orden que [responseSchema]. */
     private val CLAVES_SCHEMA = listOf(

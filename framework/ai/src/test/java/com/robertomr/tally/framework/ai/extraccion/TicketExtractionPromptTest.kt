@@ -63,9 +63,10 @@ class TicketExtractionPromptTest {
 
     @Test
     fun modelConstantIsRegistered() {
-        // gemini-3.8-flash: el modelo que el servidor de Gemini indico en el
-        // primer run real de T7 (2026-10-17) tras deprecar gemini-2.5-flash para
-        // usuarios nuevos; registrado en el spec (U3).
-        assertEquals("gemini-3.8-flash", TicketExtractionPrompt.MODELO)
+        // gemini-flash-lite-latest: variante lite elegida por el usuario
+        // (2026-10-17) para la via nube (fallback de ADR 0001) por su mayor cuota
+        // diaria y menor coste; sustituye a gemini-3.8-flash, que agotaba el free
+        // tier (20 req/dia).
+        assertEquals("gemini-flash-lite-latest", TicketExtractionPrompt.MODELO)
     }
 }

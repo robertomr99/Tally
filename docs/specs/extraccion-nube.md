@@ -598,6 +598,16 @@ DEFAULT.
   evidencia en `junit-app-emulador-5554-run-modelo-deprecado.xml`). Contingencia
   ya prevista en el prompt: `TicketExtractionPrompt.MODELO = "gemini-3.8-flash"`
   (el modelo que indicó el servidor), con su KDoc actualizado.
+- **Enmienda 2026-10-17 (sesión 022, decisión del usuario): modelo de nube a
+  variante lite.** `gemini-3.8-flash` agotaba el free tier en ~4 corridas reales
+  (límite 20 req/día; la suite gasta ~5 por ejecución), lo que hacía inviable
+  verificar. Se cambia `TicketExtractionPrompt.MODELO` a
+  **`gemini-flash-lite-latest`** (más cuota diaria, menor coste y ~9× más rápido
+  en la verificación). La nube es solo **fallback** del motor local (ADR 0001;
+  `router-automatico`). Verificado real en `emulator-5554`: `ExtraccionNubeRealTest`
+  **5/5** con los 4 totales correctos (35,30 / 3,50 / 13,90 / 7,91) en 9,2 s. El
+  test `TicketExtractionPromptTest.modelConstantIsRegistered` se actualiza al nuevo
+  id. No cambia contrato, schema ni dominio.
 - **Corrección de expectativas del test real (2026-10-17, contraste humano R3/U4
   — el papel manda sobre el test)**: las expectativas derivadas del OCR estaban
   mal y se corrigen contra el papel, no al revés:

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="5" failures="0" errors="0" skipped="0" time="9.181" timestamp="2026-10-17T15:51:45" hostname="localhost">
+  <testsuite name="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" tests="5" failures="0" errors="0" skipped="0" time="8.602" timestamp="2026-10-17T15:51:45" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="ticket1ExtractionIsValidWithTotal3530" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="3.917" />
+    <testcase name="ticket2ExtractionUsesTheTotalWithVatNotTheBase" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="1.791" />
+    <testcase name="ticket4ExtractionIsValidWithTotal791" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="1.793" />
+    <testcase name="ticket3ExtractionIsValidWithTotal1390" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="1.099" />
+    <testcase name="theInjectedEngineIsTheCloudOne" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.002" />
+  </testsuite>
+</testsuites>
