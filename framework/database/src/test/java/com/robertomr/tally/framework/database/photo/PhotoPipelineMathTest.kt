@@ -1,5 +1,6 @@
 package com.robertomr.tally.framework.database.photo
 
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -67,5 +68,70 @@ class PhotoPipelineMathTest {
         assertEquals(0, PhotoPipelineMath.gradosParaOrientacion(7))
         assertEquals(0, PhotoPipelineMath.gradosParaOrientacion(0))
         assertEquals(0, PhotoPipelineMath.gradosParaOrientacion(42))
+    }
+
+    // --- Recorte del encuadre: mapeo vista (FILL_CENTER) -> imagen ---
+
+    @Test
+    fun viewAspectMatchingImageIsIdentity() {
+        // El recuadro cubre la vista entera y la vista tiene el aspecto de la
+        // imagen: el recorte es el fotograma completo.
+        val recorte = PhotoPipelineMath.recorteEnImagen(
+            CropRegion(0f, 0f, 1f, 1f, viewAspectRatio = 2f),
+            anchoImagen = 2000,
+            altoImagen = 1000,
+        )
+
+        assertEquals(0f, recorte.left, 1e-6f)
+        assertEquals(0f, recorte.top, 1e-6f)
+        assertEquals(1f, recorte.right, 1e-6f)
+        assertEquals(1f, recorte.bottom, 1e-6f)
+    }
+
+    @Test
+    fun centeredRectKeepsRatioWhenAspectsMatch() {
+        val recorte = PhotoPipelineMath.recorteEnImagen(
+            CropRegion(0.25f, 0.1f, 0.75f, 0.9f, viewAspectRatio = 2f),
+            anchoImagen = 2000,
+            altoImagen = 1000,
+        )
+
+        assertEquals(0.25f, recorte.left, 1e-6f)
+        assertEquals(0.75f, recorte.right, 1e-6f)
+        assertEquals(0.1f, recorte.top, 1e-6f)
+        assertEquals(0.9f, recorte.bottom, 1e-6f)
+    }
+
+    @Test
+    fun widerImageIsCroppedHorizontallyByFillCenter() {
+        // Vista cuadrada (1) sobre imagen 2:1: FILL_CENTER recorta el sobrante
+        // horizontal, asi que un recuadro del 50% de la vista abarca el 25% del
+        // ancho de la imagen (centrado).
+        val recorte = PhotoPipelineMath.recorteEnImagen(
+            CropRegion(0.25f, 0f, 0.75f, 1f, viewAspectRatio = 1f),
+            anchoImagen = 2000,
+            altoImagen = 1000,
+        )
+
+        assertEquals(0.375f, recorte.left, 1e-6f)
+        assertEquals(0.625f, recorte.right, 1e-6f)
+        assertEquals(0f, recorte.top, 1e-6f)
+        assertEquals(1f, recorte.bottom, 1e-6f)
+    }
+
+    @Test
+    fun tallerImageIsCroppedVerticallyByFillCenter() {
+        // Vista 2:1 sobre imagen 1:1: el sobrante se recorta arriba/abajo, asi
+        // que un recuadro del 50% de la vista abarca el 25% del alto.
+        val recorte = PhotoPipelineMath.recorteEnImagen(
+            CropRegion(0f, 0.25f, 1f, 0.75f, viewAspectRatio = 2f),
+            anchoImagen = 1000,
+            altoImagen = 1000,
+        )
+
+        assertEquals(0f, recorte.left, 1e-6f)
+        assertEquals(1f, recorte.right, 1e-6f)
+        assertEquals(0.375f, recorte.top, 1e-6f)
+        assertEquals(0.625f, recorte.bottom, 1e-6f)
     }
 }

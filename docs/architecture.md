@@ -55,10 +55,14 @@ app ──────────► feature:* ──────────�
 
 - El pipeline de la foto capturada vive en `:framework:database`
   (`CapturedPhotoProcessor`, interno; matemática pura en `PhotoPipelineMath`):
-  hornea la orientación EXIF en los píxeles, escala a ≤1280 px de lado largo
-  conservando proporción y recomprime JPEG (~85) sin tag de orientación. El
-  contrato (`PhotoProcessor`) está en `:domain:expenses`; el original de cámara
-  no se guarda.
+  hornea la orientación EXIF en los píxeles, **recorta la región del encuadre
+  guiado** (`captura-recorte-encuadre`: la foto guardada es el recuadro del mockup
+  04, no el fotograma completo), escala a ≤1280 px de lado largo conservando
+  proporción y recomprime JPEG (~85) sin tag de orientación. El contrato
+  (`PhotoProcessor.process(rawJpeg, crop: CropRegion)`) está en `:domain:expenses`;
+  el original de cámara no se guarda. La MISMA geometría (`EncuadreGeometria` en
+  `:feature:escanear`, pura) pinta la retícula y calcula el recorte; el mapeo
+  vista→imagen modela el `FILL_CENTER` de la preview (`PhotoPipelineMath.recorteEnImagen`).
 - La foto se persiste EN EL MOMENTO DE LA CAPTURA en `filesDir/fotos/` con
   nombre RELATIVO (`fotos/captura_<uuid>.jpg`), contrato de
   `PhotoFileStore.save`: nunca se devuelve ni se escribe una ruta absoluta.

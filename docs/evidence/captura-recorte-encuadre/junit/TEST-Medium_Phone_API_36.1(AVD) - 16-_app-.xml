@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="8" failures="0" errors="0" skipped="0" time="23.628" timestamp="2026-10-17T16:57:13" hostname="localhost">
+  <testsuite name="com.robertomr.tally.captura.CapturaFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="9.705" timestamp="2026-10-17T16:57:13" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="denegadoMuestraEstadoInAppSinCrash" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="3.511" />
+    <testcase name="obturadorAbreLaRevisionDeLaFotoYRepetirVuelveAlEncuadre" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="4.188" />
+    <testcase name="permisoConcedidoMuestraElEncuadreGuiado" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.006" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.captura.ProcesadoFlujoTest" tests="2" failures="0" errors="0" skipped="0" time="6.001" timestamp="2026-10-17T16:57:13" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="procesadoMuestraElBadgeRealYElResultadoSoloLecturaConRevisarDeshabilitado" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="2.567" />
+    <testcase name="backDesdeElProcesadoVuelveALaFotoConElBorradorIntacto" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="3.434" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.navigation.NavigationTest" tests="3" failures="0" errors="0" skipped="0" time="6.973" timestamp="2026-10-17T16:57:13" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="startsOnResumenWithActivePill" classname="com.robertomr.tally.navigation.NavigationTest" time="2.317" />
+    <testcase name="systemBackReturnsToResumenAndNextBackExitsTheApp" classname="com.robertomr.tally.navigation.NavigationTest" time="1.605" />
+    <testcase name="bottomBarNavigatesAcrossTheThreeDestinations" classname="com.robertomr.tally.navigation.NavigationTest" time="3.051" />
+  </testsuite>
+</testsuites>

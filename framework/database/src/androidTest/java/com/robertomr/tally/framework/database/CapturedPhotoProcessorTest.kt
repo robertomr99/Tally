@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import androidx.exifinterface.media.ExifInterface
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.framework.database.source.CapturedPhotoProcessor
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -49,7 +50,7 @@ class CapturedPhotoProcessorTest {
         val raw = leerFixture()
         val entrada = BitmapFactory.decodeByteArray(raw, 0, raw.size)
 
-        val salidaBytes = processor.process(raw)
+        val salidaBytes = processor.process(raw, fotogramaCompleto(900f, 1600f))
         val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
 
         println(
@@ -84,7 +85,7 @@ class CapturedPhotoProcessorTest {
     fun processScalesLargeJpegWithoutExifTo1280AndDoesNotRotate() = runBlocking {
         val raw = jpegSintetico(2000, 1000)
 
-        val salidaBytes = processor.process(raw)
+        val salidaBytes = processor.process(raw, fotogramaCompleto(2000f, 1000f))
         val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
 
         println("CapturedPhotoProcessorTest: sintetico 2000x1000 -> ${salida.width}x${salida.height}")
@@ -103,12 +104,33 @@ class CapturedPhotoProcessorTest {
     fun processDoesNotScaleSmallJpeg() = runBlocking {
         val raw = jpegSintetico(800, 600)
 
-        val salidaBytes = processor.process(raw)
+        val salidaBytes = processor.process(raw, fotogramaCompleto(800f, 600f))
         val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
 
         assertEquals(800, salida.width)
         assertEquals(600, salida.height)
     }
+
+    @Test
+    fun processCropsTheGuidedRegionInsteadOfTheWholeFrame() = runBlocking {
+        val raw = jpegSintetico(2000, 1000)
+
+        // Recuadro centrado al 50% de la vista, con el mismo aspecto que la
+        // imagen: el recorte queda 1000x500 (no el fotograma completo).
+        val mittad = CropRegion(0.25f, 0.25f, 0.75f, 0.75f, viewAspectRatio = 2f)
+
+        val salidaBytes = processor.process(raw, mittad)
+        val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
+
+        println("CapturedPhotoProcessorTest: recorte 2000x1000 -> ${salida.width}x${salida.height}")
+
+        assertEquals(1000, salida.width)
+        assertEquals(500, salida.height)
+        assertEquals(1000, maxOf(salida.width, salida.height))
+    }
+
+    private fun fotogramaCompleto(ancho: Float, alto: Float) =
+        CropRegion(0f, 0f, 1f, 1f, viewAspectRatio = ancho / alto)
 
     private fun leerFixture(): ByteArray =
         instrumentacion.context.assets.open("ticket_exif_rotado.jpg").use { it.readBytes() }

@@ -1,5 +1,6 @@
 package com.robertomr.tally.domain.expenses.usecases
 
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.test.unit.CoroutineTestRule
 import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakePhotoProcessor
@@ -25,15 +26,17 @@ class GuardarFotoCapturadaTest {
     private val processor = FakePhotoProcessor(processedBytes = byteArrayOf(9, 8, 7))
     private val store = FakePhotoFileStore(savedName = "fotos/captura_test.jpg")
     private val useCase = GuardarFotoCapturada(processor, store)
+    private val crop = CropRegion(left = 0.1f, top = 0.2f, right = 0.9f, bottom = 0.8f, viewAspectRatio = 0.75f)
 
     @Test
     fun processRunsBeforeSaveAndSavesProcessedBytes() = runTest {
         val raw = byteArrayOf(1, 2, 3)
 
-        val ruta = useCase(raw)
+        val ruta = useCase(raw, crop)
 
         // process -> save, en ese orden y con los bytes procesados (no los crudos).
         assertEquals(listOf<ByteArray>(raw), processor.received)
+        assertEquals(listOf(crop), processor.receivedCrops)
         assertEquals(1, store.savedPayloads.size)
         assertTrue(processor.received[0].contentEquals(raw))
         assertTrue(store.savedPayloads[0].contentEquals(byteArrayOf(9, 8, 7)))
@@ -42,7 +45,7 @@ class GuardarFotoCapturadaTest {
 
     @Test
     fun returnedNameIsRelativeNeverAbsolute() = runTest {
-        val ruta = useCase(byteArrayOf(1))
+        val ruta = useCase(byteArrayOf(1), crop)
 
         // Contrato de seguridad: nombre relativo bajo filesDir, nunca absoluto.
         assertFalse(File(ruta).isAbsolute)
@@ -54,7 +57,7 @@ class GuardarFotoCapturadaTest {
         processor.error = IllegalStateException("fallo del pipeline")
 
         val error = assertThrows(IllegalStateException::class.java) {
-            kotlinx.coroutines.runBlocking { useCase(byteArrayOf(1)) }
+            kotlinx.coroutines.runBlocking { useCase(byteArrayOf(1), crop) }
         }
 
         assertEquals("fallo del pipeline", error.message)
@@ -66,7 +69,7 @@ class GuardarFotoCapturadaTest {
         store.saveError = IllegalStateException("disco lleno")
 
         val error = assertThrows(IllegalStateException::class.java) {
-            kotlinx.coroutines.runBlocking { useCase(byteArrayOf(1)) }
+            kotlinx.coroutines.runBlocking { useCase(byteArrayOf(1), crop) }
         }
 
         assertEquals("disco lleno", error.message)

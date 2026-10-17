@@ -2,6 +2,7 @@ package com.robertomr.tally.feature.escanear
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
@@ -45,6 +46,7 @@ class EscanearViewModelTest {
 
     private val processor = FakePhotoProcessor(processedBytes = byteArrayOf(9, 9, 9))
     private val store = FakePhotoFileStore(savedName = "fotos/captura_test.jpg")
+    private val crop = CropRegion(left = 0f, top = 0f, right = 1f, bottom = 1f, viewAspectRatio = 1f)
     private val engine = FakeOcrEngine(result = "MERCADONA\nTOTAL 12,34")
     private val textEngine = FakeTextEngine(
         result = TicketExtraido(
@@ -68,7 +70,7 @@ class EscanearViewModelTest {
         viewModel.estado.test {
             assertEquals(CapturaUiState.PermisoPendiente, awaitItem())
 
-            viewModel.onImageCapturado(byteArrayOf(1))
+            viewModel.onImageCapturado(byteArrayOf(1), crop)
 
             // Sin permiso el estado visible no cambia: se espera a que la
             // captura termine de procesarse y se comprueba que el StateFlow
@@ -99,7 +101,7 @@ class EscanearViewModelTest {
         viewModel.estado.test {
             assertEquals(CapturaUiState.Encuadre, awaitItem())
 
-            viewModel.onImageCapturado(crudos)
+            viewModel.onImageCapturado(crudos, crop)
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
             processor.gate?.complete(Unit)
@@ -125,7 +127,7 @@ class EscanearViewModelTest {
         viewModel.estado.test {
             assertEquals(CapturaUiState.Encuadre, awaitItem())
 
-            viewModel.onImageCapturado(byteArrayOf(1))
+            viewModel.onImageCapturado(byteArrayOf(1), crop)
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
             processor.gate?.complete(Unit)
@@ -155,7 +157,7 @@ class EscanearViewModelTest {
     @Test
     fun repetirBorraLaFotoAnteriorYVuelveAlEncuadre() = runTest {
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         val rutaGuardada = esperarRevision().rutaFoto
 
         viewModel.onRepetirFoto()
@@ -167,7 +169,7 @@ class EscanearViewModelTest {
 
         // Puede capturarse otra: queda solo la nueva (el fake devuelve el mismo
         // nombre configurable; lo que se comprueba es que el flujo sigue vivo).
-        viewModel.onImageCapturado(byteArrayOf(2))
+        viewModel.onImageCapturado(byteArrayOf(2), crop)
         val segunda = esperarRevision().rutaFoto
         assertEquals(rutaGuardada, segunda)
     }
@@ -177,7 +179,7 @@ class EscanearViewModelTest {
     @Test
     fun ocrTextIsRegisteredWithTheDraftTogetherWithThePhotoPath() = runTest {
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
 
         val revision = esperarRevision()
 
@@ -200,7 +202,7 @@ class EscanearViewModelTest {
         viewModel.estado.test {
             assertEquals(CapturaUiState.Encuadre, awaitItem())
 
-            viewModel.onImageCapturado(byteArrayOf(1))
+            viewModel.onImageCapturado(byteArrayOf(1), crop)
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
             processor.gate?.complete(Unit)
@@ -224,7 +226,7 @@ class EscanearViewModelTest {
         viewModel.estado.test {
             assertEquals(CapturaUiState.Encuadre, awaitItem())
 
-            viewModel.onImageCapturado(byteArrayOf(1))
+            viewModel.onImageCapturado(byteArrayOf(1), crop)
             assertEquals(CapturaUiState.Procesando, awaitItem())
 
             processor.gate?.complete(Unit)
@@ -240,7 +242,7 @@ class EscanearViewModelTest {
     @Test
     fun repeatedStateQueriesDoNotRerunTheOcr() = runTest {
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         val revision = esperarRevision()
 
         // Escenario 6: el texto del borrador se recupera tal cual, una y otra
@@ -256,7 +258,7 @@ class EscanearViewModelTest {
     fun repetirDescartaElTextoDelBorradorYLaSiguienteCapturaGeneraElSuyo() = runTest {
         engine.result = "TEXTO A"
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         assertEquals("TEXTO A", esperarRevision().textoCrudo)
 
         // Escenario 5: "Repetir foto" descarta foto y texto del borrador.
@@ -265,7 +267,7 @@ class EscanearViewModelTest {
 
         // La captura siguiente genera su propio texto (no reutiliza el anterior).
         engine.result = "TEXTO B"
-        viewModel.onImageCapturado(byteArrayOf(2))
+        viewModel.onImageCapturado(byteArrayOf(2), crop)
         assertEquals("TEXTO B", esperarRevision().textoCrudo)
         assertEquals(2, engine.received.size)
     }
@@ -276,7 +278,7 @@ class EscanearViewModelTest {
     fun continuarAbreElProcesadoYTerminaEnElResultadoConCompletitud() = runTest {
         textEngine.gate = CompletableDeferred()
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         val revision = esperarRevision()
 
         viewModel.estado.test {
@@ -306,7 +308,7 @@ class EscanearViewModelTest {
     fun cancelarAbortaLaExtraccionSinBorrarLaFotoYConElBorradorIntacto() = runTest {
         textEngine.gate = CompletableDeferred()
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         val revision = esperarRevision()
 
         viewModel.estado.test {
@@ -343,7 +345,7 @@ class EscanearViewModelTest {
         textEngine.error = IllegalStateException("Firebase AI no configurado")
         textEngine.gate = CompletableDeferred()
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         esperarRevision()
 
         viewModel.estado.test {
@@ -379,7 +381,7 @@ class EscanearViewModelTest {
     fun textoBlankDevuelveResultadoRapidoSinInvocarElMotor() = runTest {
         engine.result = "" // OCR vacio: la foto no es legible (escenario 5)
         viewModel.onPermisoCambiado(true)
-        viewModel.onImageCapturado(byteArrayOf(1))
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
         assertEquals("", esperarRevision().textoCrudo)
 
         viewModel.estado.test {

@@ -1,14 +1,17 @@
 package com.robertomr.tally.framework.database.photo
 
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import kotlin.math.roundToInt
 
 /**
- * Matematica pura del pipeline de foto (spec captura-foto): dimensiones
- * objetivo del escalado, muestra de decodificacion y mapeo de la orientacion
- * EXIF a grados. Sin dependencias de Android para poder probarla en JVM.
+ * Matematica pura del pipeline de foto (spec captura-foto + captura-recorte-encuadre):
+ * dimensiones objetivo del escalado, muestra de decodificacion, mapeo de la
+ * orientacion EXIF a grados y recorte del encuadre guiado. Sin dependencias de
+ * Android para poder probarla en JVM.
  *
- * Pipeline: horneado de la orientacion EXIF en los pixeles + escala a
- * [MAX_LADO_LARGO] px de lado largo + JPEG calidad [CALIDAD_JPEG].
+ * Pipeline: horneado de la orientacion EXIF en los pixeles + recorte de la
+ * region del recuadro + escala a [MAX_LADO_LARGO] px de lado largo + JPEG
+ * calidad [CALIDAD_JPEG].
  */
 internal object PhotoPipelineMath {
 
@@ -64,4 +67,47 @@ internal object PhotoPipelineMath {
         }
         return muestra
     }
+
+    /**
+     * Mapea el recorte normalizado a la VISTA del encuadre a coordenadas
+     * normalizadas [0,1] de la imagen capturada ya orientada (misma orientacion
+     * de visualizacion que la vista).
+     *
+     * La preview se pinta con FILL_CENTER: la imagen cubre la vista y el
+     * sobrante se recorta centrado. Por eso el factor de escala entre vista e
+     * imagen es `aspectoVista / max(aspectoVista, aspectoImagen)` en horizontal
+     * y `aspectoImagen / max(aspectoVista, aspectoImagen)` en vertical, con el
+     * centro en 0.5. Con [CropRegion.viewAspectRatio] igual al de la imagen el
+     * recorte es identidad (fotograma completo).
+     */
+    fun recorteEnImagen(
+        recorte: CropRegion,
+        anchoImagen: Int,
+        altoImagen: Int,
+    ): RecorteImagen {
+        require(anchoImagen > 0 && altoImagen > 0) {
+            "Dimensiones de imagen invalidas: ${anchoImagen}x$altoImagen"
+        }
+        require(recorte.viewAspectRatio > 0f) {
+            "Aspecto de vista invalido: ${recorte.viewAspectRatio}"
+        }
+        val aspectImagen = anchoImagen.toFloat() / altoImagen
+        val mayor = maxOf(recorte.viewAspectRatio, aspectImagen)
+        val factorX = recorte.viewAspectRatio / mayor
+        val factorY = aspectImagen / mayor
+        return RecorteImagen(
+            left = (0.5f + (recorte.left - 0.5f) * factorX).coerceIn(0f, 1f),
+            top = (0.5f + (recorte.top - 0.5f) * factorY).coerceIn(0f, 1f),
+            right = (0.5f + (recorte.right - 0.5f) * factorX).coerceIn(0f, 1f),
+            bottom = (0.5f + (recorte.bottom - 0.5f) * factorY).coerceIn(0f, 1f),
+        )
+    }
 }
+
+/** Recorte normalizado [0,1] dentro de la imagen ya orientada. */
+internal data class RecorteImagen(
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float,
+)

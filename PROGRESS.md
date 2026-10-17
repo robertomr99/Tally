@@ -9,13 +9,12 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `captura-recorte-encuadre` (spec creada en la
-  sesión 022: `docs/specs/captura-recorte-encuadre.md`, T1-T7; deps `captura-foto`
-  accepted). El usuario pidió arreglar el encuadre ANTES de seguir. Después,
-  `revision-datos` (deps aceptadas) y `descarga-modelo`/`extraccion-local`.
-  Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendiente
-  operativo nuevo: reintentar la cancelación FÍSICA de `procesado-ui` (verificación
-  2) cuando se restablezca la cuota free tier de Gemini (agotada 2026-10-17).
+- Current next ready feature: `revision-datos` (deps `procesado-ui` y
+  `persistencia-room` aceptadas; spec pendiente de planificar). `captura-recorte-encuadre`
+  quedó **`accepted`** en la sesión 023. Después, `descarga-modelo`/`extraccion-local`.
+  Desviación registrada 2026-10-16: 4 fotos reales en vez de 5. Pendiente operativo:
+  reintentar la cancelación FÍSICA de `procesado-ui` (verificación 2) cuando se
+  restablezca la cuota free tier de Gemini (agotada 2026-10-17).
 - Current blocker: ninguno bloqueante. `procesado-ui` en `accepted` con la
   cancelación física pendiente por cuota Gemini agotada (reintentar al
   restablecerse). Pendientes operativos menores: revisión visual humana de
@@ -25,13 +24,19 @@
   debug) en Firebase Console y borrar `app/appcheck-debug-token.txt` (finding Low
   sesión 019); 2 findings Low de la validación de `extraccion-nube` (envoltorio de
   errores de `GeminiCloudEngine`) como mantenimiento no bloqueante.
-- Last verified at: 2026-10-17 (sesión 022: modelo de nube cambiado a
+- Last verified at: 2026-10-17 (sesión 023: `captura-recorte-encuadre`
+  **accepted** por feature-validator — veredicto `accept`; implementada con
+  **Enfoque B** (recorte al recuadro en el pipeline); JVM (EncuadreGeometriaTest
+  3/3, PhotoPipelineMathTest 10/10, GuardarFotoCapturadaTest 4/4, EscanearViewModelTest
+  16/16) + instrumentados (`CapturedPhotoProcessorTest` recorta 2000x1000→1000x500;
+  :app E2E 8/8) en verde; T6 físico HECHO en la Tab S9+ (foto 819x1280/0,64 vs
+  960x1280/0,75; 0 EXIF; extracción nube correcta 35,30 €); 5 findings Low no
+  bloqueantes; ver sesión 023)
+- Previous verified at: 2026-10-17 (sesión 022: modelo de nube cambiado a
   `gemini-flash-lite-latest` (lite) — `ExtraccionNubeRealTest` **5/5** en
-  `emulator-5554` con los 4 totales correctos y en 9,2 s (~9× más rápido) —
-  enmienda registrada en docs/spec/`feature_list.json`; hallazgo de UX del
-  encuadre documentado (el recuadro no recorta; propuesta `captura-recorte-encuadre`);
-  ver sesión 022)
-- Previous verified at: 2026-10-17 (sesión 021: `procesado-ui` **accepted** por
+  `emulator-5554` con los 4 totales correctos y en 9,2 s (~9× más rápido);
+  hallazgo de UX del encuadre documentado)
+- Earlier verified at: 2026-10-17 (sesión 021: `procesado-ui` **accepted** por
   feature-validator — veredicto `accept`; gates re-ejecutados en verde (JVM VM
   16/16 + dominio; `:app` E2E 8/8 sin red); verificación física real en Tab S9+
   hasta resultado; cancelación física pendiente por cuota; App Check debug cableado
@@ -1727,3 +1732,69 @@
 - Next best step: implementar `captura-recorte-encuadre` (spec T1-T7; DEFAULT
   `ViewPort`) con `feature-implementer`, verificarla (E2E + físico Tab S9+) y
   pasarla a `feature-validator`. Después, `extraccion-local`/validar lo acumulado.
+
+### Session 023
+
+- Date: 2026-10-17
+- Goal: Implementar `captura-recorte-encuadre` (spec T0-T7) con el flujo
+  `planner` → `implementer`. El planner refino la spec (gate de API T0) y el
+  implementer se interrumpio a mitad; la sesion la continuo el orquestador.
+- Completed:
+  - Gate de API (T0) → **Enfoque B** (recorte en el pipeline), no `ViewPort`: el
+    recuadro es un sub-rect arbitrario y el `ViewPort` comparte region con la
+    `Preview` (riesgo de recortar/zoomear el mockup 04 a pantalla completa).
+    Determinista, testeable en JVM, sin cambiar el diseño visual.
+  - Codigo: `EncuadreGeometria` (nueva, pura, `:feature:escanear`) que pinta la
+    reticula y calcula el rect normalizado; `CropRegion` (nueva,
+    `:domain:expenses/data`) + contrato `PhotoProcessor.process(rawJpeg, crop)`;
+    `PhotoPipelineMath.recorteEnImagen` (mapeo `FILL_CENTER`→imagen);
+    `CapturedPhotoProcessor` recorta antes de escalar;
+    `CameraEncuadre`/`EscanearViewModel`/`GuardarFotoCapturada`/`FakePhotoProcessor`
+    propagan el `crop`. Preview intacta (pantalla completa).
+  - Bug del implementer corregido: `PhotoPipelineMathTest.centeredRectKeepsRatioWhenAspectsMatch`
+    esperaba `right=0.5`; con aspectos coincidentes es identidad (`0.75`). El
+    codigo era correcto.
+  - Gates en verde: `assembleDebug testDebugUnitTest`; `EncuadreGeometriaTest`
+    3/3; `PhotoPipelineMathTest` 10/10; `GuardarFotoCapturadaTest` 4/4;
+    `EscanearViewModelTest` 16/16; `:framework:database:connectedDebugAndroidTest`
+    22/22 (incluido `CapturaFlujoTest`... no: incluye
+    `CapturedPhotoProcessorTest.processCropsTheGuidedRegionInsteadOfTheWholeFrame`,
+    2000x1000 recuadro 50% → **1000x500**); E2E `:app` 8/8 en `emulator-5554`
+    (`CapturaFlujoTest` 3 + `ProcesadoFlujoTest` 2 + `NavigationTest` 3). `git diff
+    init.sh` vacio; `schemas/` sin diff.
+  - Docs: `docs/specs/captura-recorte-encuadre.md` (T0-T7 `[x]`, T6 fisico HECHO,
+    Implementation Notes con el gate + Enfoque B + finding Low),
+    `docs/architecture.md` (seccion "Captura de foto": el recuadro recorta +
+    `EncuadreGeometria`/`recorteEnImagen`), `feature_list.json` (`passing` +
+    evidence), evidencia en `docs/evidence/captura-recorte-encuadre/junit/`.
+- Verification run: ver "Completed".
+- Evidence captured: JUnit XML en `docs/evidence/captura-recorte-encuadre/junit/`;
+  evidencia en `feature_list.json`.
+- Files or artifacts updated: `feature/escanear/.../EncuadreGeometria.kt` (nuevo)
+  + test, `CameraEncuadre.kt`, `EscanearViewModel.kt`, `EscanearViewModelTest.kt`,
+  `domain/expenses/.../data/PhotoProcessor.kt` (+`CropRegion`),
+  `usecases/GuardarFotoCapturada.kt` + test, `framework/database/.../photo/PhotoPipelineMath.kt`
+  + test, `source/CapturedPhotoProcessor.kt` + androidTest, `test/unit/.../FakePhotoProcessor.kt`,
+  `docs/specs/captura-recorte-encuadre.md`, `docs/architecture.md`,
+  `feature_list.json`, `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - **T6 (fisico) HECHO 2026-10-17** (Tab S9+ `SM-X810`): captura real con ticket;
+    foto recortada **819x1280 (aspecto 0,64)** vs **960x1280 (0,75)** del fotograma
+    completo previo => el aspecto 0,64 = aspecto del recuadro (~640x1000 px en la
+    Tab), recorta de verdad; 0 EXIF; preview a pantalla completa sin zoom
+    (Scenario 5); el usuario confirmo visualmente. Bonus: con la foto recortada la
+    extraccion nube devolvio el total CORRECTO 35,30 € (con el fotograma completo
+    daba 32,09 €). Evidencia en `docs/evidence/captura-recorte-encuadre/`. Nota: el
+    realme GT 2 (`2312DRAABG`) ahora SI esta conectado (no se uso; T6 se hizo en la Tab).
+  - `captura-recorte-encuadre` → **`accepted`**: feature-validator devolvio
+    veredicto `accept` (re-ejecuto los gates en verde y corrobora la evidencia
+    fisica 819x1280 al pixel con la matematica; confirmo que el codigo de
+    `recorteEnImagen` era correcto y la expectativa corregida era la erronea). 5
+    findings Low no bloqueantes (notas obsoletas de T6 corregidas; revision visual
+    humana de PNG pendiente; nits de orientacion/encoding de la evidencia;
+    supuesto aspecto preview==ImageCapture valido en el dispositivo probado).
+  - Finding Low (no bloqueante): con el recorte en pipeline la decodificacion
+    puede ser a resolucion alta en sensores grandes (memoria transitoria); acotar
+    `inSampleSize` si molesta.
+- Next best step: planificar `revision-datos` (deps aceptadas) o `extraccion-local`;
+  y commit/push del arbol si el usuario lo pide.

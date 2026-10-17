@@ -41,18 +41,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import java.io.ByteArrayOutputStream
 
 /**
@@ -66,13 +69,14 @@ import java.io.ByteArrayOutputStream
  */
 @Composable
 fun CameraEncuadre(
-    onCapturado: (ByteArray) -> Unit,
+    onCapturado: (ByteArray, CropRegion) -> Unit,
     onCapturaFallida: (String) -> Unit,
     onCerrar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val density = LocalDensity.current
     val previewView = remember {
         PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER }
     }
@@ -84,6 +88,9 @@ fun CameraEncuadre(
     // La captura solo se habilita cuando la camara ya esta vinculada al
     // preview; pulsar antes evita errores de ImageCapture sin camara activa.
     var camaraLista by remember { mutableStateOf(false) }
+    // Tamano real de la vista del encuadre: la misma geometria que pinta la
+    // reticula calcula el recorte de la foto (WYSIWYG).
+    var vistaSize by remember { mutableStateOf(IntSize.Zero) }
 
     DisposableEffect(lifecycleOwner) {
         camaraLista = false
@@ -120,6 +127,7 @@ fun CameraEncuadre(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .onSizeChanged { vistaSize = it }
             .background(Color.Black)
             .testTag("captura_encuadre"),
     ) {
@@ -165,6 +173,7 @@ fun CameraEncuadre(
                     capturar(
                         context = context,
                         imageCapture = imageCapture,
+                        crop = cropDeLaVista(vistaSize, density),
                         onCapturado = onCapturado,
                         onCapturaFallida = onCapturaFallida,
                     )
@@ -176,11 +185,12 @@ fun CameraEncuadre(
     }
 }
 
-/** Dispara [ImageCapture] y entrega los bytes JPEG crudos (con EXIF). */
+/** Dispara [ImageCapture] y entrega los bytes JPEG crudos (con EXIF) y el recorte. */
 private fun capturar(
     context: Context,
     imageCapture: ImageCapture,
-    onCapturado: (ByteArray) -> Unit,
+    crop: CropRegion,
+    onCapturado: (ByteArray, CropRegion) -> Unit,
     onCapturaFallida: (String) -> Unit,
 ) {
     if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
@@ -196,13 +206,38 @@ private fun capturar(
         ContextCompat.getMainExecutor(context),
         object : ImageCapture.OnImageSavedCallback {
             override fun onImageSaved(results: ImageCapture.OutputFileResults) {
-                onCapturado(stream.toByteArray())
+                onCapturado(stream.toByteArray(), crop)
             }
 
             override fun onError(exception: ImageCaptureException) {
                 onCapturaFallida("No se pudo capturar la foto. Inténtalo de nuevo.")
             }
         },
+    )
+}
+
+/**
+ * Region del recuadro (mockup 04) en coordenadas de la vista, mapeable a la
+ * imagen capturada: usa la MISMA geometria que pinta la reticula.
+ */
+private fun cropDeLaVista(size: IntSize, density: Density): CropRegion = with(density) {
+    val ancho = size.width.toFloat().coerceAtLeast(1f)
+    val alto = size.height.toFloat().coerceAtLeast(1f)
+    val zona = EncuadreGeometria.zona(
+        anchoVista = ancho,
+        altoVista = alto,
+        margenPx = EncuadreGeometria.MARGEN_DP.dp.toPx(),
+        anchoMaxPx = EncuadreGeometria.ANCHO_MAX_DP.dp.toPx(),
+        altoFrac = EncuadreGeometria.ALTO_FRAC,
+        altoMaxPx = EncuadreGeometria.ALTO_MAX_DP.dp.toPx(),
+    )
+    val normalizado = EncuadreGeometria.rectNormalizado(zona, ancho, alto)
+    CropRegion(
+        left = normalizado.left,
+        top = normalizado.top,
+        right = normalizado.right,
+        bottom = normalizado.bottom,
+        viewAspectRatio = ancho / alto,
     )
 }
 
@@ -214,7 +249,15 @@ private fun capturar(
 private fun ReticulaCaptura(modifier: Modifier = Modifier) {
     val esquinaColor = MaterialTheme.colorScheme.secondaryFixed
     androidx.compose.foundation.Canvas(modifier = modifier) {
-        val zona = calcularZonaCaptura(size, this)
+        val zonaCalc = EncuadreGeometria.zona(
+            anchoVista = size.width,
+            altoVista = size.height,
+            margenPx = EncuadreGeometria.MARGEN_DP.dp.toPx(),
+            anchoMaxPx = EncuadreGeometria.ANCHO_MAX_DP.dp.toPx(),
+            altoFrac = EncuadreGeometria.ALTO_FRAC,
+            altoMaxPx = EncuadreGeometria.ALTO_MAX_DP.dp.toPx(),
+        )
+        val zona = Rect(zonaCalc.left, zonaCalc.top, zonaCalc.right, zonaCalc.bottom)
         val recorte = Path().apply {
             fillType = PathFillType.EvenOdd
             addRect(Rect(Offset.Zero, size))
@@ -249,15 +292,6 @@ private fun ReticulaCaptura(modifier: Modifier = Modifier) {
 }
 
 /** Zona de captura proporcional al mockup 04 (max-w-xs, 68vh, centrada). */
-private fun calcularZonaCaptura(size: Size, density: Density): Rect = with(density) {
-    val margen = 24.dp.toPx()
-    val ancho = minOf(size.width - 2 * margen, 320.dp.toPx())
-    val alto = minOf(size.height * 0.68f, 500.dp.toPx())
-    val left = (size.width - ancho) / 2
-    val top = (size.height - alto) / 2
-    Rect(left, top, left + ancho, top + alto)
-}
-
 @Composable
 private fun PildoraHint(texto: String) {
     Row(

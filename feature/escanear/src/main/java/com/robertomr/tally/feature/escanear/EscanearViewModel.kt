@@ -2,6 +2,7 @@ package com.robertomr.tally.feature.escanear
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
@@ -156,8 +157,8 @@ class EscanearViewModel @Inject constructor(
     }
 
     /** Bytes JPEG crudos de CameraX (la pantalla solo hace de binding). */
-    fun onImageCapturado(rawJpeg: ByteArray) {
-        entradaCaptura.value = EntradaCaptura.Cruda(rawJpeg)
+    fun onImageCapturado(rawJpeg: ByteArray, crop: CropRegion) {
+        entradaCaptura.value = EntradaCaptura.Cruda(rawJpeg, crop)
     }
 
     /** La camara no pudo capturar (sin frames, error de dispositivo...). */
@@ -227,7 +228,9 @@ class EscanearViewModel @Inject constructor(
             is EntradaCaptura.Cruda -> flow {
                 emit(CapturaEnProgreso.Procesando)
                 // La foto se guarda primero, SIEMPRE (evidencia inmutable).
-                val ruta = runCatchingLanzandoCancelacion { guardarFotoCapturada(entrada.bytes) }
+                val ruta = runCatchingLanzandoCancelacion {
+                    guardarFotoCapturada(entrada.bytes, entrada.crop)
+                }
                     .getOrElse {
                         emit(CapturaEnProgreso.Fallida(it.message ?: "No se pudo guardar la foto"))
                         return@flow
@@ -310,7 +313,7 @@ class EscanearViewModel @Inject constructor(
     /** Entradas del flujo: bytes de captura o fallo de la camara. */
     private sealed interface EntradaCaptura {
         data object Ninguna : EntradaCaptura
-        class Cruda(val bytes: ByteArray) : EntradaCaptura
+        class Cruda(val bytes: ByteArray, val crop: CropRegion) : EntradaCaptura
         data class Fallida(val mensaje: String) : EntradaCaptura
     }
 

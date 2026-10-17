@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.feature.escanear.EscanearViewModelTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-10-17T16:56:31.540Z" hostname="DESKTOP-O5DBCC6" time="0.285">
+  <properties/>
+  <testcase name="cancelarAbortaLaExtraccionSinBorrarLaFotoYConElBorradorIntacto" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.103"/>
+  <testcase name="textoBlankDevuelveResultadoRapidoSinInvocarElMotor" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.018"/>
+  <testcase name="ocrTextIsRegisteredWithTheDraftTogetherWithThePhotoPath" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.013"/>
+  <testcase name="repetirDescartaElTextoDelBorradorYLaSiguienteCapturaGeneraElSuyo" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.035"/>
+  <testcase name="emptyOcrResultReachesRevisionAsEmptyTextWithoutBlocking" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.005"/>
+  <testcase name="ocrFailureDoesNotBlockTheCaptureAndIsMarkedUnavailable" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.004"/>
+  <testcase name="continuarAbreElProcesadoYTerminaEnElResultadoConCompletitud" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.014"/>
+  <testcase name="repetirBorraLaFotoAnteriorYVuelveAlEncuadre" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.035"/>
+  <testcase name="elBadgeExponeElMotorRealDelMotorDeExtraccion" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.007"/>
+  <testcase name="cameraFailureShowsErrorStateWithoutSaving" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.004"/>
+  <testcase name="withoutPermissionStateStaysPending" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.014"/>
+  <testcase name="capturingProcessesAndSavesThePhotoAtCaptureTime" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.003"/>
+  <testcase name="repeatedStateQueriesDoNotRerunTheOcr" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.011"/>
+  <testcase name="processorErrorShowsErrorState" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.003"/>
+  <testcase name="elErrorDeExtraccionSeMuestraSinInventarDatosYReintentaConElMismoMotor" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.015"/>
+  <testcase name="grantingPermissionShowsEncuadre" classname="com.robertomr.tally.feature.escanear.EscanearViewModelTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
