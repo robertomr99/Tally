@@ -157,6 +157,27 @@ app ──────────► feature:* ──────────�
 - La latencia real de Gemini (R2) se hace visible aquí: progreso indeterminado +
   "Cancelar" siempre disponible.
 
+## Revisión y guardado (pantalla 07)
+
+- `revision-datos` cierra el flujo de escaneo: desde el resultado (pantalla 06)
+  "Revisar ticket" abre el estado `RevisionDatos` del `EscanearViewModel` (mockup
+  07), donde el usuario corrige la **cabecera** (comercio, fecha, total y categoría
+  con chips de la enum fija de 6) y Guarda. Las líneas son de solo lectura
+  (`edicion-lineas` es una feature aparte).
+- El mapeo `TicketExtraido` → `Ticket`/`Linea` vive en **dominio**: el caso de uso
+  `GuardarTicket` (`@Inject constructor(TicketRepository)`, `operator fun invoke`)
+  construye el agregado `Ticket` (con `DatosRevision` corregido, `fechaCaptura` =
+  ahora, `motor` del `TicketExtraido`, `rutaFoto` relativa, `textoCrudoOcr` del
+  Borrador, `nota = null`) y delega en `TicketRepository.save` (`@Transaction` en
+  `TicketDao.upsert`, ya existente). Funciona también con extracción vacía.
+- La foto ya está en disco (`filesDir/fotos`): solo se vincula su ruta. El Borrador
+  no se persiste; al Guardar, el `EscanearViewModel` pasa por `Guardando` → `Guardado`
+  y `EscanearScreen` emite el callback `onGastoGuardado`; `:app` navega a la pestaña
+  **Gastos** (placeholder hasta `listado-gastos`) y el subflujo se resetea a
+  `Encuadre`. Las pantallas no reciben el `NavController`.
+- Back desde la revisión = volver al resultado sin escribir en Room
+  (`CancellationException` siempre re-lanzada). El badge de motor se conserva.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

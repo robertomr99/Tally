@@ -4,7 +4,6 @@ import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -21,8 +20,9 @@ import org.junit.runner.RunWith
 
 // E2E enfocado de la feature procesado-ui (spec, T8): pantalla 05 ->
 // "Continuar" -> procesado (mockup 06) con badge del motor REAL y pasos ->
-// resultado de solo lectura con "Revisar ticket" deshabilitado, y back del
-// sistema que vuelve a la pantalla 05 con el Borrador intacto.
+// resultado de solo lectura con "Revisar ticket" habilitado (spec
+// revision-datos), y back del sistema que vuelve a la pantalla 05 con el
+// Borrador intacto.
 //
 // Determinismo (R-PROC3): NO se usa @TestInstallIn para fakes de `TextEngine`
 // porque romperia `ExtraccionNubeRealTest` (resuelve el binding real via
@@ -46,7 +46,7 @@ class ProcesadoFlujoTest {
     val reglas = composeRule
 
     @Test
-    fun procesadoMuestraElBadgeRealYElResultadoSoloLecturaConRevisarDeshabilitado() {
+    fun procesadoMuestraElBadgeRealYElResultadoSoloLecturaConRevisarHabilitado() {
         capturarFoto()
 
         // "Continuar" ya esta cableado al procesado (spec procesado-ui).
@@ -85,14 +85,14 @@ class ProcesadoFlujoTest {
 
         // Escenario 1/5: resultado de SOLO lectura con completitud real
         // ("n/5 campos extraidos", nunca % de confianza) y "Revisar ticket"
-        // deshabilitado hasta revision-datos (U4).
+        // habilitado (spec revision-datos: abre la revision editable).
         composeRule.onNodeWithTag("procesado_completitud").assertIsDisplayed()
         composeRule.onNodeWithTag("procesado_completitud")
             .assertTextContains("/5", substring = true)
         composeRule.onNodeWithTag("procesado_completitud")
             .assertTextContains("campos extra\u00eddos", substring = true)
         composeRule.onNodeWithTag("procesado_revisar").assertIsDisplayed()
-        composeRule.onNodeWithTag("procesado_revisar").assertIsNotEnabled()
+        composeRule.onNodeWithTag("procesado_revisar").assertIsEnabled()
     }
 
     @Test

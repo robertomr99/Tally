@@ -4,12 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
+import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.domain.expenses.entities.datosRevisionInicial
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
+import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +47,11 @@ import kotlinx.coroutines.launch
  * salen el resultado de solo lectura ([CapturaUiState.ExtraccionLista]) o el
  * error honesto ([CapturaUiState.ExtraccionFallida]); cancelar/volver deja el
  * Borrador intacto en la pantalla 05.
+ *
+ * Spec revision-datos (mockup 07): desde el resultado, "Revisar ticket" abre la
+ * revision editable ([CapturaUiState.RevisionDatos]); "Guardar" persiste el
+ * ticket ([CapturaUiState.Guardando] -> [CapturaUiState.Guardado]) y la pantalla
+ * emite el evento de vuelta al listado. Las lineas son de solo lectura.
  */
 sealed interface CapturaUiState {
     data object PermisoPendiente : CapturaUiState
@@ -68,8 +81,7 @@ sealed interface CapturaUiState {
 
     /**
      * Resultado de solo lectura (spec procesado-ui T4): el [TicketExtraido]
-     * validado a la espera de `revision-datos` (edicion/guardado son de otra
-     * feature). El motor del resultado es `extraido.motor`.
+     * validado con completitud de campos, a la espera de "Revisar ticket".
      */
     data class ExtraccionLista(
         val rutaFoto: String,
@@ -88,6 +100,26 @@ sealed interface CapturaUiState {
         val mensaje: String,
     ) : CapturaUiState
 
+    /**
+     * Ticket digitalizado editable (spec revision-datos, mockup 07): la cabecera
+     * corregida ([datos]) sobre la extraccion tal cual ([extraido]; lineas en
+     * solo lectura). [errorGuardado] lleva el motivo real si el guardado fallo
+     * (la UI lo pinta con la paleta `error`); null en la revision normal.
+     */
+    data class RevisionDatos(
+        val rutaFoto: String,
+        val textoCrudo: String,
+        val extraido: TicketExtraido,
+        val datos: DatosRevision,
+        val errorGuardado: String? = null,
+    ) : CapturaUiState
+
+    /** Guardado en curso (breve): el ticket se esta persistiendo en Room. */
+    data object Guardando : CapturaUiState
+
+    /** Ticket persistido; la pantalla emite el evento de vuelta al listado. */
+    data class Guardado(val id: Long) : CapturaUiState
+
     data class Error(val mensaje: String) : CapturaUiState
 }
 
@@ -100,7 +132,7 @@ sealed interface CapturaUiState {
  * [GuardarFotoCapturada] y, a continuacion (spec ocr-mlkit), se reconoce su
  * texto crudo con [ReconocerTextoCrudo] DENTRO del estado `Procesando`. El par
  * (rutaFoto, textoCrudo) vive solo en memoria (el Borrador no se persiste hasta
- * revision-datos). Politica: el OCR vacio o el fallo del motor NUNCA bloquean
+ * pulsar Guardar). Politica: el OCR vacio o el fallo del motor NUNCA bloquean
  * la captura (la foto ya esta en disco).
  *
  * Spec procesado-ui: la extraccion la dispara el usuario ("Continuar") con
@@ -108,8 +140,14 @@ sealed interface CapturaUiState {
  * otra entrada del flujo: `flatMapLatest` cancela la corrutina activa cuando
  * llega una orden nueva (Continuar/Reintentar/Cancelar/Volver) y una
  * [CancellationException] se re-lanza SIEMPRE (nunca se convierte en estado de
- * error ni en resultado; R-PROC4). No se toca `TicketRepository`: esta feature
- * no persiste nada (non-goal; cero datos huerfanos).
+ * error ni en resultado; R-PROC4).
+ *
+ * Spec revision-datos: la edicion de la cabecera vive en [datosRevision]
+ * (entrada del flujo) y "Guardar" es otra orden ([ordenGuardado]); el guardado
+ * corre [GuardarTicket] (dominio) que persiste el ticket con
+ * `TicketRepository.save` (la unica escritura de todo el subflujo). El mapeo
+ * vive en dominio; aqui solo se orquesta. Una [CancellationException] del
+ * guardado tambien se re-lanza (R-REV4).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -117,13 +155,26 @@ class EscanearViewModel @Inject constructor(
     private val guardarFotoCapturada: GuardarFotoCapturada,
     private val reconocerTextoCrudo: ReconocerTextoCrudo,
     private val extraerTicket: ExtraerTicket,
+    private val guardarTicket: GuardarTicket,
     private val photoFileStore: PhotoFileStore,
 ) : ViewModel() {
 
     private val permisoConcedido = MutableStateFlow(false)
     private val entradaCaptura = MutableStateFlow<EntradaCaptura>(EntradaCaptura.Ninguna)
     private val ordenExtraccion = MutableStateFlow<OrdenExtraccion>(OrdenExtraccion.Ninguna)
+
+    /**
+     * Cabecera corregida en la revision (null = no se esta revisando). Es una
+     * entrada reactiva: cada edicion recompone el estado visible.
+     */
+    private val datosRevision = MutableStateFlow<DatosRevision?>(null)
+    private val ordenGuardado = MutableStateFlow<OrdenGuardado>(OrdenGuardado.Ninguna)
     private var intentoExtraccion = 0
+    // Contador del intento de guardado: "Guardar" es un data class con el
+    // intento, de modo que reintentar tras un fallo (sin editar ningun campo)
+    // vuelve a emitir y re-ejecuta el guardado (MutableStateFlow conflaciona
+    // valores iguales).
+    private var intentoGuardado = 0
 
     /**
      * Motor que procesara la extraccion (spec procesado-ui T1/T3): passthrough
@@ -140,11 +191,13 @@ class EscanearViewModel @Inject constructor(
             combine(resultadoDeCaptura(entrada), ordenExtraccion) { captura, orden ->
                 captura to orden
             }.flatMapLatest { (captura, orden) ->
-                extraccionDe(captura, orden).map { extraccion -> captura to extraccion }
+                extraccionDe(captura, orden).flatMapLatest { extraccion ->
+                    flujoDeRevision(captura, extraccion)
+                }
             }
         },
-    ) { permiso, (captura, extraccion) ->
-        estadoDe(permiso, captura, extraccion)
+    ) { permiso, flujo ->
+        estadoDe(permiso, flujo)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
@@ -203,6 +256,71 @@ class EscanearViewModel @Inject constructor(
     }
 
     /**
+     * "Revisar ticket" (resultado, spec revision-datos): abre la revision
+     * editable con la cabecera prefijada por [datosRevisionInicial]. Las lineas
+     * NO se editan (solo lectura; `edicion-lineas` es otra feature).
+     */
+    fun onRevisar() {
+        val actual = estado.value
+        if (actual !is CapturaUiState.ExtraccionLista) return
+        datosRevision.value = datosRevisionInicial(actual.extraido)
+        ordenGuardado.value = OrdenGuardado.Revisar
+    }
+
+    fun onComercioEditado(comercio: String) {
+        actualizarDatos { it.copy(comercio = comercio) }
+    }
+
+    /** Fecha como texto `d/M/yyyy`; un texto no parseable se ignora. */
+    fun onFechaEditada(texto: String) {
+        val fecha = parsearFecha(texto) ?: return
+        actualizarDatos { it.copy(fechaEmision = fecha) }
+    }
+
+    /** Total como texto; coma o punto decimal; un texto no parseable se ignora. */
+    fun onTotalEditado(texto: String) {
+        val total = parsearTotal(texto) ?: return
+        actualizarDatos { it.copy(total = total) }
+    }
+
+    /** Chips de categoria: solo las 6 de la enum fija (CONTEXT.md). */
+    fun onCategoriaElegida(categoria: Categoria) {
+        actualizarDatos { it.copy(categoria = categoria) }
+    }
+
+    /**
+     * "Guardar" (spec revision-datos): persiste el ticket con [GuardarTicket]
+     * (Room via `TicketRepository.save`) y deja el subflujo en [CapturaUiState.Guardando]
+     * -> [CapturaUiState.Guardado]. Los campos vacios NO bloquean (R-REV2).
+     */
+    fun onGuardar() {
+        if (datosRevision.value == null) return
+        ordenGuardado.value = OrdenGuardado.Guardar(++intentoGuardado)
+    }
+
+    /**
+     * Back del sistema (o "Volver") desde la revision: no escribe nada en Room y
+     * vuelve al resultado del procesado con el Borrador intacto (escenario 6).
+     */
+    fun onVolverAlResultado() {
+        datosRevision.value = null
+        ordenGuardado.value = OrdenGuardado.Ninguna
+    }
+
+    /**
+     * Cierre del guardado (la pantalla ya emitio el evento de vuelta al
+     * listado): resetea el subflujo a [CapturaUiState.Encuadre] para que volver a
+     * Escanear muestre la camara limpia y no la revision del ticket guardado
+     * (R-REV3).
+     */
+    fun onGuardadoVisto() {
+        entradaCaptura.value = EntradaCaptura.Ninguna
+        ordenExtraccion.value = OrdenExtraccion.Ninguna
+        datosRevision.value = null
+        ordenGuardado.value = OrdenGuardado.Ninguna
+    }
+
+    /**
      * "Repetir foto" (y volver al encuadre desde Error): descarta la foto y el
      * texto crudo del borrador reemplazados; la foto se borra en disco
      * (best-effort; escenario 7 del spec captura-foto) y el texto desaparece
@@ -219,6 +337,13 @@ class EscanearViewModel @Inject constructor(
             }
         }
         entradaCaptura.value = EntradaCaptura.Ninguna
+    }
+
+    private fun actualizarDatos(transformacion: (DatosRevision) -> DatosRevision) {
+        val actual = datosRevision.value ?: return
+        datosRevision.value = transformacion(actual)
+        // Una edicion deja la revision limpia (borra un posible error de guardado).
+        ordenGuardado.value = OrdenGuardado.Revisar
     }
 
     private fun resultadoDeCaptura(entrada: EntradaCaptura): Flow<CapturaEnProgreso> =
@@ -277,16 +402,87 @@ class EscanearViewModel @Inject constructor(
         }
     }
 
-    private fun estadoDe(
-        permiso: Boolean,
+    /**
+     * Etapa de revision/guardado (spec revision-datos): solo actua cuando la
+     * extraccion ya termino en [ExtraccionEnProgreso.Lista]; combina la
+     * cabecera editada ([datosRevision]) con la orden ([ordenGuardado]). Un
+     * cambio de entrada cancela el guardado en curso (cancelacion estructurada).
+     */
+    private fun flujoDeRevision(
         captura: CapturaEnProgreso,
         extraccion: ExtraccionEnProgreso,
-    ): CapturaUiState = when {
+    ): Flow<FlujoInterno> {
+        if (extraccion !is ExtraccionEnProgreso.Lista) {
+            return flowOf(
+                FlujoInterno(
+                    captura = captura,
+                    extraccion = extraccion,
+                    datos = null,
+                    guardado = GuardadoEnProgreso.Ninguna,
+                )
+            )
+        }
+        return combine(datosRevision, ordenGuardado) { datos, orden -> datos to orden }
+            .flatMapLatest { (datos, orden) ->
+                guardadoDe(captura, extraccion, orden, datos).map { guardado ->
+                    FlujoInterno(
+                        captura = captura,
+                        extraccion = extraccion,
+                        datos = datos,
+                        guardado = guardado,
+                    )
+                }
+            }
+    }
+
+    /**
+     * Guardado del ticket (spec revision-datos): solo la orden `Guardar` sobre
+     * un Borrador vivo escribe en Room, con [GuardarTicket]. Exito -> `Hecho(id)`
+     * (la pantalla navega al listado); fallo -> `Fallido(mensaje)` (la revision
+     * lo muestra con la paleta `error`). La [CancellationException] se re-lanza
+     * SIEMPRE: cancelar el guardado no es un fallo de negocio (R-REV4).
+     */
+    private fun guardadoDe(
+        captura: CapturaEnProgreso,
+        extraccion: ExtraccionEnProgreso.Lista,
+        orden: OrdenGuardado,
+        datos: DatosRevision?,
+    ): Flow<GuardadoEnProgreso> {
+        if (orden !is OrdenGuardado.Guardar) return flowOf(GuardadoEnProgreso.Ninguna)
+        val borrador = captura as? CapturaEnProgreso.Guardada
+            ?: return flowOf(GuardadoEnProgreso.Ninguna)
+        return flow {
+            emit(GuardadoEnProgreso.EnProgreso)
+            val resultado = runCatchingLanzandoCancelacion {
+                guardarTicket(
+                    extraido = extraccion.extraido,
+                    rutaFoto = borrador.rutaFoto,
+                    textoCrudo = borrador.textoCrudo,
+                    datos = datos ?: datosRevisionInicial(extraccion.extraido),
+                )
+            }
+            emit(
+                resultado.fold(
+                    onSuccess = { GuardadoEnProgreso.Hecho(it) },
+                    onFailure = { GuardadoEnProgreso.Fallido(it.message ?: MENSAJE_ERROR_GUARDADO) },
+                )
+            )
+        }
+    }
+
+    private fun estadoDe(permiso: Boolean, flujo: FlujoInterno): CapturaUiState = when {
         !permiso -> CapturaUiState.PermisoPendiente
-        captura is CapturaEnProgreso.Ninguna -> CapturaUiState.Encuadre
-        captura is CapturaEnProgreso.Procesando -> CapturaUiState.Procesando
-        captura is CapturaEnProgreso.Fallida -> CapturaUiState.Error(captura.mensaje)
-        captura is CapturaEnProgreso.Guardada -> when (extraccion) {
+        flujo.captura is CapturaEnProgreso.Ninguna -> CapturaUiState.Encuadre
+        flujo.captura is CapturaEnProgreso.Procesando -> CapturaUiState.Procesando
+        flujo.captura is CapturaEnProgreso.Fallida ->
+            CapturaUiState.Error(flujo.captura.mensaje)
+        flujo.captura is CapturaEnProgreso.Guardada -> estadoDeBorrador(flujo)
+        else -> CapturaUiState.Error("Estado de captura inesperado")
+    }
+
+    private fun estadoDeBorrador(flujo: FlujoInterno): CapturaUiState {
+        val captura = flujo.captura as CapturaEnProgreso.Guardada
+        return when (val extraccion = flujo.extraccion) {
             ExtraccionEnProgreso.Ninguna -> CapturaUiState.Revision(
                 rutaFoto = captura.rutaFoto,
                 textoCrudo = captura.textoCrudo,
@@ -296,18 +492,46 @@ class EscanearViewModel @Inject constructor(
                 rutaFoto = captura.rutaFoto,
                 textoCrudo = captura.textoCrudo,
             )
-            is ExtraccionEnProgreso.Lista -> CapturaUiState.ExtraccionLista(
-                rutaFoto = captura.rutaFoto,
-                textoCrudo = captura.textoCrudo,
-                extraido = extraccion.extraido,
-            )
             is ExtraccionEnProgreso.Fallida -> CapturaUiState.ExtraccionFallida(
                 rutaFoto = captura.rutaFoto,
                 textoCrudo = captura.textoCrudo,
                 mensaje = extraccion.mensaje,
             )
+            is ExtraccionEnProgreso.Lista -> estadoDeRevision(
+                captura = captura,
+                extraido = extraccion.extraido,
+                datos = flujo.datos,
+                guardado = flujo.guardado,
+            )
         }
-        else -> CapturaUiState.Error("Estado de captura inesperado")
+    }
+
+    private fun estadoDeRevision(
+        captura: CapturaEnProgreso.Guardada,
+        extraido: TicketExtraido,
+        datos: DatosRevision?,
+        guardado: GuardadoEnProgreso,
+    ): CapturaUiState = when {
+        guardado is GuardadoEnProgreso.EnProgreso -> CapturaUiState.Guardando
+        guardado is GuardadoEnProgreso.Hecho -> CapturaUiState.Guardado(guardado.id)
+        datos == null -> CapturaUiState.ExtraccionLista(
+            rutaFoto = captura.rutaFoto,
+            textoCrudo = captura.textoCrudo,
+            extraido = extraido,
+        )
+        guardado is GuardadoEnProgreso.Fallido -> CapturaUiState.RevisionDatos(
+            rutaFoto = captura.rutaFoto,
+            textoCrudo = captura.textoCrudo,
+            extraido = extraido,
+            datos = datos,
+            errorGuardado = guardado.mensaje,
+        )
+        else -> CapturaUiState.RevisionDatos(
+            rutaFoto = captura.rutaFoto,
+            textoCrudo = captura.textoCrudo,
+            extraido = extraido,
+            datos = datos,
+        )
     }
 
     /** Entradas del flujo: bytes de captura o fallo de la camara. */
@@ -329,6 +553,18 @@ class EscanearViewModel @Inject constructor(
         data class Reintentar(val intento: Int) : OrdenExtraccion
         data object Cancelar : OrdenExtraccion
         data object Volver : OrdenExtraccion
+    }
+
+    /**
+     * Orden del usuario sobre el guardado (spec revision-datos): `Revisar` abre
+     * la pantalla 07 y `Guardar` persiste. `Ninguna` = fuera de la revision.
+     * `Guardar` lleva el numero de intento para poder re-dispararse aunque el
+     * usuario reintente sin editar (conflacion de `MutableStateFlow`).
+     */
+    private sealed interface OrdenGuardado {
+        data object Ninguna : OrdenGuardado
+        data object Revisar : OrdenGuardado
+        data class Guardar(val intento: Int) : OrdenGuardado
     }
 
     /** Resultado derivado del procesado/guardado de la captura actual. */
@@ -354,15 +590,47 @@ class EscanearViewModel @Inject constructor(
         data class Fallida(val mensaje: String) : ExtraccionEnProgreso
     }
 
+    /** Resultado derivado del guardado del ticket revisado. */
+    private sealed interface GuardadoEnProgreso {
+        data object Ninguna : GuardadoEnProgreso
+        data object EnProgreso : GuardadoEnProgreso
+        data class Hecho(val id: Long) : GuardadoEnProgreso
+        data class Fallido(val mensaje: String) : GuardadoEnProgreso
+    }
+
+    /**
+     * Instantanea del subflujo: captura + extraccion + cabecera editada +
+     * guardado. Es lo que [estadoDe] traduce al estado visible.
+     */
+    private data class FlujoInterno(
+        val captura: CapturaEnProgreso,
+        val extraccion: ExtraccionEnProgreso,
+        val datos: DatosRevision?,
+        val guardado: GuardadoEnProgreso,
+    )
+
     private companion object {
         const val MENSAJE_ERROR_EXTRACCION = "No se pudieron extraer los datos del ticket"
+        const val MENSAJE_ERROR_GUARDADO = "No se pudo guardar el ticket"
+
+        val FORMATO_FECHA_REVISION: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("d/M/yyyy")
+
+        fun parsearFecha(texto: String): LocalDateTime? = try {
+            LocalDate.parse(texto.trim(), FORMATO_FECHA_REVISION).atStartOfDay()
+        } catch (e: DateTimeParseException) {
+            null
+        }
+
+        fun parsearTotal(texto: String): Double? =
+            texto.trim().replace(',', '.').toDoubleOrNull()
     }
 }
 
 /**
  * Como `runCatching`, pero re-lanza SIEMPRE la [CancellationException]
- * (finding Low sesion 014 / R-OCR4 / R-PROC4): cancelar no es un fallo de
- * negocio y no debe convertirse en resultado.
+ * (finding Low sesion 014 / R-OCR4 / R-PROC4 / R-REV4): cancelar no es un fallo
+ * de negocio y no debe convertirse en resultado.
  */
 private inline fun <T> runCatchingLanzandoCancelacion(block: () -> T): Result<T> =
     try {

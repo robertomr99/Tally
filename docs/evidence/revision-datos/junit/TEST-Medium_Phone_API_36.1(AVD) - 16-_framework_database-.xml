@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="22" failures="0" errors="0" skipped="0" time="0.839" timestamp="2026-10-17T17:32:50" hostname="localhost">
+  <testsuite name="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" tests="5" failures="0" errors="0" skipped="0" time="0.116" timestamp="2026-10-17T17:32:50" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":framework:database" />
+    </properties>
+    <testcase name="processDoesNotScaleSmallJpeg" classname="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" time="0.059" />
+    <testcase name="processCropsTheGuidedRegionInsteadOfTheWholeFrame" classname="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" time="0.001" />
+    <testcase name="processBakesExifRotationIntoPixelsAndDropsOrientationTag" classname="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" time="0.028" />
+    <testcase name="fixtureHasExifOrientation6AndLandscapeDims" classname="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" time="0.001" />
+    <testcase name="processScalesLargeJpegWithoutExifTo1280AndDoesNotRotate" classname="com.robertomr.tally.framework.database.CapturedPhotoProcessorTest" time="0.027" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.framework.database.PhotoFileStoreTest" tests="12" failures="0" errors="0" skipped="0" time="0.089" timestamp="2026-10-17T17:32:50" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":framework:database" />
+    </properties>
+    <testcase name="deleteReturnsFalseForBlankPath" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.027" />
+    <testcase name="readReturnsTheStoredBytesGivenAbsolutePath" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="readReturnsNullForMissingFileWithoutCrashing" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.026" />
+    <testcase name="deleteReturnsFalseForMissingFileWithoutCrashing" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="saveGeneratesUniqueRelativeNamesPerCall" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="readReturnsTheStoredBytesGivenRelativeName" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.002" />
+    <testcase name="savedPhotoSurvivesProcessDeath" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="deleteRemovesExistingFileGivenAbsolutePath" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="deleteRemovesExistingFileGivenRelativeName" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="saveWritesTheFileUnderFotosAndReturnsRelativeName" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.026" />
+    <testcase name="saveThenDeleteRemovesTheFile" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+    <testcase name="readReturnsNullForBlankPath" classname="com.robertomr.tally.framework.database.PhotoFileStoreTest" time="0.001" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.framework.database.TicketDaoTest" tests="5" failures="0" errors="0" skipped="0" time="0.21" timestamp="2026-10-17T17:32:50" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":framework:database" />
+    </properties>
+    <testcase name="deleteByIdRemovesTicketAndLinesInCascade" classname="com.robertomr.tally.framework.database.TicketDaoTest" time="0.103" />
+    <testcase name="upsertReplacesTheWholeLineSetOnResave" classname="com.robertomr.tally.framework.database.TicketDaoTest" time="0.028" />
+    <testcase name="observeByDateRangeFiltersByEmissionDateAndEmitsOnSave" classname="com.robertomr.tally.framework.database.TicketDaoTest" time="0.077" />
+    <testcase name="upsertSavesTicketWithLinesAsAggregate" classname="com.robertomr.tally.framework.database.TicketDaoTest" time="0.001" />
+    <testcase name="deleteByIdIsNoOpForUnknownId" classname="com.robertomr.tally.framework.database.TicketDaoTest" time="0.001" />
+  </testsuite>
+</testsuites>

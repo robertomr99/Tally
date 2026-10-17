@@ -21,7 +21,11 @@ class FakeTicketDataSource : TicketDataSource {
     private val tickets = MutableStateFlow<List<Ticket>>(emptyList())
     private var nextId = 1L
 
+    /** Si se asigna, [save] lo lanza (p. ej. CancellationException). */
+    var saveError: Throwable? = null
+
     override suspend fun save(ticket: Ticket): Long {
+        saveError?.let { throw it }
         val id = if (ticket.id == 0L) nextId++ else ticket.id
         val saved = ticket.copy(id = id)
         tickets.update { current -> current.filterNot { it.id == id } + saved }

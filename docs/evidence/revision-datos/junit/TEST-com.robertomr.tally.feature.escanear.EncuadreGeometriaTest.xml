@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.feature.escanear.EncuadreGeometriaTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-17T17:38:12.492Z" hostname="DESKTOP-O5DBCC6" time="0.006">
+  <properties/>
+  <testcase name="zonaIsCenteredAndCapsWidthAndHeight" classname="com.robertomr.tally.feature.escanear.EncuadreGeometriaTest" time="0.002"/>
+  <testcase name="zonaUsesMarginsWhenWidthCapDoesNotApply" classname="com.robertomr.tally.feature.escanear.EncuadreGeometriaTest" time="0.0"/>
+  <testcase name="rectNormalizadoMapsZonaToUnitCoordinates" classname="com.robertomr.tally.feature.escanear.EncuadreGeometriaTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

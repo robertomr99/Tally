@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-17T17:31:47.917Z" hostname="DESKTOP-O5DBCC6" time="0.008">
+  <properties/>
+  <testcase name="dimensionsAtOrBelowLimitAreNotScaled" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.001"/>
+  <testcase name="scaledLongSideIsExactlyTheLimitAndProportionIsPreserved" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="viewAspectMatchingImageIsIdentity" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.002"/>
+  <testcase name="sampleSizeIsPowerOfTwoThatDoesNotUndershootTarget" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="centeredRectKeepsRatioWhenAspectsMatch" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="widerImageIsCroppedHorizontallyByFillCenter" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="mirroredAndUnknownOrientationsFallBackToZeroDegrees" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="tallerImageIsCroppedVerticallyByFillCenter" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.001"/>
+  <testcase name="exifOrientationMapsToClockwiseDegrees" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <testcase name="dimensionsAboveLimitScaleLongSideTo1280KeepingRatio" classname="com.robertomr.tally.framework.database.photo.PhotoPipelineMathTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -9,14 +9,13 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `revision-datos` — planificada en la sesión 024
-  (spec lista en `docs/specs/revision-datos.md`, T-series; deps `procesado-ui` y
-  `persistencia-room` aceptadas), lista para `feature-implementer`. Después,
-  `descarga-modelo`/`extraccion-local`/`edicion-lineas`. `captura-recorte-encuadre`
-  quedó **`accepted`** en la sesión 023. Desviación registrada 2026-10-16: 4 fotos
-  reales en vez de 5. Pendiente operativo: reintentar la cancelación FÍSICA de
-  `procesado-ui` (verificación 2) cuando se restablezca la cuota free tier de
-  Gemini (agotada 2026-10-17).
+- Current next ready feature: `edicion-lineas` (dep `revision-datos` aceptada) o
+  `descarga-modelo`/`extraccion-local`; spec pendiente. `revision-datos` quedó
+  **`accepted`** en la sesión 026 (tras repair M1/L1-L3 y re-validación). `captura-recorte-encuadre` quedó `accepted`
+  en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
+  Pendiente operativo: reintentar la cancelación FÍSICA de `procesado-ui`
+  (verificación 2) cuando se restablezca la cuota free tier de Gemini (agotada
+  2026-10-17).
 - Current blocker: ninguno bloqueante. `procesado-ui` en `accepted` con la
   cancelación física pendiente por cuota Gemini agotada (reintentar al
   restablecerse). Pendientes operativos menores: revisión visual humana de
@@ -26,7 +25,12 @@
   debug) en Firebase Console y borrar `app/appcheck-debug-token.txt` (finding Low
   sesión 019); 2 findings Low de la validación de `extraccion-nube` (envoltorio de
   errores de `GeminiCloudEngine`) como mantenimiento no bloqueante.
-- Last verified at: 2026-10-17 (sesión 023: `captura-recorte-encuadre`
+- Last verified at: 2026-10-17 (sesión 026: `revision-datos` **accepted** por
+  feature-validator (ronda 2, veredicto `accept`) tras validación 1 `revise` por
+  **M1** — repair aplicado (reintento de Guardar ya persiste: `Guardar` con nº de
+  intento) + L1/L2/L3; `EscanearViewModelTest` 23/23; E2E `:app` 9/9; evidencia
+  visual del mockup 07; el emulador se redimensionó a 12G; ver sesión 026)
+- Previous verified at: 2026-10-17 (sesión 023: `captura-recorte-encuadre`
   **accepted** por feature-validator — veredicto `accept`; implementada con
   **Enfoque B** (recorte al recuadro en el pipeline); JVM (EncuadreGeometriaTest
   3/3, PhotoPipelineMathTest 10/10, GuardarFotoCapturadaTest 4/4, EscanearViewModelTest
@@ -34,7 +38,7 @@
   :app E2E 8/8) en verde; T6 físico HECHO en la Tab S9+ (foto 819x1280/0,64 vs
   960x1280/0,75; 0 EXIF; extracción nube correcta 35,30 €); 5 findings Low no
   bloqueantes; ver sesión 023)
-- Previous verified at: 2026-10-17 (sesión 022: modelo de nube cambiado a
+- Earlier verified at: 2026-10-17 (sesión 022: modelo de nube cambiado a
   `gemini-flash-lite-latest` (lite) — `ExtraccionNubeRealTest` **5/5** en
   `emulator-5554` con los 4 totales correctos y en 9,2 s (~9× más rápido);
   hallazgo de UX del encuadre documentado)
@@ -1838,3 +1842,100 @@
     alguna no encaja.
 - Next best step: `feature-implementer` sobre `docs/specs/revision-datos.md` y,
   después, validación independiente con `feature-validator`.
+
+### Session 025
+
+- Date: 2026-10-17
+- Goal: Implementar `revision-datos` (spec) con `feature-implementer`. El
+  implementer se interrumpio a mitad; la sesion la continuo el orquestador.
+- Completed:
+  - Codigo: `DatosRevision` (holder de cabecera corregida) y caso de uso
+    `GuardarTicket` (dominio: mapea `TicketExtraido`→`Ticket`/`Linea` y persiste
+    con `TicketRepository.save`, `@Transaction` ya en `TicketDao.upsert`);
+    `RevisionDatosContent.kt` (mockup 07: recibo, badge de motor, campos
+    comercio/fecha/total, chips de las 6 categorias, lineas solo lectura, Guardar);
+    estados `RevisionDatos`/`Guardando`/`Guardado` + eventos en `EscanearViewModel`;
+    cableado (`ProcesadoContent` "Revisar ticket" habilitado con `onRevisar`,
+    `EscanearScreen(onGastoGuardado)` + BackHandler, `TallyApp` navega a la pestana
+    Gastos sin ruta nueva). Reseteo del subflujo a Encuadre tras Guardar (R-REV3);
+    `CancellationException` re-lanzada (R-REV4).
+  - Gates en verde: JVM `GuardarTicketTest 5/5` + `EscanearViewModelTest 21/21`
+    (+5) + dominio (TicketRepositoryTest 6/6, etc.); instrumentado
+    `:framework:database:connectedDebugAndroidTest 22/22` (TicketDaoTest 5/5);
+    E2E `:app` 9/9 = CapturaFlujoTest 3 + ProcesadoFlujoTest 2 (`procesado_revisar`
+    habilitado) + RevisionDatosFlujoTest 1 (resultado→Revisar→chip→Guardar→
+    `pantalla_gastos`) + NavigationTest 3. `git diff init.sh` vacio; `schemas/` sin
+    diff; 0 versiones literales fuera del toml. (Nota: un primer intento de E2E
+    fallo por pasar `-P...class=` a `:framework:database` por error del orquestador;
+    se separo y quedo en verde.)
+  - Docs: `docs/specs/revision-datos.md` (T1-T7 `[x]`), `docs/architecture.md`
+    (seccion nueva "Revision y guardado (pantalla 07)"), `feature_list.json`
+    (`passing` + evidence), evidencia en `docs/evidence/revision-datos/junit/`.
+- Verification run: ver "Completed".
+- Evidence captured: JUnit XML en `docs/evidence/revision-datos/junit/`; evidencia
+  en `feature_list.json`.
+- Files or artifacts updated: `domain/expenses/.../entities/DatosRevision.kt` (nuevo),
+  `usecases/GuardarTicket.kt` (nuevo) + test, `feature/escanear/.../RevisionDatosContent.kt`
+  (nuevo), `EscanearViewModel.kt` + test, `EscanearScreen.kt`, `ProcesadoContent.kt`,
+  `app/.../navigation/TallyApp.kt`, `app/src/androidTest/.../RevisionDatosFlujoTest.kt`
+  (nuevo), `ProcesadoFlujoTest.kt`, `test/unit/.../FakeTicketDataSource.kt`,
+  `docs/specs/revision-datos.md`, `docs/architecture.md`, `feature_list.json`,
+  `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - **T-fisico opcional PENDIENTE** (no bloqueante; el spec lo marca opcional): Tab
+    S9+ con ticket real captura→Continuar→Revisar→corregir→Guardar→`run-as ls`.
+  - `revision-datos` queda en `passing`; `accepted` exige validacion independiente
+    (`feature-validator`) que persiste el orquestador.
+  - "Ticket en el listado" no tiene listado real (`listado-gastos` es posterior):
+    verificado por repositorio (JVM) + E2E de navegacion a la pestana Gastos.
+- Next best step: validacion independiente de `revision-datos` con
+  `feature-validator`; despues, `edicion-lineas`/`descarga-modelo`/`extraccion-local`.
+
+### Session 026
+
+- Date: 2026-10-17
+- Goal: Validacion independiente de `revision-datos` con `feature-validator` y
+  repair de los hallazgos.
+- Completed:
+  - Validacion 1 (`feature-validator`): veredicto **`revise`** por un defecto real
+    **M1** y 5 findings Low (L1-L5). M1: reintentar "Guardar" tras un fallo era un
+    no-op silencioso (la orden `OrdenGuardado.Guardar` no cambiaba y
+    `MutableStateFlow` conflaciona valores iguales). El validador lo confirmo
+    empiricamente con un probe temporal (eliminado).
+  - **Repair**:
+    - **M1**: `OrdenGuardado.Guardar` pasa a `data class Guardar(val intento: Int)`
+      + contador `intentoGuardado`; `onGuardar()` reintenta aunque no se edite.
+      Test nuevo `reintentarTrasFalloGuardaSinEditarNadaPersisteElTicket`.
+    - **L1**: test nuevo `editarFechaYTotalActualizaLaCabeceraEIgnoraTextoInvalido`.
+    - **L2**: `ProcesadoFlujoTest` renombrado a `...ConRevisarHabilitado`.
+    - **L3**: evidencia visual del mockup 07 capturada en `emulator-5554` sin nube
+      (OCR blank -> extraccion vacia -> revision manual): `mockup07-revision.png` +
+      `-uia.xml` y `mockup07-tras-guardar-gastos.png` + `-uia.xml`.
+    - L4/L5 no bloqueantes (L4 = mejora semantica de nombre; L5 se acepta).
+  - Incidencia operativa: el emulador se quedo sin almacenamiento (APK debug
+    180 MB; `/data` al 91%). Autorizado por el usuario, se paro el emulador, se
+    subio `disk.dataPartition.size` de 6G a 12G en `config.ini` y se arranco con
+    `-wipe-data` (AVD de pruebas). Quedo con ~11G libres.
+  - Re-verificacion en verde: `EscanearViewModelTest` **23/23** (0 fallos);
+    `assembleDebug testDebugUnitTest` BUILD SUCCESSFUL; E2E `:app` **9/9**
+    (`RevisionDatosFlujoTest` 1/1 + `ProcesadoFlujoTest` 2/2 renombrado +
+    `CapturaFlujoTest` 3/3 + `NavigationTest` 3/3).
+  - Docs/estado: `docs/specs/revision-datos.md` (seccion "Repair y Validacion"
+    + Validator Checklist `[x]`), `feature_list.json` (evidence del repair +
+    notas), evidencia en `docs/evidence/revision-datos/`.
+- Verification run: ver "Completed".
+- Evidence captured: `docs/evidence/revision-datos/mockup07-*.png`/`-uia.xml`;
+  JUnit XML actualizados (`EscanearViewModelTest` 23/23; `:app` 9/9).
+- Files or artifacts updated: `feature/escanear/.../EscanearViewModel.kt` (fix M1),
+  `feature/escanear/src/test/.../EscanearViewModelTest.kt` (+2 tests),
+  `app/src/androidTest/.../ProcesadoFlujoTest.kt` (rename),
+  `docs/specs/revision-datos.md`, `feature_list.json`, `docs/evidence/revision-datos/`,
+  `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - `revision-datos` → **`accepted`**: re-validacion (ronda 2) con
+    `feature-validator` -> `accept` (M1 confirmado resuelto con probe empirico;
+    gates re-ejecutados en verde).
+  - T-fisico opcional pendiente (no bloqueante).
+  - L4/L5 no bloqueantes (nombre de evento; back bloqueado durante Guardando).
+- Next best step: planificar/implementar `edicion-lineas` (dep `revision-datos`
+  accepted) o `descarga-modelo`/`extraccion-local`; y commit/push del árbol.

@@ -44,7 +44,15 @@ fun TallyApp() {
         ) {
             composable(TallyRoute.Resumen.route) { ResumenScreen() }
             composable(TallyRoute.Gastos.route) { GastosScreen() }
-            composable(TallyRoute.Escanear.route) { EscanearScreen() }
+            composable(TallyRoute.Escanear.route) {
+                // Tras Guardar (spec revision-datos) se vuelve al listado: la
+                // pestaña Gastos es el placeholder hasta listado-gastos. Sin
+                // ruta nueva; el callback lo cablea :app (la pantalla no recibe
+                // el NavController).
+                EscanearScreen(
+                    onGastoGuardado = { navController.navigateTo(BottomBarDestino.Gastos) },
+                )
+            }
         }
     }
 }

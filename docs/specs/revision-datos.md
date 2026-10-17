@@ -295,26 +295,26 @@ del procesado con el Borrador intacto.
 
 ## Implementation Tasks
 
-- [ ] T1 Dominio: holder de campos corregidos + `GuardarTicket` (mapeo y
+- [x] T1 Dominio: holder de campos corregidos + `GuardarTicket` (mapeo y
       `TicketRepository.save`) + `GuardarTicketTest` (vacío, con líneas, ruta foto).
-- [ ] T2 VM: `CapturaUiState.RevisionDatos`/`Guardando`/`Guardado`,
+- [x] T2 VM: `CapturaUiState.RevisionDatos`/`Guardando`/`Guardado`,
       `datosRevisionInicial(extraido)` (fecha hoy, total 0.0), eventos
       (`onRevisar`, edición de campos, `onCategoriaElegida`, `onGuardar`,
       `onVolverALaFoto`, `onGuardadoVisto`); `CancellationException` re-lanzada.
-- [ ] T3 UI `RevisionDatosContent.kt` (mockup 07 normativo): recibo, badge de
+- [x] T3 UI `RevisionDatosContent.kt` (mockup 07 normativo): recibo, badge de
       motor, campos editables comercio/fecha/total, chips de las 6 categorías,
       líneas solo lectura, Guardar; sin decoración ficticia.
-- [ ] T4 Cableado: `ProcesadoContent` habilita "Revisar ticket" con `onRevisar`;
+- [x] T4 Cableado: `ProcesadoContent` habilita "Revisar ticket" con `onRevisar`;
       `EscanearScreen` renderiza los estados nuevos y emite `onGastoGuardado`;
       `TallyApp` navega a la pestaña Gastos (sin ruta nueva); back = volver sin
       guardar.
-- [ ] T5 Tests JVM: `EscanearViewModelTest` (revisar→editar→guardar, campos
+- [x] T5 Tests JVM: `EscanearViewModelTest` (revisar→editar→guardar, campos
       vacíos, categoría de la enum, volver sin guardar sin escribir en Room) +
       `GuardarTicketTest`.
-- [ ] T6 E2E `RevisionDatosFlujoTest` (resultado → Revisar → chip de categoría →
+- [x] T6 E2E `RevisionDatosFlujoTest` (resultado → Revisar → chip de categoría →
       Guardar → `pantalla_gastos`) + `ProcesadoFlujoTest` (`procesado_revisar`
       habilitado).
-- [ ] T7 Cierre: `assembleDebug testDebugUnitTest` + suite instrumentada; búsquedas
+- [x] T7 Cierre: `assembleDebug testDebugUnitTest` + suite instrumentada; búsquedas
       (0 decoración ficticia del mockup 07, 0 versiones literales fuera del toml,
       `git diff init.sh` vacío, `schemas/` sin diff); `docs/architecture.md`;
       evidencia en `docs/evidence/revision-datos/`.
@@ -396,19 +396,63 @@ del procesado con el Borrador intacto.
 - **U9 — Dispositivo físico**: DEFAULT = Tab S9+ `SM-X810` (precedente sesiones
   012-013/018/021) si se hace la verificación física; `emulator-5554` para el E2E.
 
+## Repair y Validación (2026-10-17)
+
+- **Validación 1 (`feature-validator`)**: veredicto `revise` por un defecto real
+  **M1** — reintentar "Guardar" tras un fallo era un no-op silencioso (la orden
+  `OrdenGuardado.Guardar` no cambiaba y `MutableStateFlow` conflaciona valores
+  iguales, así que el flujo interior no se reiniciaba). Hallazgos Low: L1 (sin test
+  de `onFechaEditada`/`onTotalEditado`), L2 (nombre de test desincronizado en
+  `ProcesadoFlujoTest`), L3 (sin evidencia visual de UI del mockup 07), L4 (el
+  evento se llama `onVolverAlResultado`, más correcto que el `onVolverALaFoto` del
+  spec), L5 (`Guardando` bloquea el back).
+- **Repair aplicado**:
+  - **M1**: `OrdenGuardado.Guardar` pasa de `object` a `data class Guardar(val intento: Int)`
+    con un contador (`intentoGuardado`); `onGuardar()` reintenta aunque no se edite
+    ningún campo. Test nuevo `reintentarTrasFalloGuardaSinEditarNadaPersisteElTicket`.
+  - **L1**: test nuevo `editarFechaYTotalActualizaLaCabeceraEIgnoraTextoInvalido`.
+  - **L2**: `ProcesadoFlujoTest` renombrado a `...ConRevisarHabilitado` (+ comentario).
+  - **L3**: evidencia visual capturada en `emulator-5554` (sin nube: OCR blank →
+    extracción vacía → revisión manual): `mockup07-revision.png` +
+    `mockup07-revision-uia.xml` (cabecera + chips de las 6 categorías + Guardar) y
+    `mockup07-tras-guardar-gastos.png` + `mockup07-tras-guardar-uia.xml` (pestaña
+    Gastos tras Guardar). `run-as` no aplica en emulador (foto vinculada; la
+    persistencia la cubren `TicketDaoTest` + `GuardarTicketTest`).
+  - L4/L5 no bloqueantes: L4 es una mejora semántica (el spec citaba un nombre
+    provisional); L5 se acepta por lo breve del guardado.
+- **Re-verificación**: `EscanearViewModelTest` **23/23** (0 fallos); `assembleDebug
+  testDebugUnitTest` verde; E2E `:app` **9/9** (`RevisionDatosFlujoTest` 1/1 +
+  `ProcesadoFlujoTest` 2/2 renombrado + `CapturaFlujoTest` 3/3 + `NavigationTest`
+  3/3). Nota operativa: el emulador se quedó sin espacio (APK debug 180 MB); se
+  redimensionó su partición de datos (6G→12G, `-wipe-data`, autorizado por el
+  usuario) para poder re-ejecutar el E2E.
+
 ## Validator Checklist
 
-- [ ] Implementation stays within this feature's scope (sin edición de líneas, sin
+- [x] Implementation stays within this feature's scope (sin edición de líneas, sin
       reintento/cambio de motor, sin listado real, sin módulos/rutas/dependencias
       nuevas).
-- [ ] Acceptance scenarios 1-6 pass.
-- [ ] Verification evidence is present (JUnit XML + capturas/uiautomator; `run-as`
+- [x] Acceptance scenarios 1-6 pass.
+- [x] Verification evidence is present (JUnit XML + capturas/uiautomator; `run-as`
       si hubo físico).
-- [ ] E2E enfocado `RevisionDatosFlujoTest` añadido/actualizado (feature con flujo
+- [x] E2E enfocado `RevisionDatosFlujoTest` añadido/actualizado (feature con flujo
       de usuario y harness disponibles).
-- [ ] `feature_list.json` y `PROGRESS.md` actualizados correctamente.
-- [ ] Mapeo `TicketExtraido`→`Ticket`/`Linea` en dominio (no en la UI) y
+- [x] `feature_list.json` y `PROGRESS.md` actualizados correctamente.
+- [x] Mapeo `TicketExtraido`→`Ticket`/`Linea` en dominio (no en la UI) y
       `@Transaction` sin cambios (regresión `TicketDaoTest`).
-- [ ] Sin decoración ficticia del mockup 07; 0 versiones literales fuera de
+- [x] Sin decoración ficticia del mockup 07; 0 versiones literales fuera de
       `gradle/libs.versions.toml`; `init.sh`/`AGENTS.md`/`build-logic/` sin diffs.
-- [ ] No unrelated product behavior or extra feature work was added.
+- [x] No unrelated product behavior or extra feature work was added.
+
+### Validator Verdict (ronda 2, 2026-10-17)
+
+- Veredicto: **accept** (feature-validator). Validación 1 = `revise` (M1); tras el
+  repair, la ronda 2 confirma **M1 resuelto** (probe empírico: al neutralizar el fix
+  el test `reintentarTrasFalloGuardaSinEditarNadaPersisteElTicket` falla) y regenera
+  los gates en verde (`EscanearViewModelTest` 23/23, `GuardarTicketTest` 5/5,
+  `:framework:database` 22/22, `:app` 9/9). L1/L2/L3 resueltos.
+- Findings Low residuales no bloqueantes: L4 (nombre de evento `onVolverAlResultado`
+  vs el `onVolverALaFoto` citado en el spec; el del código es más correcto), L5
+  (`Guardando` bloquea el back) y fragilidad de orden pre-existente en
+  `CapturaFlujoTest.denegadoMuestraEstadoInAppSinCrash` (SKIP si otra clase ya
+  concedió CAMERA; no es falso PASS).

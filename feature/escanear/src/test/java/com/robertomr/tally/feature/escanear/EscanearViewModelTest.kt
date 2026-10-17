@@ -3,11 +3,14 @@ package com.robertomr.tally.feature.escanear
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.robertomr.tally.domain.expenses.data.CropRegion
+import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
+import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
 import com.robertomr.tally.test.unit.CoroutineTestRule
@@ -15,8 +18,11 @@ import com.robertomr.tally.test.unit.FakeOcrEngine
 import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakePhotoProcessor
 import com.robertomr.tally.test.unit.FakeTextEngine
+import com.robertomr.tally.test.unit.FakeTicketDataSource
+import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -58,10 +64,13 @@ class EscanearViewModelTest {
             motor = Motor.NUBE,
         ),
     )
+    private val ticketDataSource = FakeTicketDataSource()
+    private val repository = TicketRepository(ticketDataSource, store)
     private val viewModel = EscanearViewModel(
         guardarFotoCapturada = GuardarFotoCapturada(processor, store),
         reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
         extraerTicket = ExtraerTicket(textEngine),
+        guardarTicket = GuardarTicket(repository),
         photoFileStore = store,
     )
 
@@ -419,13 +428,226 @@ class EscanearViewModelTest {
             guardarFotoCapturada = GuardarFotoCapturada(processor, store),
             reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
             extraerTicket = ExtraerTicket(FakeTextEngine(motor = Motor.LOCAL)),
+            guardarTicket = GuardarTicket(repository),
             photoFileStore = store,
         )
         assertEquals(Motor.LOCAL, local.motor)
     }
 
-    /**
-     * Espera con Turbine hasta el estado indicado, saltandose los intermedios
+    // --- Revision y guardado (spec revision-datos) ---
+
+    @Test
+    fun revisarEditaLaCabeceraYGuardarPersisteElTicketEnRoom() = runTest {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+
+        viewModel.estado.test {
+            skipItems(1) // Revision (pantalla 05)
+
+            viewModel.onContinuar()
+            awaitHastaQue("ExtraccionLista") { it is CapturaUiState.ExtraccionLista }
+
+            // "Revisar ticket" abre la revision editable con la cabecera
+            // prefijada de la extraccion.
+            viewModel.onRevisar()
+            val revision = awaitHastaQue("RevisionDatos") {
+                it is CapturaUiState.RevisionDatos
+            } as CapturaUiState.RevisionDatos
+            assertEquals(textEngine.result, revision.extraido)
+
+            viewModel.onComercioEditado("TIENDA X")
+            awaitHastaQue("comercio editado") {
+                it is CapturaUiState.RevisionDatos && it.datos.comercio == "TIENDA X"
+            }
+            viewModel.onCategoriaElegida(Categoria.HOGAR)
+            val conCategoria = awaitHastaQue("categoria HOGAR") {
+                it is CapturaUiState.RevisionDatos && it.datos.categoria == Categoria.HOGAR
+            } as CapturaUiState.RevisionDatos
+            assertEquals(Categoria.HOGAR, conCategoria.datos.categoria)
+
+            viewModel.onGuardar()
+            awaitHastaQue("Guardado") { it is CapturaUiState.Guardado }
+        }
+
+        // Se persiste UN ticket con la cabecera corregida y el resto del Borrador.
+        val ticket = ticketsGuardados().single()
+        assertEquals("TIENDA X", ticket.comercio)
+        assertEquals(Categoria.HOGAR, ticket.categoria)
+        assertEquals(35.30, ticket.total, 0.0)
+        assertEquals(textEngine.result?.motor, ticket.motor)
+        assertEquals("fotos/captura_test.jpg", ticket.rutaFoto)
+        assertEquals("MERCADONA\nTOTAL 12,34", ticket.textoCrudoOcr)
+        assertTrue(ticket.lineas.isNotEmpty())
+    }
+
+    @Test
+    fun guardarSinRellenarNadaPersisteConLosDefaults() = runTest {
+        engine.result = "" // OCR vacio (foto ilegible): extraccion vacia
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        assertEquals("", esperarRevision().textoCrudo)
+        val antes = LocalDateTime.now()
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+            awaitHastaQue("ExtraccionLista") { it is CapturaUiState.ExtraccionLista }
+
+            viewModel.onRevisar()
+            val revision = awaitHastaQue("RevisionDatos") {
+                it is CapturaUiState.RevisionDatos
+            } as CapturaUiState.RevisionDatos
+            // Escenario 2: defaults sin bloquear (comercio "", fecha hoy,
+            // total 0.0, categoria OTROS).
+            assertEquals("", revision.datos.comercio)
+            assertEquals(0.0, revision.datos.total, 0.0)
+            assertEquals(Categoria.OTROS, revision.datos.categoria)
+            assertTrue(!revision.datos.fechaEmision.isBefore(antes))
+
+            viewModel.onGuardar()
+            awaitHastaQue("Guardado") { it is CapturaUiState.Guardado }
+        }
+
+        val ticket = ticketsGuardados().single()
+        assertEquals("", ticket.comercio)
+        assertEquals(0.0, ticket.total, 0.0)
+        assertEquals(Categoria.OTROS, ticket.categoria)
+        assertTrue(ticket.lineas.isEmpty())
+        assertEquals(Motor.NUBE, ticket.motor)
+        assertEquals("fotos/captura_test.jpg", ticket.rutaFoto)
+    }
+
+    @Test
+    fun volverAlResultadoSinGuardarNoEscribeEnRoom() = runTest {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+            awaitHastaQue("ExtraccionLista") { it is CapturaUiState.ExtraccionLista }
+
+            viewModel.onRevisar()
+            awaitHastaQue("RevisionDatos") { it is CapturaUiState.RevisionDatos }
+
+            // Escenario 6: back (o "Volver") no escribe nada y vuelve al
+            // resultado con el Borrador intacto.
+            viewModel.onVolverAlResultado()
+            val deVuelta = awaitHastaQue("ExtraccionLista de vuelta") {
+                it is CapturaUiState.ExtraccionLista
+            }
+            assertTrue(deVuelta is CapturaUiState.ExtraccionLista)
+        }
+
+        assertTrue("nada debe persistirse al volver", ticketsGuardados().isEmpty())
+        assertTrue("la foto no se borra al volver", store.deletedPaths.isEmpty())
+    }
+
+    @Test
+    fun trasGuardarElSubflujoSeReseteaAEncuadre() = runTest {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        viewModel.onContinuar()
+        esperarEstado { it is CapturaUiState.ExtraccionLista }
+        viewModel.onRevisar()
+        esperarEstado { it is CapturaUiState.RevisionDatos }
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+
+        // La pantalla emite el evento y resetea el subflujo (R-REV3): volver a
+        // Escanear debe mostrar la camara limpia, no la revision del guardado.
+        viewModel.onGuardadoVisto()
+
+        assertEquals(CapturaUiState.Encuadre, esperarEstado { it is CapturaUiState.Encuadre })
+    }
+
+    @Test
+    fun guardarFallidoVuelveALaRevisionConElMotivoReal() = runTest {
+        ticketDataSource.saveError = IllegalStateException("disco lleno")
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+            awaitHastaQue("ExtraccionLista") { it is CapturaUiState.ExtraccionLista }
+            viewModel.onRevisar()
+            awaitHastaQue("RevisionDatos") { it is CapturaUiState.RevisionDatos }
+
+            viewModel.onGuardar()
+            val fallo = awaitHastaQue("RevisionDatos con error") {
+                it is CapturaUiState.RevisionDatos && it.errorGuardado != null
+            } as CapturaUiState.RevisionDatos
+            assertEquals("disco lleno", fallo.errorGuardado)
+        }
+
+        assertTrue(ticketsGuardados().isEmpty())
+    }
+
+    @Test
+    fun reintentarTrasFalloGuardaSinEditarNadaPersisteElTicket() = runTest {
+        ticketDataSource.saveError = IllegalStateException("disco lleno")
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+
+        viewModel.estado.test {
+            skipItems(1)
+
+            viewModel.onContinuar()
+            awaitHastaQue("ExtraccionLista") { it is CapturaUiState.ExtraccionLista }
+            viewModel.onRevisar()
+            awaitHastaQue("RevisionDatos") { it is CapturaUiState.RevisionDatos }
+
+            viewModel.onGuardar()
+            awaitHastaQue("fallo de guardado") {
+                it is CapturaUiState.RevisionDatos && it.errorGuardado != null
+            }
+
+            // Se arregla el problema y se reintenta SIN editar ningun campo: el
+            // segundo "Guardar" debe re-dispararse (no un no-op silencioso).
+            ticketDataSource.saveError = null
+            viewModel.onGuardar()
+            awaitHastaQue("Guardado en el reintento") { it is CapturaUiState.Guardado }
+        }
+
+        assertEquals(1, ticketsGuardados().size)
+    }
+
+    @Test
+    fun editarFechaYTotalActualizaLaCabeceraEIgnoraTextoInvalido() = runTest {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        viewModel.onContinuar()
+        esperarEstado { it is CapturaUiState.ExtraccionLista }
+        viewModel.onRevisar()
+        esperarEstado { it is CapturaUiState.RevisionDatos }
+
+        viewModel.onFechaEditada("3/10/2026")
+        viewModel.onTotalEditado("12,34")
+        val editada = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.total == 12.34
+        } as CapturaUiState.RevisionDatos
+        assertEquals(LocalDate.of(2026, 10, 3), editada.datos.fechaEmision.toLocalDate())
+
+        // Texto no parseable: se ignora y la cabecera no cambia.
+        viewModel.onFechaEditada("no es fecha")
+        viewModel.onTotalEditado("abc")
+        val igual = esperarEstado { it is CapturaUiState.RevisionDatos } as CapturaUiState.RevisionDatos
+        assertEquals(12.34, igual.datos.total, 0.0)
+        assertEquals(LocalDate.of(2026, 10, 3), igual.datos.fechaEmision.toLocalDate())
+    }
+
+    /** Espera con Turbine hasta el estado indicado, saltandose los intermedios
      * (p. ej. `ProcesandoExtraccion` cuando la extraccion termina rapido y el
      * estado intermedio puede llegar o no por conflation).
      */
@@ -469,4 +691,8 @@ class EscanearViewModelTest {
             Thread.sleep(10)
         }
     }
+
+    /** Tickets persistidos (via el repositorio, como los observara el listado). */
+    private suspend fun ticketsGuardados(): List<Ticket> =
+        repository.observeByDateRange(LocalDate.MIN, LocalDate.MAX).first()
 }

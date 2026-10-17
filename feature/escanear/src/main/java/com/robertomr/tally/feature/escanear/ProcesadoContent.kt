@@ -140,14 +140,14 @@ fun ProcesandoExtraccionContent(
 
 /**
  * Resultado de solo lectura (spec procesado-ui T4): los datos del
- * [TicketExtraido] tal cual salieron del motor (sin editar; edicion y guardado
- * son de `revision-datos`) + completitud de campos real + "Revisar ticket"
- * deshabilitado hasta `revision-datos` (patrón de "Continuar" en captura-foto).
- * La salida de este estado es back del sistema (orden "Volver" al Borrador).
+ * [TicketExtraido] tal cual salieron del motor + completitud de campos real +
+ * "Revisar ticket", que abre la revision editable (spec revision-datos, mockup
+ * 07). La salida de este estado es back del sistema (orden "Volver" al Borrador).
  */
 @Composable
 fun ExtraccionListaContent(
     extraido: TicketExtraido,
+    onRevisar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -180,11 +180,11 @@ fun ExtraccionListaContent(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // U4: sin destino hasta revision-datos, igual que "Continuar" en
-        // captura-foto. Ningun otro boton: back del sistema vuelve a la foto.
+        // "Revisar ticket" abre la revision editable (spec revision-datos).
+        // Back del sistema desde el resultado vuelve a la foto.
         Button(
-            onClick = { },
-            enabled = false,
+            onClick = onRevisar,
+            enabled = true,
             modifier = Modifier
                 .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)
                 .fillMaxWidth()
@@ -897,7 +897,7 @@ internal fun camposExtraidos(extraido: TicketExtraido): Int {
 internal fun etiquetaCompletitud(extraido: TicketExtraido): String =
     "${camposExtraidos(extraido)}/$CAMPOS_REVISABLES campos extra\u00eddos"
 
-private fun etiquetaMotor(motor: Motor): String = when (motor) {
+internal fun etiquetaMotor(motor: Motor): String = when (motor) {
     Motor.NUBE -> "Motor Nube \u00b7 Gemini"
     Motor.LOCAL -> "Motor Local \u00b7 Gemma 3n"
 }
@@ -912,7 +912,7 @@ private fun etiquetaProceso(motor: Motor, estado: EstadoBadge): String {
     }
 }
 
-private fun etiquetaCategoria(categoria: Categoria): String = when (categoria) {
+internal fun etiquetaCategoria(categoria: Categoria): String = when (categoria) {
     Categoria.ALIMENTACION -> "Alimentaci\u00f3n"
     Categoria.HOGAR -> "Hogar"
     Categoria.TRANSPORTE -> "Transporte"
@@ -921,7 +921,7 @@ private fun etiquetaCategoria(categoria: Categoria): String = when (categoria) {
     Categoria.OTROS -> "Otros"
 }
 
-private fun formatoImporte(valor: Double): String =
+internal fun formatoImporte(valor: Double): String =
     String.format(Locale.forLanguageTag("es-ES"), "%,.2f \u20ac", valor)
 
 private val FORMATO_FECHA: DateTimeFormatter =

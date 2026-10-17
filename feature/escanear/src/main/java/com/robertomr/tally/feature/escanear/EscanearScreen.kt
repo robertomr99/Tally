@@ -45,12 +45,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * - Gate de permiso de camara in-app: sin dialogo automatico del sistema al
  *   entrar; boton "Permitir camara" que lanza el launcher. Si se deniega, el
  *   estado queda en espanol con boton para volver a pedirlo (sin bucles).
- * - Subflujo interno Encuadre <-> Revision <-> Procesado (BackHandler) SIN
- *   rutas nuevas en :app (spec procesado-ui): la pantalla 05 y el procesado
- *   (mockup 06) son estados internos de esta feature.
+ * - Subflujo interno Encuadre <-> Revision <-> Procesado <-> RevisionDatos
+ *   (BackHandler) SIN rutas nuevas en :app (spec procesado-ui/revision-datos):
+ *   la pantalla 05, el procesado (mockup 06) y la revision editable (mockup 07)
+ *   son estados internos de esta feature.
+ *
+ * Al persistir el ticket (spec revision-datos) la pantalla emite
+ * [onGastoGuardado] (el :app navega a la pestaña Gastos; la pantalla NO recibe
+ * el NavController) y resetea el subflujo a Encuadre (R-REV3).
  */
 @Composable
-fun EscanearScreen() {
+fun EscanearScreen(onGastoGuardado: () -> Unit) {
     val viewModel: EscanearViewModel = hiltViewModel()
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val uiState = rememberEscanearState()
@@ -94,6 +99,16 @@ fun EscanearScreen() {
         viewModel.onVolverALaFoto()
     }
 
+    // Back desde la revision editable (spec revision-datos, escenario 6): no
+    // escribe nada en Room y vuelve al resultado del procesado con el Borrador
+    // intacto.
+    BackHandler(enabled = estado is CapturaUiState.RevisionDatos) {
+        viewModel.onVolverAlResultado()
+    }
+
+    // Durante el guardado (breve) el back se ignora: no se cancela a medias.
+    BackHandler(enabled = estado is CapturaUiState.Guardando) { }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -131,6 +146,7 @@ fun EscanearScreen() {
 
             is CapturaUiState.ExtraccionLista -> ExtraccionListaContent(
                 extraido = actual.extraido,
+                onRevisar = viewModel::onRevisar,
             )
 
             is CapturaUiState.ExtraccionFallida -> ExtraccionFallidaContent(
@@ -140,6 +156,30 @@ fun EscanearScreen() {
                 onVolverALaFoto = viewModel::onVolverALaFoto,
             )
 
+            // Spec revision-datos (mockup 07): revision editable de la cabecera.
+            is CapturaUiState.RevisionDatos -> RevisionDatosContent(
+                extraido = actual.extraido,
+                datos = actual.datos,
+                errorGuardado = actual.errorGuardado,
+                onComercioEditado = viewModel::onComercioEditado,
+                onFechaEditada = viewModel::onFechaEditada,
+                onTotalEditado = viewModel::onTotalEditado,
+                onCategoriaElegida = viewModel::onCategoriaElegida,
+                onGuardar = viewModel::onGuardar,
+            )
+
+            CapturaUiState.Guardando -> GuardandoContent()
+
+            is CapturaUiState.Guardado -> {
+                // El ticket ya esta persistido: se emite el evento de vuelta al
+                // listado y se resetea el subflujo (R-REV3). La clave por id
+                // evita relanzar el efecto.
+                LaunchedEffect(actual.id) {
+                    onGastoGuardado()
+                    viewModel.onGuardadoVisto()
+                }
+                GuardandoContent()
+            }
             is CapturaUiState.Error -> ErrorContent(
                 mensaje = actual.mensaje,
                 onVolverAlEncuadre = viewModel::onRepetirFoto,
@@ -219,6 +259,27 @@ private fun ProcesandoContent(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Procesando la foto\u2026",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** Guardado del ticket en curso (breve): persistiendo en Room. */
+@Composable
+private fun GuardandoContent(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp)
+            .testTag("revision_guardando"),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        CircularProgressIndicator(modifier = Modifier.size(40.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Guardando el ticket\u2026",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )

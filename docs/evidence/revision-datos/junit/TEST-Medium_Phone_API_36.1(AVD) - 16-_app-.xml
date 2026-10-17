@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="9" failures="0" errors="0" skipped="0" time="42.36" timestamp="2026-10-17T17:59:18" hostname="localhost">
+  <testsuite name="com.robertomr.tally.captura.CapturaFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="20.965" timestamp="2026-10-17T17:59:18" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="denegadoMuestraEstadoInAppSinCrash" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="5.45" />
+    <testcase name="obturadorAbreLaRevisionDeLaFotoYRepetirVuelveAlEncuadre" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="10.395" />
+    <testcase name="permisoConcedidoMuestraElEncuadreGuiado" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="5.12" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.captura.ProcesadoFlujoTest" tests="2" failures="0" errors="0" skipped="0" time="9.451" timestamp="2026-10-17T17:59:18" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="procesadoMuestraElBadgeRealYElResultadoSoloLecturaConRevisarHabilitado" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="5.386" />
+    <testcase name="backDesdeElProcesadoVuelveALaFotoConElBorradorIntacto" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="4.065" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.captura.RevisionDatosFlujoTest" tests="1" failures="0" errors="0" skipped="0" time="4.966" timestamp="2026-10-17T17:59:18" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="revisarElegirCategoriaYGuardarVuelveALaPestanaGastos" classname="com.robertomr.tally.captura.RevisionDatosFlujoTest" time="4.966" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.navigation.NavigationTest" tests="3" failures="0" errors="0" skipped="0" time="5.657" timestamp="2026-10-17T17:59:18" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="startsOnResumenWithActivePill" classname="com.robertomr.tally.navigation.NavigationTest" time="1.559" />
+    <testcase name="systemBackReturnsToResumenAndNextBackExitsTheApp" classname="com.robertomr.tally.navigation.NavigationTest" time="1.857" />
+    <testcase name="bottomBarNavigatesAcrossTheThreeDestinations" classname="com.robertomr.tally.navigation.NavigationTest" time="2.241" />
+  </testsuite>
+</testsuites>
