@@ -182,6 +182,24 @@ app ──────────► feature:* ──────────�
   muestra el motor real (`ExtraerTicket.motor`, passthrough de `TextEngine.motor`).
 - La latencia real de Gemini (R2) se hace visible aquí: progreso indeterminado +
   "Cancelar" siempre disponible.
+- **Reintento con el otro motor (`reintento-otro-motor`)**: `EngineRouter`
+  implementa además la interfaz de dominio `ExtractorPorMotor`
+  (`disponibilidad(motor)`, `extract(motor, texto)`), registrada en `AiModule` con
+  la **misma instancia** singleton que el `TextEngine` sin calificar. La
+  extracción explícita **ignora la política y la preferencia**, no hace fallback
+  y, si el motor no está `DISPONIBLE`, lanza `MotorNoDisponibleException` sin
+  invocarlo. Disponibilidad pura `disponibilidadMotor(motor, capaz, modelo)`:
+  Nube siempre `DISPONIBLE` (la red no es entrada); Local solo con `capaz &&
+  modelo` (`NO_CAPAZ` gana sobre `SIN_MODELO`). Casos de uso
+  `ExtraerTicketConMotor` (texto blank → vacío con ese motor) y `ObtenerOtroMotor`
+  (¬motor + disponibilidad). El VM reutiliza el `textoCrudo` del Borrador: ni
+  OCR ni foto nuevos. `ProcesandoExtraccion`/`ExtraccionFallida` llevan el `motor`
+  (badge desde el estado, no desde `viewModel.motor`) y `ExtraccionLista` /
+  `ExtraccionFallida` el `otro: OfertaMotor`. El resultado previo viaja como
+  `anterior` en la orden `ReintentarCon` (D4): cancelar el reintento o su fallo
+  vuelven a él (`Restaurar`); el éxito lo reemplaza y `Ticket.motor` es el del
+  resultado aceptado. "Reintentar" repite con el motor que falló, no con el que
+  elegiría el router ahora.
 
 ## Revisión y guardado (pantalla 07)
 

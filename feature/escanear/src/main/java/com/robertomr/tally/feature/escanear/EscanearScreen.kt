@@ -140,20 +140,26 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
             // Spec procesado-ui (mockup 06): procesado -> resultado/error como
             // subflujo interno, sin rutas nuevas en :app.
             is CapturaUiState.ProcesandoExtraccion -> ProcesandoExtraccionContent(
-                motor = viewModel.motor,
+                motor = actual.motor,
                 onCancelar = viewModel::onCancelarProcesado,
             )
 
             is CapturaUiState.ExtraccionLista -> ExtraccionListaContent(
                 extraido = actual.extraido,
+                otro = actual.otro,
                 onRevisar = viewModel::onRevisar,
+                onReintentarOtro = viewModel::onReintentarConOtroMotor,
             )
 
             is CapturaUiState.ExtraccionFallida -> ExtraccionFallidaContent(
                 mensaje = actual.mensaje,
-                motor = viewModel.motor,
+                motor = actual.motor,
+                otro = actual.otro,
+                hayAnterior = actual.anterior != null,
                 onReintentar = viewModel::onReintentarExtraccion,
+                onReintentarOtro = viewModel::onReintentarConOtroMotor,
                 onVolverALaFoto = viewModel::onVolverALaFoto,
+                onVolverAnterior = viewModel::onVolverAlResultadoAnterior,
             )
 
             // Spec revision-datos (mockup 07) + edicion-lineas (mockup 08): revision

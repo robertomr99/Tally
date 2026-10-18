@@ -3,19 +3,26 @@ package com.robertomr.tally.feature.escanear
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import com.robertomr.tally.domain.expenses.data.CropRegion
+import com.robertomr.tally.domain.expenses.data.EngineRouter
 import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
+import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
 import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.totalRecalculado
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
+import com.robertomr.tally.domain.expenses.usecases.ExtraerTicketConMotor
+import com.robertomr.tally.domain.expenses.usecases.ObtenerOtroMotor
 import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
 import com.robertomr.tally.test.unit.CoroutineTestRule
+import com.robertomr.tally.test.unit.FakeCapacidadDispositivo
+import com.robertomr.tally.test.unit.FakeModelDownloader
 import com.robertomr.tally.test.unit.FakeOcrEngine
 import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakePhotoProcessor
@@ -27,6 +34,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -70,10 +78,21 @@ class EscanearViewModelTest {
     )
     private val ticketDataSource = FakeTicketDataSource()
     private val repository = TicketRepository(ticketDataSource, store)
-    private val viewModel = EscanearViewModel(
+    private val localEngine = FakeTextEngine(motor = Motor.LOCAL)
+    private val capacidad = FakeCapacidadDispositivo(capaz = true)
+    private val downloader = FakeModelDownloader(ruta = null)
+    private var pref = PreferenciaMotor.AUTO
+    private val router = EngineRouter(localEngine, textEngine, capacidad, downloader) {
+        pref
+    }
+    private val viewModel = crearViewModel(router)
+
+    private fun crearViewModel(motorRouter: EngineRouter): EscanearViewModel = EscanearViewModel(
         guardarFotoCapturada = GuardarFotoCapturada(processor, store),
         reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
-        extraerTicket = ExtraerTicket(textEngine),
+        extraerTicket = ExtraerTicket(motorRouter),
+        extraerTicketConMotor = ExtraerTicketConMotor(motorRouter),
+        obtenerOtroMotor = ObtenerOtroMotor(motorRouter),
         guardarTicket = GuardarTicket(repository),
         photoFileStore = store,
     )
@@ -428,14 +447,240 @@ class EscanearViewModelTest {
         // muestra el motor ANTES de que termine la extraccion.
         assertEquals(Motor.NUBE, viewModel.motor)
 
-        val local = EscanearViewModel(
-            guardarFotoCapturada = GuardarFotoCapturada(processor, store),
-            reconocerTextoCrudo = ReconocerTextoCrudo(store, engine),
-            extraerTicket = ExtraerTicket(FakeTextEngine(motor = Motor.LOCAL)),
-            guardarTicket = GuardarTicket(repository),
-            photoFileStore = store,
+        downloader.ruta = "/m/model.task" // Auto con capaz + modelo -> Local
+
+        assertEquals(Motor.LOCAL, viewModel.motor)
+    }
+
+    // --- Reintento con el otro motor (spec reintento-otro-motor) ---
+
+    private val modeloLocal = "/m/model.litertlm"
+
+    /** Entorno: Local disponible y la preferencia [p] fija el motor del primer intento. */
+    private fun entornoConLocalDisponible(p: PreferenciaMotor) {
+        capacidad.capaz = true
+        downloader.ruta = modeloLocal
+        pref = p
+    }
+
+    private fun llegarAlResultado(): CapturaUiState.ExtraccionLista {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        viewModel.onContinuar()
+        return esperarEstado { it is CapturaUiState.ExtraccionLista } as CapturaUiState.ExtraccionLista
+    }
+
+    @Test
+    fun reintentoDesdeElResultadoUsaElOtroMotorSobreElMismoTextoSinOcrNiFoto() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.AUTO) // primer intento: Local
+        val r1 = llegarAlResultado()
+        assertEquals(Motor.LOCAL, r1.extraido.motor)
+        assertEquals(Motor.NUBE, r1.otro.motor)
+        assertEquals(DisponibilidadMotor.DISPONIBLE, r1.otro.disponibilidad)
+        val ocrAntes = engine.received.size
+        val fotosAntes = store.savedPayloads.size
+
+        textEngine.gate = CompletableDeferred()
+        viewModel.onReintentarConOtroMotor()
+
+        // Badge honesto: el estado lleva el motor del NUEVO intento y R1 queda
+        // conservado mientras dura el reintento (D4).
+        val procesando = esperarEstado { it is CapturaUiState.ProcesandoExtraccion } as CapturaUiState.ProcesandoExtraccion
+        assertEquals(Motor.NUBE, procesando.motor)
+        assertEquals(r1.extraido, procesando.anterior)
+
+        textEngine.gate?.complete(Unit)
+        val r2 = esperarEstado { it is CapturaUiState.ExtraccionLista } as CapturaUiState.ExtraccionLista
+        assertEquals(Motor.NUBE, r2.extraido.motor)
+        assertEquals(Motor.LOCAL, r2.otro.motor)
+
+        // Mismo texto crudo del Borrador, sin OCR ni foto nuevos.
+        assertEquals(listOf("MERCADONA\nTOTAL 12,34"), textEngine.received)
+        assertEquals(listOf("MERCADONA\nTOTAL 12,34"), localEngine.received)
+        assertEquals(ocrAntes, engine.received.size)
+        assertEquals(fotosAntes, store.savedPayloads.size)
+    }
+
+    @Test
+    fun cancelarElReintentoDesdeElResultadoRestauraElResultadoAnterior() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE) // primer intento: Nube
+        val r1 = llegarAlResultado()
+        assertEquals(Motor.NUBE, r1.extraido.motor)
+
+        localEngine.gate = CompletableDeferred()
+        viewModel.onReintentarConOtroMotor()
+        val procesando = esperarEstado { it is CapturaUiState.ProcesandoExtraccion } as CapturaUiState.ProcesandoExtraccion
+        assertEquals(Motor.LOCAL, procesando.motor)
+        assertEquals(1, localEngine.received.size)
+
+        // Cancelar (o back) vuelve a R1 intacto, no a la pantalla 05, y la
+        // cancelacion nunca se convierte en error.
+        viewModel.onCancelarProcesado()
+        assertEquals(r1, esperarEstado { it is CapturaUiState.ExtraccionLista })
+    }
+
+    @Test
+    fun elFalloDelReintenteConservaElAnteriorYPermiteRestaurarlo() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE)
+        val r1 = llegarAlResultado()
+
+        localEngine.error = IllegalStateException("modelo roto")
+        viewModel.onReintentarConOtroMotor()
+        val fallo = esperarEstado { it is CapturaUiState.ExtraccionFallida } as CapturaUiState.ExtraccionFallida
+        assertEquals("modelo roto", fallo.mensaje)
+        assertEquals(Motor.LOCAL, fallo.motor) // badge FALLIDO del motor nuevo
+        assertEquals(r1.extraido, fallo.anterior)
+        assertEquals(Motor.NUBE, fallo.otro.motor)
+
+        viewModel.onVolverAlResultadoAnterior()
+        assertEquals(r1, esperarEstado { it is CapturaUiState.ExtraccionLista })
+    }
+
+    @Test
+    fun volverALaFotoDesdeElErrorDeUnReintenteDescartaElAnterior() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE)
+        llegarAlResultado()
+        localEngine.error = IllegalStateException("x")
+        viewModel.onReintentarConOtroMotor()
+        esperarEstado { it is CapturaUiState.ExtraccionFallida }
+
+        viewModel.onVolverALaFoto()
+
+        esperarRevision()
+        assertTrue(store.deletedPaths.isEmpty())
+    }
+
+    @Test
+    fun reintentarConElMismoMotorUsaElQueFalloNoElDelRouterActual() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE)
+        textEngine.error = IllegalStateException("sin cuota")
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        viewModel.onContinuar()
+        val fallo = esperarEstado { it is CapturaUiState.ExtraccionFallida } as CapturaUiState.ExtraccionFallida
+        assertEquals(Motor.NUBE, fallo.motor)
+        assertNull(fallo.anterior)
+
+        // El entorno cambia: la politica Auto elegiria Local, pero "Reintentar"
+        // repite con el motor que fallo (Nube).
+        pref = PreferenciaMotor.AUTO
+        textEngine.error = null
+        viewModel.onReintentarExtraccion()
+
+        val lista = esperarEstado { it is CapturaUiState.ExtraccionLista } as CapturaUiState.ExtraccionLista
+        assertEquals(Motor.NUBE, lista.extraido.motor)
+        assertEquals(2, textEngine.received.size)
+        assertTrue(localEngine.received.isEmpty())
+    }
+
+    @Test
+    fun probarConElOtroMotorDesdeElErrorYCancelarVuelveALaPantalla05() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE)
+        textEngine.error = IllegalStateException("sin red")
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        val revision = esperarRevision()
+        viewModel.onContinuar()
+        val fallo = esperarEstado { it is CapturaUiState.ExtraccionFallida } as CapturaUiState.ExtraccionFallida
+        assertEquals(DisponibilidadMotor.DISPONIBLE, fallo.otro.disponibilidad)
+
+        localEngine.gate = CompletableDeferred()
+        viewModel.onReintentarConOtroMotor()
+        val procesando = esperarEstado { it is CapturaUiState.ProcesandoExtraccion } as CapturaUiState.ProcesandoExtraccion
+        assertEquals(Motor.LOCAL, procesando.motor)
+        assertNull(procesando.anterior)
+        assertEquals(listOf("MERCADONA\nTOTAL 12,34"), localEngine.received)
+
+        viewModel.onCancelarProcesado()
+        assertEquals(revision, esperarRevision())
+    }
+
+    @Test
+    fun conElOtroMotorNoDisponibleElEventoSeIgnoraYLaOfertaLlevaElMotivo() = runTest {
+        pref = PreferenciaMotor.NUBE
+        capacidad.capaz = true
+        downloader.ruta = null
+        val sinModelo = llegarAlResultado()
+        assertEquals(DisponibilidadMotor.SIN_MODELO, sinModelo.otro.disponibilidad)
+        assertEquals(
+            "Descarga el modelo local en Ajustes para usarlo",
+            motivoNoDisponible(sinModelo.otro.disponibilidad),
         )
-        assertEquals(Motor.LOCAL, local.motor)
+
+        viewModel.onReintentarConOtroMotor()
+
+        assertEquals(sinModelo, viewModel.estado.value)
+        assertTrue(localEngine.received.isEmpty())
+        assertEquals(
+            "Este dispositivo no puede ejecutar el motor local",
+            motivoNoDisponible(DisponibilidadMotor.NO_CAPAZ),
+        )
+        assertNull(motivoNoDisponible(DisponibilidadMotor.DISPONIBLE))
+    }
+
+    @Test
+    fun siElModeloDesapareceTrasMostrarElBotonElErrorExplicaElMotivoSinInvocarElMotor() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.NUBE)
+        val r1 = llegarAlResultado()
+        downloader.ruta = null // el usuario elimina el modelo con el resultado en pantalla
+
+        viewModel.onReintentarConOtroMotor()
+
+        val fallo = esperarEstado { it is CapturaUiState.ExtraccionFallida } as CapturaUiState.ExtraccionFallida
+        assertEquals("Descarga el modelo local en Ajustes para usarlo", fallo.mensaje)
+        assertEquals(Motor.LOCAL, fallo.motor)
+        assertEquals(r1.extraido, fallo.anterior)
+        assertTrue(localEngine.received.isEmpty())
+    }
+
+    @Test
+    fun dobleToqueDelBotonCuentaComoUnSoloIntento() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.AUTO)
+        llegarAlResultado()
+        textEngine.gate = CompletableDeferred()
+
+        viewModel.onReintentarConOtroMotor()
+        viewModel.onReintentarConOtroMotor()
+        textEngine.gate?.complete(Unit)
+
+        esperarEstado { it is CapturaUiState.ExtraccionLista && it.extraido.motor == Motor.NUBE }
+        assertEquals(1, textEngine.received.size)
+    }
+
+    @Test
+    fun guardarTrasElReintentoPersisteElMotorDelResultadoAceptado() = runTest {
+        entornoConLocalDisponible(PreferenciaMotor.AUTO) // R1 Local
+        llegarAlResultado()
+        viewModel.onReintentarConOtroMotor() // R2 Nube
+        esperarEstado { it is CapturaUiState.ExtraccionLista && it.extraido.motor == Motor.NUBE }
+
+        viewModel.onRevisar()
+        esperarEstado { it is CapturaUiState.RevisionDatos }
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+
+        val ticket = ticketsGuardados().single()
+        assertEquals(Motor.NUBE, ticket.motor)
+        assertEquals(35.30, ticket.total, 0.001)
+    }
+
+    @Test
+    fun elBadgeDelProcesadoSaleDelEstadoNoDelRouterRecomputado() = runTest {
+        pref = PreferenciaMotor.AUTO
+        downloader.ruta = null // Continuar resuelve Nube
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        textEngine.gate = CompletableDeferred()
+        viewModel.onContinuar()
+        val procesando = esperarEstado { it is CapturaUiState.ProcesandoExtraccion } as CapturaUiState.ProcesandoExtraccion
+        assertEquals(Motor.NUBE, procesando.motor)
+
+        downloader.ruta = modeloLocal // el entorno cambia en pleno procesado
+        assertEquals(Motor.LOCAL, viewModel.motor)
+        assertEquals(Motor.NUBE, (esperarEstado { it is CapturaUiState.ProcesandoExtraccion } as CapturaUiState.ProcesandoExtraccion).motor)
     }
 
     // --- Revision y guardado (spec revision-datos) ---

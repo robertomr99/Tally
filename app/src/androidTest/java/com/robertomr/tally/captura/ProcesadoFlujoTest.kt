@@ -2,6 +2,7 @@ package com.robertomr.tally.captura
 
 import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -96,6 +97,48 @@ class ProcesadoFlujoTest {
     }
 
     @Test
+    fun resultadoOfreceProbarConElOtroMotorYElBadgeCambiaODeshabilitaConMotivo() {
+        capturarFoto()
+        composeRule.onNodeWithTag("captura_continuar").performClick()
+        esperarTag("procesado_pantalla")
+        val termino = esperarFinDeExtraccion()
+        if (!termino) {
+            // Error real del motor en este entorno: la accion tambien esta en el error.
+            composeRule.onNodeWithTag("procesado_reintentar_otro").assertIsDisplayed()
+            composeRule.onNodeWithTag("procesado_reintentar").assertIsDisplayed()
+            assumeTrue("La extraccion REAL fallo en este entorno; ver procesado_error.", false)
+            return
+        }
+
+        // Spec reintento-otro-motor S1/S3: el boton secundario convive con "Revisar".
+        composeRule.onNodeWithTag("procesado_reintentar_otro").assertIsDisplayed()
+        composeRule.onNodeWithTag("procesado_revisar").assertIsDisplayed()
+        val badgeAntes = textoDe("procesado_badge_motor")
+        val otroEsLocal = badgeAntes.contains("Nube")
+        val etiquetaOtro = if (otroEsLocal) "Local" else "Nube"
+        composeRule.onNodeWithTag("procesado_reintentar_otro")
+            .assertTextContains("Probar con $etiquetaOtro", substring = true)
+
+        val habilitado = runCatching {
+            composeRule.onNodeWithTag("procesado_reintentar_otro").assertIsEnabled()
+        }.isSuccess
+        if (!habilitado) {
+            // Local no disponible (RAM < 10 GB o sin modelo): deshabilitado CON motivo.
+            composeRule.onNodeWithTag("procesado_reintentar_otro_motivo").assertIsDisplayed()
+            return
+        }
+
+        composeRule.onNodeWithTag("procesado_reintentar_otro").performClick()
+        // El badge pasa al otro motor (estado procesando o resultado/error final).
+        composeRule.waitUntil(TIMEOUT_EXTRACCION_MS) {
+            composeRule.onAllNodesWithTag("procesado_badge_motor").fetchSemanticsNodes().isNotEmpty() &&
+                textoDe("procesado_badge_motor").contains(etiquetaOtro)
+        }
+        composeRule.onNodeWithTag("procesado_badge_motor")
+            .assertTextContains("Motor $etiquetaOtro", substring = true)
+    }
+
+    @Test
     fun backDesdeElProcesadoVuelveALaFotoConElBorradorIntacto() {
         capturarFoto()
 
@@ -155,6 +198,10 @@ class ProcesadoFlujoTest {
         return composeRule.onAllNodesWithTag("procesado_completitud")
             .fetchSemanticsNodes().isNotEmpty()
     }
+
+    private fun textoDe(tag: String): String =
+        composeRule.onNodeWithTag(tag).fetchSemanticsNode()
+            .config[SemanticsProperties.Text].joinToString("") { it.text }
 
     private fun esperarTag(tag: String) {
         composeRule.waitUntil(TIMEOUT_PROCESADO_MS) {

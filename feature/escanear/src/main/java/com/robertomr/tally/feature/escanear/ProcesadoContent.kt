@@ -32,12 +32,14 @@ import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Receipt
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -50,8 +52,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -147,7 +151,9 @@ fun ProcesandoExtraccionContent(
 @Composable
 fun ExtraccionListaContent(
     extraido: TicketExtraido,
+    otro: OfertaMotor,
     onRevisar: () -> Unit,
+    onReintentarOtro: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -180,6 +186,14 @@ fun ExtraccionListaContent(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // Reintento con el otro motor (spec reintento-otro-motor): secundario,
+        // deshabilitado con motivo si el otro motor no esta disponible.
+        BotonOtroMotor(
+            otro = otro,
+            onClick = onReintentarOtro,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+        )
+
         // "Revisar ticket" abre la revision editable (spec revision-datos).
         // Back del sistema desde el resultado vuelve a la foto.
         Button(
@@ -208,8 +222,12 @@ fun ExtraccionListaContent(
 fun ExtraccionFallidaContent(
     mensaje: String,
     motor: Motor,
+    otro: OfertaMotor,
+    hayAnterior: Boolean,
     onReintentar: () -> Unit,
+    onReintentarOtro: () -> Unit,
     onVolverALaFoto: () -> Unit,
+    onVolverAnterior: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -260,6 +278,22 @@ fun ExtraccionFallidaContent(
             )
         }
 
+        BotonOtroMotor(
+            otro = otro,
+            onClick = onReintentarOtro,
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+        )
+        if (hayAnterior) {
+            TextButton(
+                onClick = onVolverAnterior,
+                modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .testTag("procesado_volver_anterior"),
+            ) {
+                Text(text = "Volver al resultado anterior")
+            }
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -290,6 +324,62 @@ fun ExtraccionFallidaContent(
             }
         }
     }
+}
+
+/**
+ * "Probar con {otro}" (spec reintento-otro-motor, patron del mockup 07):
+ * outlined secundario con icono de refrescar. Si el otro motor no esta
+ * [DisponibilidadMotor.DISPONIBLE] se muestra deshabilitado con el motivo
+ * (tag `procesado_reintentar_otro_motivo`), sin ocultar la razon.
+ */
+@Composable
+private fun BotonOtroMotor(
+    otro: OfertaMotor,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val disponible = otro.disponibilidad == DisponibilidadMotor.DISPONIBLE
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = disponible,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .testTag("procesado_reintentar_otro"),
+            shape = RoundedCornerShape(9999.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Refresh,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Probar con ${etiquetaMotorCorta(otro.motor)}")
+        }
+        val motivo = motivoNoDisponible(otro.disponibilidad)
+        if (motivo != null) {
+            Text(
+                text = motivo,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .testTag("procesado_reintentar_otro_motivo"),
+            )
+        }
+    }
+}
+
+/** Motivo visible de un motor no disponible; null si esta [DisponibilidadMotor.DISPONIBLE]. */
+internal fun motivoNoDisponible(disponibilidad: DisponibilidadMotor): String? = when (disponibilidad) {
+    DisponibilidadMotor.DISPONIBLE -> null
+    DisponibilidadMotor.SIN_MODELO -> "Descarga el modelo local en Ajustes para usarlo"
+    DisponibilidadMotor.NO_CAPAZ -> "Este dispositivo no puede ejecutar el motor local"
 }
 
 // ---------------------------------------------------------------------------
@@ -897,9 +987,11 @@ internal fun camposExtraidos(extraido: TicketExtraido): Int {
 internal fun etiquetaCompletitud(extraido: TicketExtraido): String =
     "${camposExtraidos(extraido)}/$CAMPOS_REVISABLES campos extra\u00eddos"
 
-internal fun etiquetaMotor(motor: Motor): String = when (motor) {
-    Motor.NUBE -> "Motor Nube \u00b7 Gemini"
-    Motor.LOCAL -> "Motor Local \u00b7 Gemma 3n"
+internal fun etiquetaMotor(motor: Motor): String = "Motor ${etiquetaMotorCorta(motor)}"
+
+internal fun etiquetaMotorCorta(motor: Motor): String = when (motor) {
+    Motor.NUBE -> "Nube \u00b7 Gemini"
+    Motor.LOCAL -> "Local \u00b7 Gemma 3n"
 }
 
 private fun etiquetaProceso(motor: Motor, estado: EstadoBadge): String {

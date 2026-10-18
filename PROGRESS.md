@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `reintento-otro-motor` (`router-automatico` `accepted`, sesión 035; sin spec → `planner`); luego `ajustes-motor`.
+- Current next ready feature: `ajustes-motor` (`reintento-otro-motor` `accepted`, sesión 038).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2304,3 +2304,78 @@
   - Opcionales: UI con camara real en la Tab (badge Local, cancelacion fisica de `procesado-ui`) y realme GT 2
     sin modelo (cuota Gemini, `MemTotal`; R-RT2 abierto).
 - Next best step: `planner` sobre `reintento-otro-motor` (dep `router-automatico` accepted).
+
+### Session 036
+
+- Date: 2026-10-18
+- Goal: push de `router-automatico` (hecho: `33adcf8` en `origin/master`) y planificar
+  `reintento-otro-motor` (dep `router-automatico` accepted).
+- Completed:
+  - Spec creada: `docs/specs/reintento-otro-motor.md` (~170 lineas, 10 escenarios), sin modulos ni dependencias nuevas.
+  - Diseno: `ExtractorPorMotor` (dominio) implementado por `EngineRouter`; casos de uso
+    `ExtraerTicketConMotor` y `ObtenerOtroMotor`; el reintento reutiliza el `textoCrudo` del Borrador
+    (sin OCR nuevo) e ignora la preferencia; `MotorNoDisponibleException` sin fallback; boton
+    "Probar con {otro}" en resultado y error; `ProcesandoExtraccion`/`ExtraccionFallida` llevan el
+    `motor` (badge honesto); "Reintentar" repite con el motor que fallo; sin reintento desde la
+    revision editable.
+  - Decisiones del usuario: **D4 = conservar el resultado anterior** mientras dura el reintento
+    (cancelar o fallar vuelve al anterior, con `anterior` en la orden y `Restaurar`). D2 (Local solo
+    si capaz y modelo descargado) y D3 (boton deshabilitado con motivo) por defecto.
+- Verification run: planificacion (sin gates de producto; cero cambios de codigo).
+- Evidence captured: `docs/specs/reintento-otro-motor.md`.
+- Known risk or unresolved issue:
+  - Cuota de Gemini agotada desde 2026-10-17: la mitad Nube de la prueba fisica puede no ser posible.
+  - R-RO2: liberacion/cancelacion del modelo local al encadenar un Local cancelado con otro intento.
+  - Cambia el constructor de `EscanearViewModel` y los campos de `CapturaUiState`
+    (actualizar `EscanearViewModelTest`); test inestable previo `capturingProcessesAndSavesThePhotoAtCaptureTime`.
+- Next best step: `implementer` sobre `docs/specs/reintento-otro-motor.md`.
+
+### Session 037
+
+- Date: 2026-10-18
+- Goal: implementar `reintento-otro-motor` (spec `docs/specs/reintento-otro-motor.md`, sesion 036).
+- Completed:
+  - Dominio: `DisponibilidadMotor`, `OfertaMotor`, `MotorNoDisponibleException`, `ExtractorPorMotor`,
+    `disponibilidadMotor()` pura, `EngineRouter` implementa tambien `ExtractorPorMotor` (ignora la
+    preferencia, sin fallback), casos de uso `ExtraerTicketConMotor` y `ObtenerOtroMotor`.
+  - DI (`AiModule`, unico `di.kt`): `EngineRouter` singleton expuesto como `TextEngine` y `ExtractorPorMotor`.
+  - `EscanearViewModel`: `ReintentarCon`/`Restaurar`, estado con `motor`/`anterior`/`otro`,
+    eventos `onReintentarConOtroMotor` y `onVolverAlResultadoAnterior`; `onReintentarExtraccion`
+    repite con el motor que fallo; `onCancelarProcesado` restaura el anterior si lo hay (D4).
+    Badge desde el estado (S8).
+  - UI: boton `procesado_reintentar_otro` (+ `procesado_reintentar_otro_motivo` si deshabilitado) en
+    resultado y error; `procesado_volver_anterior` en el error con `anterior`. Tags previos intactos.
+  - Docs: `docs/architecture.md` (seccion Procesado).
+- Verification run (todo real, esta sesion):
+  - `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test
+    :app:compileDebugAndroidTestKotlin --console=plain` -> BUILD SUCCESSFUL. Base previa tambien verde.
+  - JUnit XML: `EscanearViewModelTest` 44/44 (10 nuevos), `EngineRouterTest` 11/11 (5 nuevos),
+    `ExtraerTicketConMotorTest` 3/3, `ObtenerOtroMotorTest` 2/2. Sin fallos de los tests inestables ajenos.
+  - Tab S9+ (unica conectada; emulator-5554 NO conectado, no arrancado): `installDebug
+    installDebugAndroidTest` (-r) y `am instrument -e class ...ExtraccionLocalRealTest` -> OK (6 tests, 820 s):
+    el grafo Hilt con el router como `TextEngine` + `ExtractorPorMotor` funciona en dispositivo.
+    Modelo `gemma-3n-E2B-it-int4.litertlm` 3655827456 B intacto antes y despues.
+- NO ejecutado (pendiente): E2E `:app` en emulator-5554 (`ProcesadoFlujoTest` ampliado con
+  `resultadoOfreceProbarConElOtroMotorYElBadgeCambiaODeshabilitaConMotivo`, solo compilado; necesita camara
+  virtual) y verificacion fisica de UI en la Tab (ver abajo).
+- Desviacion de la spec: `onReintentarConOtroMotor` desde `ExtraccionFallida` conserva el `anterior`
+  que ya tuviera (la spec decia `anterior=null`), para que cancelar no pierda R1 (coherente con D4).
+- Verificacion fisica pendiente (orquestador + usuario, Tab S9+, modelo descargado): (1) Local -> resultado ->
+  "Probar con Nube · Gemini" (badge Nube, sin nueva captura/OCR en logcat); (2) Nube -> "Probar con Local",
+  cancelar a mitad -> vuelve al resultado anterior; (3) error de nube -> "Probar con Local" y "Reintentar"
+  repite con Nube; (4) modelo eliminado -> boton deshabilitado con "Descarga el modelo local en Ajustes para
+  usarlo". Cuota Gemini agotada desde 2026-10-17 puede limitar la parte Nube.
+- Status: `reintento-otro-motor` = **in_progress** (falta E2E emulador y verificacion fisica).
+- Next best step: ejecutar E2E `:app` en emulador y la verificacion fisica; luego `validator`.
+
+## Session 038 - reintento-otro-motor E2E + validacion (2026-10-18)
+
+- E2E `:app` en emulator-5556 (emulator-5554 quedo offline; AVD limpio de 4 GB): `adb shell am instrument`
+  con `-e notClass` de los tests reales -> OK (15 tests, 48 s), incluido
+  `resultadoOfreceProbarConElOtroMotorYElBadgeCambiaODeshabilitaConMotivo`. Evidencia:
+  `docs/evidence/reintento-otro-motor/README.md`.
+- Validator independiente: **accept** (JVM dominio + escanear y assembleDebug en verde; sin imports de
+  Android en dominio; sin secretos). Desviacion de S6 (conservar `anterior` desde error) aceptada.
+- Pendiente opcional no bloqueante: verificacion fisica en Tab S9+ (Local->Nube sin nuevo OCR, cancelar a
+  mitad, modelo eliminado, error de nube; cuota Gemini agotada).
+- Status: `reintento-otro-motor` = **accepted**. Next: `ajustes-motor`.

@@ -339,13 +339,16 @@
     "title": "Reintentar extracción con el otro motor",
     "user_visible_behavior": "Con un resultado inservible, el usuario reintenta cambiando de motor (Local↔Nube) sobre el mismo texto crudo; el nuevo motor queda registrado.",
     "depends_on": ["router-automatico"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "En directo: extracción nube mala → reintento local (y viceversa) en la Tab S9+",
       "El texto crudo se reutiliza: no se repite el OCR"
     ],
-    "evidence": [],
-    "notes": "Decisión de producto del descubrimiento (reintento + revisión manual como última vía)."
+    "evidence": [
+      "2026-10-18 sesion 037: JVM verde (EscanearViewModelTest 44/44, EngineRouterTest 11/11, ExtraerTicketConMotorTest 3/3, ObtenerOtroMotorTest 2/2); assembleDebug y :app:compileDebugAndroidTestKotlin OK; Tab S9+: ExtraccionLocalRealTest OK (6 tests) con el router como TextEngine+ExtractorPorMotor. PENDIENTE: E2E :app en emulador y verificacion fisica de UI.",
+      "2026-10-18 sesion 038: E2E :app en emulator-5556 (am instrument, sin connected*) OK 15 tests incl. ProcesadoFlujoTest nuevo; validator independiente -> accept (gates JVM + assembleDebug en verde). Desviacion documentada: onReintentarConOtroMotor desde ExtraccionFallida conserva el anterior. PENDIENTE OPCIONAL no bloqueante: verificacion fisica en Tab S9+ (Local->Nube sin nuevo OCR, cancelar a mitad, modelo borrado, error de nube)."
+    ],
+    "notes": "Decisión de producto del descubrimiento (reintento + revisión manual como última vía). PLANIFICACIÓN 2026-10-18 (sesión 036): spec en docs/specs/reintento-otro-motor.md (ExtractorPorMotor en dominio implementado por EngineRouter; casos de uso ExtraerTicketConMotor y ObtenerOtroMotor; reutiliza el texto crudo del Borrador sin repetir OCR; botón \"Probar con {otro}\" en resultado y error; badge honesto con el motor en el estado; sin cambios de Room ni módulos). Decisiones del usuario: D4 = conservar el resultado anterior mientras dura el reintento (cancelar o fallar vuelve al anterior); D2 (Local solo si capaz y modelo) y D3 (botón deshabilitado con motivo) por defecto. ajustes-motor fuera de alcance. Verificación física en la Tab S9+ (Local->Nube, Nube->Local con cancelación, error de nube, modelo eliminado); cuota de Gemini agotada desde 2026-10-17."
   },
   {
     "id": "ajustes-motor",

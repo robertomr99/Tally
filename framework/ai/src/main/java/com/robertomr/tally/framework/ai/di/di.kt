@@ -4,6 +4,7 @@ import android.content.Context
 import com.robertomr.tally.domain.expenses.data.CapacidadDispositivo
 import com.robertomr.tally.domain.expenses.data.DownloadConditions
 import com.robertomr.tally.domain.expenses.data.EngineRouter
+import com.robertomr.tally.domain.expenses.data.ExtractorPorMotor
 import com.robertomr.tally.domain.expenses.data.ModelAccessTokenStore
 import com.robertomr.tally.domain.expenses.data.ModelDownloader
 import com.robertomr.tally.domain.expenses.data.OcrEngine
@@ -65,16 +66,30 @@ internal object AiModule {
     fun providePreferenciaMotorSource(): PreferenciaMotorSource =
         PreferenciaMotorSource { PreferenciaMotor.AUTO }
 
-    /** `TextEngine` sin calificar = router Local/Nube (ADR 0001, spec router-automatico). */
+    /**
+     * Router Local/Nube (ADR 0001, spec router-automatico): una unica
+     * instancia expuesta como [TextEngine] sin calificar y como
+     * [ExtractorPorMotor] (spec reintento-otro-motor).
+     */
     @Provides
     @Singleton
-    fun provideTextEngine(
+    fun provideEngineRouter(
         @Named("local") local: TextEngine,
         @Named("nube") nube: TextEngine,
         capacidad: CapacidadDispositivo,
         modelDownloader: ModelDownloader,
         preferencia: PreferenciaMotorSource,
-    ): TextEngine = EngineRouter(local, nube, capacidad, modelDownloader, preferencia)
+    ): EngineRouter = EngineRouter(local, nube, capacidad, modelDownloader, preferencia)
+
+    /** `TextEngine` sin calificar = router Local/Nube. */
+    @Provides
+    @Singleton
+    fun provideTextEngine(router: EngineRouter): TextEngine = router
+
+    /** Extraccion explicita por motor para el reintento con el otro motor. */
+    @Provides
+    @Singleton
+    fun provideExtractorPorMotor(router: EngineRouter): ExtractorPorMotor = router
 
     /** Politica WiFi y espacio libre para la descarga del modelo (spec descarga-modelo). */
     @Provides

@@ -6,6 +6,9 @@ import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
+import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
+import com.robertomr.tally.domain.expenses.entities.MotorNoDisponibleException
+import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
@@ -14,6 +17,8 @@ import com.robertomr.tally.domain.expenses.entities.nuevaLineaEditable
 import com.robertomr.tally.domain.expenses.entities.parsearCantidad
 import com.robertomr.tally.domain.expenses.entities.parsearPrecio
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
+import com.robertomr.tally.domain.expenses.usecases.ExtraerTicketConMotor
+import com.robertomr.tally.domain.expenses.usecases.ObtenerOtroMotor
 import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
@@ -31,6 +36,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -83,27 +89,37 @@ sealed interface CapturaUiState {
     data class ProcesandoExtraccion(
         val rutaFoto: String,
         val textoCrudo: String,
+        val motor: Motor,
+        val anterior: TicketExtraido? = null,
     ) : CapturaUiState
 
     /**
      * Resultado de solo lectura (spec procesado-ui T4): el [TicketExtraido]
      * validado con completitud de campos, a la espera de "Revisar ticket".
+     * [otro] es el motor alternativo ofrecido para reintentar (spec
+     * reintento-otro-motor).
      */
     data class ExtraccionLista(
         val rutaFoto: String,
         val textoCrudo: String,
         val extraido: TicketExtraido,
+        val otro: OfertaMotor,
     ) : CapturaUiState
 
     /**
      * Error de extraccion/red (spec procesado-ui T5): mensaje honesto del
      * fallo, sin datos inventados ni fallback a otro motor (ADR 0001). El
-     * Borrador y la foto se conservan.
+     * Borrador y la foto se conservan. [motor] es el que fallo; [anterior] el
+     * resultado previo conservado durante un reintento (spec
+     * reintento-otro-motor, D4); [otro] el motor alternativo.
      */
     data class ExtraccionFallida(
         val rutaFoto: String,
         val textoCrudo: String,
         val mensaje: String,
+        val motor: Motor,
+        val anterior: TicketExtraido? = null,
+        val otro: OfertaMotor,
     ) : CapturaUiState
 
     /**
@@ -161,6 +177,8 @@ class EscanearViewModel @Inject constructor(
     private val guardarFotoCapturada: GuardarFotoCapturada,
     private val reconocerTextoCrudo: ReconocerTextoCrudo,
     private val extraerTicket: ExtraerTicket,
+    private val extraerTicketConMotor: ExtraerTicketConMotor,
+    private val obtenerOtroMotor: ObtenerOtroMotor,
     private val guardarTicket: GuardarTicket,
     private val photoFileStore: PhotoFileStore,
 ) : ViewModel() {
@@ -239,21 +257,67 @@ class EscanearViewModel @Inject constructor(
     }
 
     /**
-     * "Reintentar" (estado de error): nueva extraccion con el MISMO motor
-     * (ADR 0001: sin fallback silencioso a otro motor).
+     * "Reintentar" (estado de error): nueva extraccion con el MISMO motor que
+     * fallo, guardado en el estado (ADR 0001: sin fallback silencioso; spec
+     * reintento-otro-motor, S5), no el que el router elegiria ahora.
      */
     fun onReintentarExtraccion() {
+        val fallida = estado.value as? CapturaUiState.ExtraccionFallida ?: return
         intentoExtraccion += 1
-        ordenExtraccion.value = OrdenExtraccion.Reintentar(intentoExtraccion)
+        ordenExtraccion.value = OrdenExtraccion.ReintentarCon(
+            intento = intentoExtraccion,
+            motor = fallida.motor,
+            anterior = fallida.anterior,
+        )
+    }
+
+    /**
+     * "Probar con {otro}" (resultado o error, spec reintento-otro-motor): nueva
+     * extraccion con el otro motor sobre el MISMO texto crudo del Borrador (sin
+     * OCR ni foto nuevos). Desde el resultado se conserva ese resultado como
+     * `anterior` mientras dura el reintento (D4); desde un error se conserva el
+     * `anterior` que ya hubiera. Ignorado si el otro motor no esta disponible
+     * o si el estado no es resultado/error (p. ej. doble pulsacion).
+     */
+    fun onReintentarConOtroMotor() {
+        val actual = estado.value
+        val (otro, anterior) = when (actual) {
+            is CapturaUiState.ExtraccionLista -> actual.otro to actual.extraido
+            is CapturaUiState.ExtraccionFallida -> actual.otro to actual.anterior
+            else -> return
+        }
+        if (otro.disponibilidad != DisponibilidadMotor.DISPONIBLE) return
+        intentoExtraccion += 1
+        ordenExtraccion.value = OrdenExtraccion.ReintentarCon(
+            intento = intentoExtraccion,
+            motor = otro.motor,
+            anterior = anterior,
+        )
+    }
+
+    /**
+     * "Volver al resultado anterior" (error de un reintento): restaura el
+     * resultado conservado sin llamar a ningun motor.
+     */
+    fun onVolverAlResultadoAnterior() {
+        val anterior = (estado.value as? CapturaUiState.ExtraccionFallida)?.anterior ?: return
+        ordenExtraccion.value = OrdenExtraccion.Restaurar(anterior)
     }
 
     /**
      * "Cancelar" (o back del sistema durante el procesado): aborta la extraccion
      * en curso y vuelve a la pantalla 05 con el Borrador intacto (misma
-     * `rutaFoto` y `textoCrudo`; la foto NO se borra y nada se persiste).
+     * `rutaFoto` y `textoCrudo`; la foto NO se borra y nada se persiste). Si el
+     * procesado es un reintento con resultado `anterior`, vuelve a ese
+     * resultado (spec reintento-otro-motor, S6).
      */
     fun onCancelarProcesado() {
-        ordenExtraccion.value = OrdenExtraccion.Cancelar
+        val anterior = (estado.value as? CapturaUiState.ProcesandoExtraccion)?.anterior
+        ordenExtraccion.value = if (anterior != null) {
+            OrdenExtraccion.Restaurar(anterior)
+        } else {
+            OrdenExtraccion.Cancelar
+        }
     }
 
     /**
@@ -439,21 +503,56 @@ class EscanearViewModel @Inject constructor(
         val borrador = captura as? CapturaEnProgreso.Guardada
             ?: return flowOf(ExtraccionEnProgreso.Ninguna)
         return when (orden) {
-            is OrdenExtraccion.Continuar, is OrdenExtraccion.Reintentar -> flow {
-                emit(ExtraccionEnProgreso.EnProgreso)
-                val resultado = runCatchingLanzandoCancelacion { extraerTicket(borrador.textoCrudo) }
-                emit(
-                    resultado.fold(
-                        onSuccess = { ExtraccionEnProgreso.Lista(it) },
-                        onFailure = {
-                            ExtraccionEnProgreso.Fallida(it.message ?: MENSAJE_ERROR_EXTRACCION)
-                        },
-                    )
-                )
+            // Primer intento: el motor se resuelve UNA vez al empezar (badge
+            // honesto, spec reintento-otro-motor S8).
+            is OrdenExtraccion.Continuar -> flow {
+                val motor = extraerTicket.motor
+                emitAll(extraer(motor, anterior = null) { extraerTicket(borrador.textoCrudo) })
             }
+            // Reintento explicito con un motor concreto sobre el MISMO texto
+            // crudo del Borrador (sin OCR ni foto nuevos).
+            is OrdenExtraccion.ReintentarCon -> extraer(orden.motor, orden.anterior) {
+                extraerTicketConMotor(borrador.textoCrudo, orden.motor)
+            }
+            is OrdenExtraccion.Restaurar -> flowOf(
+                ExtraccionEnProgreso.Lista(orden.anterior, obtenerOtroMotor(orden.anterior.motor))
+            )
             else -> flowOf(ExtraccionEnProgreso.Ninguna)
         }
     }
+
+    /**
+     * Una extraccion con [motor]: `EnProgreso` -> `Lista` o `Fallida`. La
+     * [CancellationException] se re-lanza (nunca es error ni resultado).
+     */
+    private fun extraer(
+        motor: Motor,
+        anterior: TicketExtraido?,
+        bloque: suspend () -> TicketExtraido,
+    ): Flow<ExtraccionEnProgreso> = flow {
+        emit(ExtraccionEnProgreso.EnProgreso(motor, anterior))
+        val resultado = runCatchingLanzandoCancelacion { bloque() }
+        emit(
+            resultado.fold(
+                onSuccess = { ExtraccionEnProgreso.Lista(it, obtenerOtroMotor(it.motor)) },
+                onFailure = {
+                    ExtraccionEnProgreso.Fallida(
+                        mensaje = mensajeDeError(it),
+                        motor = motor,
+                        anterior = anterior,
+                        otro = obtenerOtroMotor(motor),
+                    )
+                },
+            )
+        )
+    }
+
+    private fun mensajeDeError(error: Throwable): String =
+        if (error is MotorNoDisponibleException) {
+            motivoNoDisponible(error.disponibilidad) ?: MENSAJE_ERROR_EXTRACCION
+        } else {
+            error.message ?: MENSAJE_ERROR_EXTRACCION
+        }
 
     /**
      * Etapa de revision/guardado (spec revision-datos): solo actua cuando la
@@ -541,18 +640,24 @@ class EscanearViewModel @Inject constructor(
                 textoCrudo = captura.textoCrudo,
                 ocrNoDisponible = captura.ocrNoDisponible,
             )
-            ExtraccionEnProgreso.EnProgreso -> CapturaUiState.ProcesandoExtraccion(
+            is ExtraccionEnProgreso.EnProgreso -> CapturaUiState.ProcesandoExtraccion(
                 rutaFoto = captura.rutaFoto,
                 textoCrudo = captura.textoCrudo,
+                motor = extraccion.motor,
+                anterior = extraccion.anterior,
             )
             is ExtraccionEnProgreso.Fallida -> CapturaUiState.ExtraccionFallida(
                 rutaFoto = captura.rutaFoto,
                 textoCrudo = captura.textoCrudo,
                 mensaje = extraccion.mensaje,
+                motor = extraccion.motor,
+                anterior = extraccion.anterior,
+                otro = extraccion.otro,
             )
             is ExtraccionEnProgreso.Lista -> estadoDeRevision(
                 captura = captura,
                 extraido = extraccion.extraido,
+                otro = extraccion.otro,
                 datos = flujo.datos,
                 guardado = flujo.guardado,
             )
@@ -562,6 +667,7 @@ class EscanearViewModel @Inject constructor(
     private fun estadoDeRevision(
         captura: CapturaEnProgreso.Guardada,
         extraido: TicketExtraido,
+        otro: OfertaMotor,
         datos: DatosRevision?,
         guardado: GuardadoEnProgreso,
     ): CapturaUiState = when {
@@ -571,6 +677,7 @@ class EscanearViewModel @Inject constructor(
             rutaFoto = captura.rutaFoto,
             textoCrudo = captura.textoCrudo,
             extraido = extraido,
+            otro = otro,
         )
         guardado is GuardadoEnProgreso.Fallido -> CapturaUiState.RevisionDatos(
             rutaFoto = captura.rutaFoto,
@@ -603,7 +710,12 @@ class EscanearViewModel @Inject constructor(
     private sealed interface OrdenExtraccion {
         data object Ninguna : OrdenExtraccion
         data class Continuar(val intento: Int) : OrdenExtraccion
-        data class Reintentar(val intento: Int) : OrdenExtraccion
+        data class ReintentarCon(
+            val intento: Int,
+            val motor: Motor,
+            val anterior: TicketExtraido?,
+        ) : OrdenExtraccion
+        data class Restaurar(val anterior: TicketExtraido) : OrdenExtraccion
         data object Cancelar : OrdenExtraccion
         data object Volver : OrdenExtraccion
     }
@@ -638,9 +750,17 @@ class EscanearViewModel @Inject constructor(
     /** Resultado derivado de la extraccion del Borrador actual. */
     private sealed interface ExtraccionEnProgreso {
         data object Ninguna : ExtraccionEnProgreso
-        data object EnProgreso : ExtraccionEnProgreso
-        data class Lista(val extraido: TicketExtraido) : ExtraccionEnProgreso
-        data class Fallida(val mensaje: String) : ExtraccionEnProgreso
+        data class EnProgreso(
+            val motor: Motor,
+            val anterior: TicketExtraido?,
+        ) : ExtraccionEnProgreso
+        data class Lista(val extraido: TicketExtraido, val otro: OfertaMotor) : ExtraccionEnProgreso
+        data class Fallida(
+            val mensaje: String,
+            val motor: Motor,
+            val anterior: TicketExtraido?,
+            val otro: OfertaMotor,
+        ) : ExtraccionEnProgreso
     }
 
     /** Resultado derivado del guardado del ticket revisado. */
