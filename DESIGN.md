@@ -113,7 +113,7 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
   `surface-container-*`; sombras solo en FAB y docks inferiores.
 - Categorías: paleta semántica apagada del design system
   (`stitch-design-system.md`, sección "Semantic Financial Categories").
-  PENDIENTE decidir (ver Open Design Questions).
+  DECIDIDO en `grafica-donut`: un color fijo por categoría (no por posición): ALIMENTACION ámbar `#B86A22` (oscurecido desde `#C87D32` para llegar a 3:1), TRANSPORTE azul acero `#4A6B82`, OCIO ciruela `#7A587A`, HOGAR musgo `#5D6E3F`, SALUD verde azulado `#2E776E`, OTROS pizarra `#5F6561`. Contraste WCAG medido (`CategoriaUiContrasteTest`) sobre `surface-container-low` 3,71-5,42:1 y sobre la pista `surface-container-highest` 3,18-4,64:1; icono blanco 4,10-5,99:1. El color nunca es el único canal (nombre, %, icono, hueco de 2° entre arcos). Revisión visual y de daltonismo pendiente de humano.
 
 ## Typography
 
@@ -225,9 +225,9 @@ design system NO es MVP.
 
 ## Open Design Questions
 
-1. Colores de categoría en gráfica: paleta semántica apagada del design
-   system (recomendado) vs rampa de verdes de la pantalla 02. Decidir al
-   implementar el resumen.
+1. RESUELTA (`grafica-donut`): paleta semántica apagada del design system, no la
+   rampa de verdes de la pantalla 02 (la rampa no discrimina 6 categorías ni
+   contrasta con la pista). Ver sección Colors.
 2. Acento del fondo de cabecera del recibo (pantalla 07): mantener barra
    `primary` tal cual.
 3. Navigation rail en expandido: pospuesto (no MVP).

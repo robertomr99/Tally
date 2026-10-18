@@ -8,6 +8,9 @@ android {
 }
 
 dependencies {
+    // Entidad Categoria (etiqueta, icono y color en CategoriaUi).
+    implementation(project(":domain:expenses"))
+
     // Iconos de la bottom bar (TallyBottomBar); los gestiona el Compose BOM.
     implementation(libs.androidx.compose.material.icons.extended)
 }

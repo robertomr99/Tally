@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `grafica-donut`, `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`; `resumen-total` `accepted` sesión 044).
+- Current next ready feature: `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`; `grafica-donut` `accepted` sesión 046).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2461,3 +2461,26 @@
   metricas, formato espanol y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
 - Pendiente humano no bloqueante: revision visual de las cifras tabulares (`tnum`).
 - Status: `resumen-total` = **accepted**.
+
+## Session 045 - grafica-donut implementacion (2026-10-18)
+
+- Implementado (spec `docs/specs/grafica-donut.md`, defaults D1-D7): dominio `DistribucionCategorias`/
+  `PorcionCategoria`, `CalcularDistribucionCategorias` (centimos Long HALF_UP, resto mayor, orden por importe,
+  omite 0/NaN/inf) y `ObservarDistribucionDelPeriodo`. `:feature:resumen`: `TarjetaDistribucion`, `DonutCategorias`
+  (Canvas + `segmentosDonut` pura), `ResumenUiState.distribucion` (combine en el VM). `CategoriaUi.kt` en
+  `:feature:common` (D2; `:feature:resumen` -> `:feature:common` y `:feature:common` -> `:domain:expenses`, sin
+  modulos nuevos; `:feature:escanear` no tocado, duplicacion de etiqueta/icono anotada como deuda).
+- D1: paleta semantica; el ambar pasa a `#B86A22` (el test dio 3,18-3,71:1 vs 3:1 exigido). DESIGN.md actualizado,
+  Open Design Question #1 cerrada. Deuda menor: sin ancho maximo centrado en tablet (como `TarjetaTotal`).
+- Verificacion: `assembleDebug testDebugUnitTest :app:assembleDebugAndroidTest` verde; JUnit Calcular 11,
+  Observar 2, Segmentos 5, Contraste 2, ResumenViewModelTest 9. E2E emulator-5556: `OK (27 tests)` incl.
+  `GraficaDonutFlujoTest` 4. Evidencia y capturas en `docs/evidence/grafica-donut/README.md`.
+- Pendiente humano: revision visual de paleta y capturas y simulacion de daltonismo.
+- Status: `grafica-donut` = **passing** (listo para validator).
+
+## Session 046 - grafica-donut validacion (2026-10-18)
+
+- Validator independiente: **accept** (tests de dominio y `:feature:resumen` re-ejecutados; matematica de la
+  distribucion, `segmentosDonut`, contraste y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
+- Pendiente humano no bloqueante: revision visual de la paleta y simulacion de daltonismo.
+- Status: `grafica-donut` = **accepted**.

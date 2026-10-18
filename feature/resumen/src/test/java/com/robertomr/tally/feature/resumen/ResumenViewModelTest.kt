@@ -3,10 +3,13 @@ package com.robertomr.tally.feature.resumen
 import app.cash.turbine.test
 import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
+import com.robertomr.tally.domain.expenses.usecases.CalcularDistribucionCategorias
 import com.robertomr.tally.domain.expenses.usecases.CalcularResumenPeriodo
+import com.robertomr.tally.domain.expenses.usecases.ObservarDistribucionDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarResumenDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarTicketsDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
@@ -46,13 +49,22 @@ class ResumenViewModelTest {
             CalcularResumenPeriodo(),
             clock,
         ),
+        observarDistribucionDelPeriodo = ObservarDistribucionDelPeriodo(
+            ObservarTicketsDelPeriodo(repository),
+            CalcularDistribucionCategorias(),
+        ),
     )
 
-    private fun ticket(emision: LocalDateTime, total: Double, captura: LocalDateTime = emision) = Ticket(
+    private fun ticket(
+        emision: LocalDateTime,
+        total: Double,
+        captura: LocalDateTime = emision,
+        categoria: Categoria = Categoria.OTROS,
+    ) = Ticket(
         comercio = "T",
         fechaEmision = emision,
         total = total,
-        categoria = Categoria.OTROS,
+        categoria = categoria,
         fechaCaptura = captura,
         motor = Motor.LOCAL,
         rutaFoto = "x.jpg",
@@ -131,7 +143,8 @@ class ResumenViewModelTest {
             if (s.cargando) s = awaitItem()
             assertEquals(0, s.resumen?.numTickets)
             repository.save(ticket(hoy.atTime(10, 0), 12.5))
-            s = awaitItem()
+            // combine emite estados intermedios (resumen y distribucion llegan por separado).
+            while (s.resumen?.numTickets != 1 || s.distribucion?.porciones?.size != 1) s = awaitItem()
             assertEquals(1, s.resumen?.numTickets)
             assertEquals(12.5, s.resumen?.total ?: -1.0, 0.001)
             cancelAndIgnoreRemainingEvents()
@@ -166,6 +179,43 @@ class ResumenViewModelTest {
     @Test
     fun elEstadoInicialDejaDeCargarse() = runTest {
         assertFalse(viewModel().uiState.first { !it.cargando }.cargando)
+    }
+
+    @Test
+    fun laDistribucionCambiaAlAlternarTipoYEsVaciaSinTickets() = runTest {
+        repository.save(ticket(hoy.atTime(9, 0), 10.0, categoria = Categoria.HOGAR))
+        repository.save(ticket(hoy.minusDays(14).atTime(9, 0), 30.0, categoria = Categoria.OCIO))
+        val vm = viewModel()
+        vm.uiState.test {
+            var s = esperar(PeriodoTipo.MES)
+            assertEquals(listOf(Categoria.OCIO, Categoria.HOGAR), s.distribucion?.porciones?.map { it.categoria })
+            assertEquals(4000L, s.distribucion?.totalCentimos)
+
+            vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
+            s = esperar(PeriodoTipo.DIA)
+            assertEquals(listOf(Categoria.HOGAR), s.distribucion?.porciones?.map { it.categoria })
+            assertEquals(100, s.distribucion?.porciones?.single()?.porcentaje)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun sinTicketsLaDistribucionEsVaciaYNoNulaTrasCargar() = runTest {
+        val s = viewModel().uiState.first { !it.cargando }
+        assertEquals(DistribucionCategorias.VACIA, s.distribucion)
+    }
+
+    @Test
+    fun laDistribucionSeActualizaSolaAlGuardarUnTicket() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            var s = esperar(PeriodoTipo.MES)
+            assertEquals(DistribucionCategorias.VACIA, s.distribucion)
+            repository.save(ticket(hoy.atTime(10, 0), 12.5, categoria = Categoria.SALUD))
+            while (s.distribucion?.porciones?.map { it.categoria } != listOf(Categoria.SALUD)) s = awaitItem()
+            assertEquals(listOf(Categoria.SALUD), s.distribucion?.porciones?.map { it.categoria })
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private suspend fun app.cash.turbine.ReceiveTurbine<ResumenUiState>.esperar(tipo: PeriodoTipo): ResumenUiState =

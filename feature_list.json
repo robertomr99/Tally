@@ -408,13 +408,16 @@
     "title": "Gráfica de distribución por categoría (donut)",
     "user_visible_behavior": "Donut por categoría con leyenda y desglose con barras para el período activo; estado vacío sin tickets.",
     "depends_on": ["periodo-selector"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Donut con Canvas de Compose renderiza proporciones correctas con dataset de prueba",
       "Estado vacío sin datos",
       "Colores de categoría según la decisión pendiente de DESIGN.md resuelta aquí"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-18 (sesion 045): assembleDebug testDebugUnitTest verde; JUnit CalcularDistribucionCategoriasTest 11, ObservarDistribucionDelPeriodoTest 2, SegmentosDonutTest 5, CategoriaUiContrasteTest 2 (todos los colores >=3:1; ambar oscurecido a #B86A22), ResumenViewModelTest 9. E2E emulator-5556 OK (27 tests) incl. GraficaDonutFlujoTest 4; capturas 6 categorias, 2 categorias y vacio en docs/evidence/grafica-donut/README.md. Pendiente humano: revision visual de paleta y daltonismo",
+      "2026-10-18 sesion 046: validator independiente -> accept (tests de dominio y feature:resumen re-ejecutados; matematica de distribucion, segmentosDonut, contraste y capturas revisados; E2E apoyado en evidencia de emulator-5556, OK 27 tests). Pendiente humano no bloqueante: revision visual de paleta y simulacion de daltonismo."
+    ],
     "notes": "Mockup 02. Aquí se decide Open Design Question #1 (paleta semántica vs rampa verde)."
   },
   {

@@ -12,7 +12,7 @@ dependencias. Las reglas operativas completas están en `AGENTS.md`.
  ├─ :framework:database   (android library internal; implementa interfaces de domain)
  ├─ :framework:ai         (android library internal; implementa interfaces de domain; OCR, motores y modelo/ = descarga con WorkManager)
  ├─ :feature:common       (compose; tema, tipografía y utilidades de UI)
- ├─ :feature:resumen      (compose; panel: selector de período Día/Semana/Mes, usa :domain:expenses)
+ ├─ :feature:resumen      (compose; panel: selector Día/Semana/Mes, total y donut; usa :domain:expenses y :feature:common)
  ├─ :feature:ajustes      (compose; Ajustes: sección "Modelo local", descarga y token)
  ├─ :feature:gastos       (compose; pantallas)
  └─ :feature:escanear     (compose; pantallas)
@@ -270,6 +270,14 @@ app ──────────► feature:* ──────────�
   del período anterior"). `ObservarResumenDelPeriodo` combina los Flow del período y del
   anterior con el `Clock` inyectado. `ResumenUiState.resumen` alimenta `TarjetaTotal`;
   importes en `Double`, redondeo solo al formatear (`FormatoResumen.kt`, cifras `tnum`).
+- Donut de categorías (`grafica-donut`): `CalcularDistribucionCategorias` (pura) agrupa los
+  tickets por categoría en céntimos `Long` (HALF_UP desde el `Double`), omite las de 0 y reparte
+  porcentajes enteros por resto mayor (suman 100; orden por importe desc, empate por `ordinal`).
+  `ObservarDistribucionDelPeriodo` la aplica al Flow de `ObservarTicketsDelPeriodo`.
+  `ResumenUiState.distribucion` (`null` = cargando) alimenta `TarjetaDistribucion` (`Canvas`,
+  sin librerías de gráficas; geometría pura en `segmentosDonut`). Etiqueta, icono y color de
+  categoría viven en `:feature:common` (`CategoriaUi.kt`); `:feature:resumen` depende de
+  `:feature:common` y `:feature:common` de `:domain:expenses` (no son módulos nuevos).
 
 ## Convenciones de build
 

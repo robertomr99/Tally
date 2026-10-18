@@ -12,6 +12,9 @@ dependencies {
     // Casos de uso del período y entidades (spec periodo-selector).
     implementation(project(":domain:expenses"))
 
+    // Etiqueta, icono y color de categoría compartidos (spec grafica-donut, D2).
+    implementation(project(":feature:common"))
+
     // hiltViewModel() en Compose.
     implementation(libs.hilt.navigation.compose)
 

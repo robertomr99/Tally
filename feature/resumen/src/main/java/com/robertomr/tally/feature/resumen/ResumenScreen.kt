@@ -27,7 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 
 /**
- * Pestaña Resumen: selector de período y tarjeta de total con sus métricas.
+ * Pestaña Resumen: selector de período, tarjeta de total y distribución por categoría.
  */
 @Composable
 fun ResumenScreen(
@@ -91,6 +91,7 @@ private fun ResumenContenido(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen)
+            TarjetaDistribucion(distribucion = ui.distribucion)
         }
     }
 }

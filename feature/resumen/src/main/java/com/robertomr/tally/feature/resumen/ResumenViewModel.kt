@@ -2,9 +2,11 @@ package com.robertomr.tally.feature.resumen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.ResumenPeriodo
+import com.robertomr.tally.domain.expenses.usecases.ObservarDistribucionDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarResumenDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,20 +14,22 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
  * Estado del panel (specs periodo-selector y resumen-total). [resumen] lleva las
- * métricas de la tarjeta de total y es `null` mientras carga.
+ * métricas de la tarjeta de total y [distribucion] el reparto por categoría del
+ * donut (spec grafica-donut); ambos son `null` mientras carga.
  */
 data class ResumenUiState(
     val cargando: Boolean = true,
     val tipo: PeriodoTipo = PeriodoTipo.MES,
     val periodo: Periodo? = null,
     val resumen: ResumenPeriodo? = null,
+    val distribucion: DistribucionCategorias? = null,
 )
 
 /**
@@ -41,6 +45,7 @@ data class ResumenUiState(
 class ResumenViewModel @Inject constructor(
     private val obtenerPeriodo: ObtenerPeriodo,
     private val observarResumenDelPeriodo: ObservarResumenDelPeriodo,
+    private val observarDistribucionDelPeriodo: ObservarDistribucionDelPeriodo,
 ) : ViewModel() {
 
     private val tipoSeleccionado = MutableStateFlow(PeriodoTipo.MES)
@@ -48,12 +53,16 @@ class ResumenViewModel @Inject constructor(
     val uiState: StateFlow<ResumenUiState> = tipoSeleccionado
         .flatMapLatest { tipo ->
             val periodo = obtenerPeriodo(tipo)
-            observarResumenDelPeriodo(periodo).map { resumen ->
+            combine(
+                observarResumenDelPeriodo(periodo),
+                observarDistribucionDelPeriodo(periodo),
+            ) { resumen, distribucion ->
                 ResumenUiState(
                     cargando = false,
                     tipo = tipo,
                     periodo = periodo,
                     resumen = resumen,
+                    distribucion = distribucion,
                 )
             }
         }
