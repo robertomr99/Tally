@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.robertomr.tally.feature.ajustes.AjustesScreen
 import com.robertomr.tally.feature.common.BottomBarDestino
 import com.robertomr.tally.feature.common.TallyBottomBar
 import com.robertomr.tally.feature.escanear.EscanearScreen
@@ -42,7 +43,14 @@ fun TallyApp() {
             startDestination = TallyRoute.Resumen.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(TallyRoute.Resumen.route) { ResumenScreen() }
+            composable(TallyRoute.Resumen.route) {
+                ResumenScreen(
+                    onAbrirAjustes = { navController.navigate(TallyRoute.Ajustes.route) },
+                )
+            }
+            composable(TallyRoute.Ajustes.route) {
+                AjustesScreen(onBack = { navController.popBackStack() })
+            }
             composable(TallyRoute.Gastos.route) { GastosScreen() }
             composable(TallyRoute.Escanear.route) {
                 // Tras Guardar (spec revision-datos) se vuelve al listado: la

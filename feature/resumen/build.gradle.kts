@@ -6,3 +6,8 @@ plugins {
 android {
     namespace = "com.robertomr.tally.feature.resumen"
 }
+
+dependencies {
+    // Icono de Ajustes (Settings); lo gestiona el Compose BOM.
+    implementation(libs.androidx.compose.material.icons.extended)
+}

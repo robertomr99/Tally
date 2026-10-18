@@ -51,6 +51,7 @@ dependencies {
     implementation(project(":feature:resumen"))
     implementation(project(":feature:gastos"))
     implementation(project(":feature:escanear"))
+    implementation(project(":feature:ajustes"))
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
@@ -69,6 +70,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     // GrantPermissionRule del CapturaFlujoTest (spec captura-foto).
     androidTestImplementation(libs.androidx.test.rules)
+    // WorkManager en el E2E de descarga-modelo (comprobar que no se encola trabajo).
+    androidTestImplementation(libs.androidx.work.runtime.ktx)
     // App Check debug provider para el test real de nube (extraccion-nube T7):
     // Firebase AI Logic exige App Check enforced; sin provider de produccion
     // (pendiente futuro). Sin claves en el repo: el debug token es un fichero

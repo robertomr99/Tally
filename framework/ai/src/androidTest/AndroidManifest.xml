@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ModelDownloadEngineDeviceTest habla con un servidor local en http://127.0.0.1
+         (solo en el APK de test; el motor real exige HTTPS). -->
+    <application android:usesCleartextTraffic="true" />
+</manifest>

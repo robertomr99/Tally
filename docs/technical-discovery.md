@@ -18,7 +18,7 @@ Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
   gratuito, sin clave de API. Produce el texto crudo.
 - **Motor Local**: Gemma 3n con MediaPipe (LLM Inference / GenAI) como
   `GemmaLocalEngine` en `framework/ai`. El archivo del modelo NO va en el APK:
-  se descarga en la primera ejecución (WiFi + progreso + espacio).
+  se descarga desde Ajustes (WiFi + progreso + espacio; 3,4 GB reales, no "2-3 GB") con WorkManager y reanudación `Range` en `framework/ai/modelo`; el token de Hugging Face lo pega el usuario y vive en `noBackupFilesDir`.
 - **Motor Nube**: Gemini vía Firebase AI Logic SDK como `GeminiCloudEngine`
   (sin clave de API en el APK; la gestione Firebase).
 - **Gráfica**: donut dibujado con Canvas de Compose (el diseño usa SVG, se

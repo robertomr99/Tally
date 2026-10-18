@@ -1,13 +1,22 @@
 package com.robertomr.tally.framework.ai.di
 
+import android.content.Context
+import com.robertomr.tally.domain.expenses.data.DownloadConditions
+import com.robertomr.tally.domain.expenses.data.ModelAccessTokenStore
+import com.robertomr.tally.domain.expenses.data.ModelDownloader
 import com.robertomr.tally.domain.expenses.data.OcrEngine
 import com.robertomr.tally.domain.expenses.data.TextEngine
 import com.robertomr.tally.framework.ai.extraccion.GeminiCloudEngine
+import com.robertomr.tally.framework.ai.modelo.AndroidDownloadConditions
+import com.robertomr.tally.framework.ai.modelo.FileModelAccessTokenStore
+import com.robertomr.tally.framework.ai.modelo.WorkManagerModelDownloader
 import com.robertomr.tally.framework.ai.ocr.MlKitOcrEngine
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -24,4 +33,26 @@ internal object AiModule {
      */
     @Provides
     fun provideTextEngine(): TextEngine = GeminiCloudEngine()
+
+    /** Politica WiFi y espacio libre para la descarga del modelo (spec descarga-modelo). */
+    @Provides
+    @Singleton
+    fun provideDownloadConditions(
+        @ApplicationContext context: Context,
+    ): DownloadConditions = AndroidDownloadConditions(context)
+
+    /** Token de Hugging Face del usuario en `noBackupFilesDir` (spec descarga-modelo, D4). */
+    @Provides
+    @Singleton
+    fun provideModelAccessTokenStore(
+        @ApplicationContext context: Context,
+    ): ModelAccessTokenStore = FileModelAccessTokenStore(context)
+
+    /** Descarga del modelo local con WorkManager (spec descarga-modelo). */
+    @Provides
+    @Singleton
+    fun provideModelDownloader(
+        @ApplicationContext context: Context,
+        conditions: DownloadConditions,
+    ): ModelDownloader = WorkManagerModelDownloader(context, conditions)
 }

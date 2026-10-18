@@ -9,8 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `descarga-modelo` (dep `spike-gemma-mediapipe`
-  accepted; sin spec → `planner`). Después, `extraccion-local`.
+- Current next ready feature: `extraccion-local` (descarga-modelo `accepted`, sesión 031; sin spec → `planner`).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2060,3 +2059,93 @@
   después `planner` sobre `descarga-modelo`.
 - Seguimiento: con `emulator-5554` arrancado, `RevisionDatosFlujoTest` 3/3
   (0 fallos, 0 skipped) incluido el paso de precio vacío. Pendiente cerrado.
+
+### Session 030
+
+- Date: 2026-10-18
+- Goal: planificar `descarga-modelo` (dep `spike-gemma-mediapipe` accepted) con `planner`.
+- Completed:
+  - Spec creada: `docs/specs/descarga-modelo.md` (~230 lineas).
+  - Decisiones con DEFAULT: WorkManager (red no medida, notificacion `dataSync`,
+    backoff) como unica dependencia nueva; `HttpURLConnection` con `Range` sobre
+    `.part` y redirecciones manuales (no se envia `Authorization` al CDN);
+    token HF pegado por el usuario en `noBackupFilesDir`; modelo real
+    3.655.827.456 bytes (3,4 GB; corrige el "2-3 GB" de la doc); dominio puro
+    (`EstadoModelo`, `ModelDownloader`, casos de uso) con implementaciones
+    `internal` en `framework/ai/modelo/`; integridad solo por tamaño.
+  - D1 (modulo Gradle nuevo `:feature:ajustes`): **aprobada por el usuario**
+    el 2026-10-18 (AGENTS.md exige preguntar antes de crear modulos).
+- Verification run: planificacion (sin gates de producto; cero cambios de codigo).
+- Evidence captured: `docs/specs/descarga-modelo.md`.
+- Files or artifacts updated: `docs/specs/descarga-modelo.md` (nuevo),
+  `feature_list.json` (nota de planificacion), `PROGRESS.md`.
+- Known risk or unresolved issue:
+  - R-DM1: la verificacion fisica en la Tab S9+ necesita un token HF con la
+    licencia Gemma aceptada; sin el solo se verifica el protocolo contra un
+    servidor local de pruebas.
+  - R-DM2..R-DM6: ver la spec (CDN de HF, version `main`, fichero preexistente,
+    limites `dataSync` en Android 14+, WiFi medido).
+- Next best step: `implementer` sobre `docs/specs/descarga-modelo.md`.
+
+### Session 031
+
+- Date: 2026-10-18
+- Goal: cerrar la implementación de `descarga-modelo` (continuación de una
+  instancia anterior sin commits) y verificar en `emulator-5554`.
+- Completed:
+  - Código ya presente: dominio (`EstadoModelo`, `ModelDownloader`, casos de uso),
+    `framework/ai/modelo` (motor `HttpURLConnection` + `Range`, worker WorkManager
+    2.12.0, token en `noBackupFilesDir`), módulo `:feature:ajustes`, ruta Ajustes
+    e icono en Resumen. Capturas 01-07 en `docs/evidence/descarga-modelo/`.
+  - Docs duraderas: 3,4 GB en `technical-discovery.md` y `risks-and-open-questions.md`;
+    `:feature:ajustes` y `framework/ai/modelo` en `architecture.md`; checkboxes de la spec.
+- Verification run (todo en `emulator-5554`; adb en `.../Android/Sdk/platform-tools`):
+  - `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test`
+    → BUILD SUCCESSFUL.
+  - `:app:connectedDebugAndroidTest` → 19/19 (0 fallos), incl. `AjustesModeloFlujoTest` 3/3.
+  - `:framework:ai:connectedDebugAndroidTest` → `ModelDownloadEngineDeviceTest` 4/4 y
+    `MlKitOcrEngineTest` 7/7; `GemmaMediaPipeSpikeTest` falla por diseño (no hay modelo
+    en `.../files/models`, requiere `adb push`; ajeno a esta feature).
+  - Estáticas: 0 versiones literales en `*.gradle.kts`, 0 Retrofit/OkHttp en código
+    (solo un comentario), 0 `BuildConfig`/tokens `hf_` en código, diff vacío de
+    `init.sh`, `AGENTS.md` y `build-logic/`.
+- NO realizado: DESCARGA REAL de 3,4 GB. El token HF que el usuario guardó en la app
+  del emulador se perdió: la primera ejecución de `connectedDebugAndroidTest` falló
+  `conWifiElWorkerArrancaYSinTokenAvisaDeLaLicencia` (el test asume app sin token; con
+  token el worker terminó en Error genérico "No se pudo completar la descarga", causa
+  sin determinar por no haber logcat) y AGP desinstala la app al terminar, lo que
+  borra `noBackupFilesDir`. Tras la reinstalación no hay token; no se inventó ninguno.
+- Known risk or unresolved issue:
+  - Con token válido el worker acabó en error genérico en esa corrida: hay que
+    diagnosticar con `adb logcat -s ModeloDescarga` en la descarga real (puede ser
+    licencia Gemma no aceptada, red del emulador o un bug del motor).
+  - Los tests instrumentados desinstalan la app: ejecutar la descarga real DESPUÉS de
+    ellos y no volver a lanzar `connected*` hasta terminar.
+  - `AjustesModeloFlujoTest` depende de que no haya token guardado.
+- Next best step: reinstalar (`gradlew installDebug`), pegar el token en Ajustes y
+  ejecutar el paso 4 (descarga real, corte de WiFi, reanudación, Eliminar) con logcat;
+  si sale completa, `passing`. Tab S9+ opcional.
+
+### Session 031 (seguimiento): descarga real
+
+- Date: 2026-10-18
+- Completed:
+  - Descarga real en `emulator-5554` con el token del usuario ya guardado en la app
+    (no leido ni mostrado). Primer intento: `HTTP 404` por **errata de repo en
+    `ModelPaths.URL_MODELO`** (`google/gemma-3n-E2B-it-litertlm` no existe; correcto
+    `google/gemma-3n-E2B-it-litert-lm`, confirmado con la API publica de HF; el
+    fichero `gemma-3n-E2B-it-int4.litertlm` mide 3.655.827.456 bytes). Corregido en
+    `ModelPaths.kt`, `docs/specs/descarga-modelo.md` y `docs/risks-and-open-questions.md`.
+  - Tras el fix: Descargando -> corte de WiFi -> "En pausa · Esperando WiFi" con el
+    `.part` conservado (500.597.515 bytes) -> WiFi on -> "Reanudando desde 500597515
+    bytes (Range)" -> "Descarga completa: 3655827456 bytes" -> estado Descargado.
+    Fichero final de 3.655.827.456 bytes. Evidencia: capturas 08-10 en
+    `docs/evidence/descarga-modelo/` (0 coincidencias `hf_` en los volcados).
+- Status: `descarga-modelo` = **accepted** (validator independiente: ACCEPT, JVM re-ejecutado + fichero final de 3655827456 bytes por adb; sin hallazgos bloqueantes).
+- Known risk or unresolved issue:
+  - Tab S9+ (red movil real, rendimiento fisico): prueba opcional, no bloqueante.
+  - `AjustesModeloFlujoTest` falla si hay un token guardado; los `connected*Test`
+    desinstalan la app y borran token y modelo descargado.
+  - El modelo real queda en el emulador para `extraccion-local` (no volver a lanzar
+    `connected*` si se quiere conservar).
+- Next best step: planificar `extraccion-local` (deps accepted); aislar `AjustesModeloFlujoTest` del token guardado.

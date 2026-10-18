@@ -30,8 +30,14 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
 
-    // TicketExtractionPromptTest (JVM) de extraccion-nube.
+    // WorkManager: descarga del modelo local en segundo plano (descarga-modelo).
+    implementation(libs.androidx.work.runtime.ktx)
+    // NotificationCompat de la notificacion en primer plano de la descarga.
+    implementation(libs.androidx.core.ktx)
+
+    // TicketExtractionPromptTest (JVM) de extraccion-nube + ModelDownloadEngineTest.
     testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
 
     // Harness instrumentado sin UI del spike (se ejecuta a mano con la Tab S9+).
     androidTestImplementation(libs.coroutines.core)

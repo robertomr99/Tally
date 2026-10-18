@@ -6,4 +6,7 @@ sealed class TallyRoute(val route: String) {
     data object Resumen : TallyRoute("resumen")
     data object Gastos : TallyRoute("gastos")
     data object Escanear : TallyRoute("escanear")
+
+    // Pantalla secundaria (sin pestaña de la bottom bar): se abre desde Resumen.
+    data object Ajustes : TallyRoute("ajustes")
 }

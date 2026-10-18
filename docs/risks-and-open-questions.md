@@ -8,7 +8,7 @@
      (`LlmInference` + `LlmInferenceSession`) con
      `google/gemma-3n-E2B-it-int4.litertlm` (Gemma 3n E2B-it cuantizado int4,
      formato LiteRT-LM, 3.655.827.456 bytes ≈ 3,4 GB, origen Hugging Face
-     `google/gemma-3n-E2B-it-litertlm`; fuera del APK y del repo).
+     `google/gemma-3n-E2B-it-litert-lm`; fuera del APK y del repo).
    - Dispositivo: Galaxy Tab S9+ (`SM-X810`, `gts9pwifi`), Android 16 (API 36),
      11.454.088 kB de RAM (~11,4 GB).
    - Resultado real del harness (test instrumentado, off-main-thread verificado
@@ -38,7 +38,7 @@
      permite (generación esperada más lenta); 4) si el motor local no fuera
      viable en absoluto, el ADR 0001 ya contempla enrutar a Gemini en nube.
 2. **Alojamiento y descarga del modelo**: elegir fuente (Hugging Face), tamaño
-   (~2–3 GB esperados) y UX de descarga (solo WiFi, progreso, espacio libre).
+   (3,4 GB reales, 3.655.827.456 bytes; `descarga-modelo`: WorkManager, solo red no medida, token HF del usuario, reanudación con `Range`) y UX de descarga (solo WiFi, progreso, espacio libre).
 3. **Firebase AI Logic**: crear proyecto, habilitar Gemini, verificar cuota del
    free tier y latencia desde España. Sin clave en el APK.
 

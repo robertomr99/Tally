@@ -10,9 +10,10 @@ dependencias. Las reglas operativas completas están en `AGENTS.md`.
  ├─ :domain:core          (Kotlin puro, sin Android)
  ├─ :domain:expenses      (Kotlin puro, sin Android)
  ├─ :framework:database   (android library internal; implementa interfaces de domain)
- ├─ :framework:ai         (android library internal; implementa interfaces de domain)
+ ├─ :framework:ai         (android library internal; implementa interfaces de domain; OCR, motores y modelo/ = descarga con WorkManager)
  ├─ :feature:common       (compose; tema, tipografía y utilidades de UI)
  ├─ :feature:resumen      (compose; pantallas)
+ ├─ :feature:ajustes      (compose; Ajustes: sección "Modelo local", descarga y token)
  ├─ :feature:gastos       (compose; pantallas)
  └─ :feature:escanear     (compose; pantallas)
 

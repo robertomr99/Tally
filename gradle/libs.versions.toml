@@ -67,6 +67,11 @@ googleServices = "4.5.0"
 # Firebase Android BoM (gestiona firebase-ai sin version literal; extraccion-nube).
 # Ultima release a 2026-10-16 (la doc de Firebase AI Logic recomienda 35.0.1+).
 firebaseBom = "35.0.2"
+# WorkManager (descarga-modelo): descarga del modelo local en segundo plano con
+# constraint de red no medida, reintentos y servicio en primer plano dataSync.
+# 2.12.0 es la ultima estable en Google Maven (2026-09-23); verificada en
+# maven-metadata.xml el 2026-10-18.
+workManager = "2.12.0"
 
 [libraries]
 # Artefactos de plugin (los usa build-logic)
@@ -150,6 +155,9 @@ exifinterface = { group = "androidx.exifinterface", name = "exifinterface", vers
 
 # hiltViewModel() para las pantallas Compose (:feature:escanear; captura-foto)
 hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+
+# WorkManager: CoroutineWorker + WorkManager.getWorkInfosForUniqueWorkFlow (descarga-modelo)
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 
 # Tests
 junit = { group = "junit", name = "junit", version.ref = "junit" }

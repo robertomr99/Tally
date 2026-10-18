@@ -278,16 +278,20 @@
     "id": "descarga-modelo",
     "area": "ia",
     "title": "Descarga del modelo local con progreso y estado",
-    "user_visible_behavior": "El usuario puede descargar el modelo local (~2-3 GB) desde la app (solo WiFi, con progreso y aviso de espacio) y ver su estado (descargado/no).",
+    "user_visible_behavior": "El usuario puede descargar el modelo local (3,4 GB) desde la app (solo WiFi, con progreso y aviso de espacio) y ver su estado (descargado/no).",
     "depends_on": ["spike-gemma-mediapipe"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Descarga completa probada en la Tab S9+ con reanudación básica",
       "Con red móvil, aviso y sin descarga (política WiFi)",
-      "Estado del modelo visible en Ajustes"
+      "Estado del modelo visible en Ajustes",
+      "2026-10-18 ACEPTADA por feature-validator independiente (sesión 031): re-ejecutó gate JVM --rerun-tasks (DescargarModeloTest 8, ModelDownloadEngineTest 14, AjustesViewModelTest 10, FormatoTamanoTest 3; 0 fallos) y comprobó por adb (solo lectura) el fichero final de 3655827456 bytes sin .part; escenarios 1-6 cumplidos, sin hallazgos bloqueantes. Tab S9+ opcional."
     ],
-    "evidence": [],
-    "notes": "El archivo NO va en el APK. Fuente Hugging Face (ver risks). Carga del modelo nunca en hilo principal."
+    "evidence": [
+      "2026-10-18 sesión 031: gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test → BUILD SUCCESSFUL; :app:connectedDebugAndroidTest en emulator-5554 19/19 (AjustesModeloFlujoTest 3/3); :framework:ai:connectedDebugAndroidTest ModelDownloadEngineDeviceTest 4/4 (GemmaMediaPipeSpikeTest falla por falta de modelo, ajeno); estáticas limpias (0 versiones literales, 0 Retrofit/OkHttp, 0 secretos, diff vacío init.sh/AGENTS.md/build-logic); capturas 01-07 en docs/evidence/descarga-modelo/",
+      "2026-10-18 DESCARGA REAL en emulator-5554 con el token HF del usuario guardado en la app (nunca leído ni mostrado; 0 coincidencias hf_ en la evidencia): primer intento HTTP 404 por errata de repo en la URL (google/gemma-3n-E2B-it-litertlm no existe; el correcto es google/gemma-3n-E2B-it-litert-lm, confirmado con la API pública de HF: gemma-3n-E2B-it-int4.litertlm = 3655827456 bytes). Corregido en ModelPaths.kt y docs. Tras el fix: Descargando (157 MB a los 20 s) -> corte de WiFi (svc wifi disable) -> En pausa · Esperando WiFi con 477 MB y .part conservado (500597515 bytes) -> WiFi on -> log \"Reanudando desde 500597515 bytes (Range)\" -> \"Descarga completa: 3655827456 bytes\" -> fichero final de 3655827456 bytes y estado Descargado (3,4 GB en el dispositivo). Capturas 08-10 en docs/evidence/descarga-modelo/. Eliminar probado antes con un fichero de 50 MB (el modelo real se conserva para extraccion-local). Tab S9+: prueba física opcional, no bloqueante. Pendiente menor: AjustesModeloFlujoTest falla si hay token guardado; los connected*Test desinstalan la app y borran token y modelo."
+    ],
+    "notes": "El archivo NO va en el APK. Fuente Hugging Face (ver risks). Carga del modelo nunca en hilo principal. IMPLEMENTADA sesión 031 y verificada con descarga real en emulator-5554. PLANIFICACIÓN 2026-10-18 (sesión 030): spec en docs/specs/descarga-modelo.md (WorkManager + HttpURLConnection con Range, token HF del usuario en noBackupFilesDir, modelo real 3,4 GB). D1 aprobada por el usuario: crear el módulo :feature:ajustes."
   },
   {
     "id": "extraccion-local",
