@@ -77,6 +77,8 @@ import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
+import com.robertomr.tally.domain.expenses.entities.parsearCantidad
+import com.robertomr.tally.domain.expenses.entities.parsearPrecio
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.totalRecalculado
@@ -331,6 +333,7 @@ private fun CampoEditable(
     keyboardType: KeyboardType = KeyboardType.Text,
     cifrasTabulares: Boolean = false,
     estilo: TextStyle = MaterialTheme.typography.bodyLarge,
+    esValido: (String) -> Boolean = { true },
 ) {
     // El texto local es la fuente durante la edicion: el ViewModel parsea y
     // actualiza el dato, pero el campo no se re-formatea bajo los dedos.
@@ -343,6 +346,9 @@ private fun CampoEditable(
         },
         label = { Text(etiqueta) },
         singleLine = true,
+        // Un texto no valido se marca en error: el modelo conserva el ultimo
+        // valor valido, y asi el usuario ve que lo escrito no es lo que cuenta.
+        isError = !esValido(texto),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         textStyle = if (cifrasTabulares) estilo.cifrasTabulares() else estilo,
         shape = RoundedCornerShape(8.dp),
@@ -544,6 +550,7 @@ private fun FilaLinea(
                 testTag = "${prefijo}_cantidad",
                 keyboardType = KeyboardType.Number,
                 cifrasTabulares = true,
+                esValido = { parsearCantidad(it) != null },
                 modifier = Modifier.width(96.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
@@ -554,6 +561,7 @@ private fun FilaLinea(
                 testTag = "${prefijo}_precio",
                 keyboardType = KeyboardType.Decimal,
                 cifrasTabulares = true,
+                esValido = { parsearPrecio(it) != null },
                 modifier = Modifier.weight(1f),
             )
             Spacer(modifier = Modifier.width(4.dp))

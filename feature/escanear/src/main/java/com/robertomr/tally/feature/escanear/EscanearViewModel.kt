@@ -11,6 +11,8 @@ import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.datosRevisionInicial
 import com.robertomr.tally.domain.expenses.entities.nuevaLineaEditable
+import com.robertomr.tally.domain.expenses.entities.parsearCantidad
+import com.robertomr.tally.domain.expenses.entities.parsearPrecio
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
@@ -179,6 +181,9 @@ class EscanearViewModel @Inject constructor(
     // vuelve a emitir y re-ejecuta el guardado (MutableStateFlow conflaciona
     // valores iguales).
     private var intentoGuardado = 0
+    // Siguiente id de cliente para una linea nueva: solo crece durante la
+    // revision, asi que borrar la ultima fila y anadir otra no reutiliza su id.
+    private var proximoIdLinea = 0L
 
     /**
      * Motor que procesara la extraccion (spec procesado-ui T1/T3): passthrough
@@ -267,7 +272,9 @@ class EscanearViewModel @Inject constructor(
     fun onRevisar() {
         val actual = estado.value
         if (actual !is CapturaUiState.ExtraccionLista) return
-        datosRevision.value = datosRevisionInicial(actual.extraido)
+        val datos = datosRevisionInicial(actual.extraido)
+        proximoIdLinea = datos.lineas.size.toLong()
+        datosRevision.value = datos
         ordenGuardado.value = OrdenGuardado.Revisar
     }
 
@@ -298,7 +305,8 @@ class EscanearViewModel @Inject constructor(
      * Nunca toca el total del ticket.
      */
     fun onLineaAnadida() {
-        actualizarDatos { it.copy(lineas = it.lineas + nuevaLineaEditable(it.lineas)) }
+        val nueva = nuevaLineaEditable(proximoIdLinea++)
+        actualizarDatos { it.copy(lineas = it.lineas + nueva) }
     }
 
     fun onLineaConceptoEditado(id: Long, concepto: String) {
@@ -669,15 +677,6 @@ class EscanearViewModel @Inject constructor(
 
         fun parsearTotal(texto: String): Double? =
             texto.trim().replace(',', '.').toDoubleOrNull()
-
-        /** Cantidad de linea: entero >= 1 (docs/domain-model.md); si no, null. */
-        fun parsearCantidad(texto: String): Int? =
-            texto.trim().toIntOrNull()?.takeIf { it >= 1 }
-
-        /** Precio unitario: numero finito >= 0, coma o punto decimal; si no, null. */
-        fun parsearPrecio(texto: String): Double? =
-            texto.trim().replace(',', '.').toDoubleOrNull()
-                ?.takeIf { it.isFinite() && it >= 0.0 }
     }
 }
 

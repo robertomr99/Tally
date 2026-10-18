@@ -1,6 +1,7 @@
 package com.robertomr.tally.domain.expenses.entities
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -53,20 +54,33 @@ class LineaEditableTest {
     }
 
     @Test
-    fun nuevaLineaEditableEsFilaVaciaConIdNoRepetido() {
-        val sinLineas = nuevaLineaEditable(emptyList())
-        assertEquals(LineaEditable(0, "", 1, 0.0), sinLineas)
+    fun nuevaLineaEditableEsFilaVaciaConElIdDado() {
+        assertEquals(LineaEditable(0, "", 1, 0.0), nuevaLineaEditable(0))
 
-        // Con huecos de id (una fila borrada) el id nuevo es max + 1.
-        val existentes = listOf(
-            LineaEditable(0, "A", 1, 1.0),
-            LineaEditable(4, "B", 1, 1.0),
-        )
-        val nueva = nuevaLineaEditable(existentes)
+        val nueva = nuevaLineaEditable(5)
         assertEquals(5L, nueva.id)
         assertEquals("", nueva.concepto)
         assertEquals(1, nueva.cantidad)
         assertEquals(0.0, nueva.precioUnitario, 0.0)
+    }
+
+    @Test
+    fun parsearCantidadSoloAceptaEnterosMayoresOIgualesAUno() {
+        assertEquals(3, parsearCantidad(" 3 "))
+        listOf("", "abc", "0", "-3", "2,5", "2.5").forEach {
+            assertNull(it, parsearCantidad(it))
+        }
+    }
+
+    @Test
+    fun parsearPrecioVacioEsCeroYLosInvalidosSonNull() {
+        assertEquals(0.0, parsearPrecio("")!!, 0.0)
+        assertEquals(0.0, parsearPrecio("   ")!!, 0.0)
+        assertEquals(0.9, parsearPrecio("0,90")!!, 1e-9)
+        assertEquals(1.5, parsearPrecio("1.5")!!, 1e-9)
+        listOf("abc", "-1", "NaN", "Infinity").forEach {
+            assertNull(it, parsearPrecio(it))
+        }
     }
 
     @Test

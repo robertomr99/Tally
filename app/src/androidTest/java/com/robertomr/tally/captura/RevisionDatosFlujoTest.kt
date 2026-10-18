@@ -118,6 +118,12 @@ class RevisionDatosFlujoTest {
         composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
         escribir("revision_linea_0_cantidad", "3")
 
+        // Un precio vacio cuenta como 0 (el total baja) y se puede volver a rellenar.
+        escribir("revision_linea_1_precio", "")
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("4,50", substring = true)
+        escribir("revision_linea_1_precio", "2")
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+
         // Eliminar la segunda linea.
         composeRule.onNodeWithTag("revision_linea_1_borrar").performScrollTo().performClick()
         composeRule.waitForIdle()

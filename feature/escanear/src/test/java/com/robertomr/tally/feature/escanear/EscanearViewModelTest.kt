@@ -737,13 +737,14 @@ class EscanearViewModelTest {
 
     @Test
     fun cantidadOPrecioInvalidosSeIgnoranSinRomperLaRevision() = runTest {
-        // Escenario 4: "abc", "0", "-3", "2,5" en cantidad; "abc" y "-1" en precio.
+        // Escenario 4: "abc", "0", "-3", "2,5" y vacio en cantidad; "abc", "-1" y
+        // "NaN" en precio (el precio vacio es 0, ver precioVacioCuentaComoCero).
         abrirRevisionDatos()
 
         listOf("abc", "0", "-3", "2,5", "").forEach {
             viewModel.onLineaCantidadEditada(0, it)
         }
-        listOf("abc", "-1", "", "NaN").forEach {
+        listOf("abc", "-1", "NaN").forEach {
             viewModel.onLineaPrecioEditado(0, it)
         }
         // Una edicion a una fila inexistente tampoco rompe nada.
@@ -757,6 +758,35 @@ class EscanearViewModelTest {
         viewModel.onGuardar()
         esperarEstado { it is CapturaUiState.Guardado }
         assertEquals(listOf(Linea("LECHE", 2, 1.05)), ticketsGuardados().single().lineas)
+    }
+
+    @Test
+    fun precioVacioCuentaComoCeroYElTotalRecalculadoLoRefleja() = runTest {
+        // L1 (validator edicion-lineas): vaciar el precio no deja el valor anterior.
+        abrirRevisionDatos()
+
+        viewModel.onLineaPrecioEditado(0, "")
+        val editada = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.lineas.single().precioUnitario == 0.0
+        } as CapturaUiState.RevisionDatos
+
+        assertEquals(0.0, totalRecalculado(editada.datos.lineas), 0.0)
+        assertEquals(35.30, editada.datos.total, 0.0)
+    }
+
+    @Test
+    fun anadirTrasBorrarLaUltimaLineaNoReutilizaSuId() = runTest {
+        // L2 (validator edicion-lineas): ids que nunca se reutilizan.
+        abrirRevisionDatos()
+
+        viewModel.onLineaAnadida() // id 1
+        viewModel.onLineaEliminada(1)
+        viewModel.onLineaAnadida() // id 2, no 1
+        val actual = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.lineas.size == 2
+        } as CapturaUiState.RevisionDatos
+
+        assertEquals(listOf(0L, 2L), actual.datos.lineas.map { it.id })
     }
 
     @Test
@@ -787,7 +817,7 @@ class EscanearViewModelTest {
         abrirRevisionDatos()
         viewModel.onLineaEliminada(0)
         viewModel.onLineaAnadida()
-        // Sin filas, la nueva toma id 0 (max + 1 de lista vacia) y va en blanco.
+        // Sin filas, la nueva va en blanco (su id no reutiliza el de LECHE).
         esperarEstado {
             it is CapturaUiState.RevisionDatos && it.datos.lineas.singleOrNull()?.concepto == ""
         }

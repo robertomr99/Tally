@@ -2037,3 +2037,24 @@
   (id reutilizado tras borrar la línea de id máximo; inocuo).
 - Next best step: `planner` sobre `descarga-modelo` (dep `spike-gemma-mediapipe`
   accepted); después `extraccion-local`.
+
+### Session 029
+
+- Date: 2026-10-18
+- Goal: corregir los hallazgos L1 y L2 del validator de `edicion-lineas`.
+- Completed:
+  - L1: `parsearPrecio` trata el campo vacío como 0; `CampoEditable` marca el
+    campo en error (`esValido`) si cantidad/precio no son válidos. Las funciones
+    `parsearCantidad`/`parsearPrecio` pasan a `LineaEditable.kt` (dominio) para
+    que ViewModel y pantalla compartan la regla.
+  - L2: `nuevaLineaEditable(id)` + contador `proximoIdLinea` en el ViewModel
+    (solo crece, se reinicia en `onRevisar`); ya no se reutilizan ids.
+- Verification run: `assembleDebug testDebugUnitTest :domain:expenses:test
+  :app:compileDebugAndroidTestKotlin --rerun-tasks` → BUILD SUCCESSFUL;
+  LineaEditableTest 9/9, GuardarTicketTest 8/8, EscanearViewModelTest 33/33.
+- Known risk or unresolved issue:
+  - E2E `RevisionDatosFlujoTest` (paso nuevo: precio vacío → total baja) sin
+    ejecutar: `emulator-5554` apagado (solo había un dispositivo inalámbrico, que
+    no se usó). Estado de la feature sigue `accepted`.
+- Next best step: arrancar `emulator-5554` y ejecutar `RevisionDatosFlujoTest`;
+  después `planner` sobre `descarga-modelo`.

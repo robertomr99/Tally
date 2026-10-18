@@ -32,16 +32,35 @@ fun lineasEditablesIniciales(lineas: List<Linea>): List<LineaEditable> =
 
 /**
  * Fila nueva lista para escribir ("Añadir producto o linea"): concepto vacio,
- * cantidad 1 y precio 0. Su id es `max(id) + 1` (0 si no hay lineas), asi que
- * nunca colisiona con una fila existente.
+ * cantidad 1 y precio 0. El [id] lo asigna quien edita con un contador que solo
+ * crece, asi que borrar la ultima fila y anadir otra nunca reutiliza un id.
  */
-fun nuevaLineaEditable(existentes: List<LineaEditable>): LineaEditable =
+fun nuevaLineaEditable(id: Long): LineaEditable =
     LineaEditable(
-        id = (existentes.maxOfOrNull { it.id } ?: -1L) + 1L,
+        id = id,
         concepto = "",
         cantidad = 1,
         precioUnitario = 0.0,
     )
+
+/**
+ * Cantidad de linea tecleada: entero >= 1 (docs/domain-model.md); si no, `null`
+ * (el editor ignora el texto y la UI lo marca en error).
+ */
+fun parsearCantidad(texto: String): Int? =
+    texto.trim().toIntOrNull()?.takeIf { it >= 1 }
+
+/**
+ * Precio unitario tecleado: campo vacio = 0 (como una linea nueva); si no,
+ * numero finito >= 0 con coma o punto decimal; un texto no valido devuelve
+ * `null` (el editor lo ignora y la UI lo marca en error).
+ */
+fun parsearPrecio(texto: String): Double? {
+    val limpio = texto.trim()
+    if (limpio.isEmpty()) return 0.0
+    return limpio.replace(',', '.').toDoubleOrNull()
+        ?.takeIf { it.isFinite() && it >= 0.0 }
+}
 
 /**
  * "Total recalculado" (footer del mockup 08): suma de `cantidad x precio` de

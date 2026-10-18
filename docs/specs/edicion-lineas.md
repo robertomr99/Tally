@@ -105,7 +105,9 @@ Given una línea con cantidad o precio escritos como texto inválido ("abc", "0"
 When el usuario teclea
 Then el valor inválido se ignora (se conserva el último valor válido / ≥ 1 /
 ≥ 0), la pantalla sigue viva y "Guardar cambios" sigue disponible; no hay crash
-ni cierre del subflujo.
+ni cierre del subflujo. Revisión posterior a la aceptación (hallazgos L1/L2 del
+validator): el campo se marca en error mientras su texto no sea válido, y un
+precio vacío cuenta como 0 (no es inválido).
 
 ### Scenario 5: extracción vacía → añadir líneas a mano → guardar
 
@@ -441,7 +443,9 @@ Sin cambios en `settings.gradle.kts`, `build.gradle.kts`, `gradle/libs.versions.
   función pura y NUNCA escribe `datos.total`; test JVM explícito (escenario 2).
 - **R-EDI2 — Identidad de fila en Compose**: sin id estable, borrar/añadir filas
   puede "migrar" el texto tecleado. Mitigación: `LineaEditable.id` de cliente,
-  `key(id)` por fila, direccionamiento por id en los eventos.
+  `key(id)` por fila, direccionamiento por id en los eventos. Los ids salen de un
+  contador del ViewModel que solo crece (no `max + 1`), así que borrar la última
+  fila y añadir otra no reutiliza su id.
 - **R-EDI3 — Líneas inválidas**: cantidad/precio no parseables o fuera de rango.
   Mitigación: parseo tolerante (ignora el keystroke inválido) + normalización
   defensiva en `aLineas()` (cantidad ≥ 1, precio ≥ 0) + filtrado de vacías.
