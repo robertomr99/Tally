@@ -156,7 +156,8 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
                 onVolverALaFoto = viewModel::onVolverALaFoto,
             )
 
-            // Spec revision-datos (mockup 07): revision editable de la cabecera.
+            // Spec revision-datos (mockup 07) + edicion-lineas (mockup 08): revision
+            // editable de la cabecera y de las lineas; "Descartar" = back (no escribe).
             is CapturaUiState.RevisionDatos -> RevisionDatosContent(
                 extraido = actual.extraido,
                 datos = actual.datos,
@@ -165,6 +166,12 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
                 onFechaEditada = viewModel::onFechaEditada,
                 onTotalEditado = viewModel::onTotalEditado,
                 onCategoriaElegida = viewModel::onCategoriaElegida,
+                onLineaAnadida = viewModel::onLineaAnadida,
+                onLineaConceptoEditado = viewModel::onLineaConceptoEditado,
+                onLineaCantidadEditada = viewModel::onLineaCantidadEditada,
+                onLineaPrecioEditado = viewModel::onLineaPrecioEditado,
+                onLineaEliminada = viewModel::onLineaEliminada,
+                onDescartar = viewModel::onVolverAlResultado,
                 onGuardar = viewModel::onGuardar,
             )
 

@@ -9,9 +9,9 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `edicion-lineas` — planificada en la sesión 027
-  (spec lista en `docs/specs/edicion-lineas.md`; dep `revision-datos` accepted),
-  lista para `feature-implementer`. Después, `descarga-modelo`/`extraccion-local`.
+- Current next ready feature: `descarga-modelo` (dep `spike-gemma-mediapipe`
+  accepted; sin spec → `planner`). Después, `extraccion-local`.
+  `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
   Pendiente operativo: reintentar la cancelación FÍSICA de `procesado-ui`
@@ -26,7 +26,10 @@
   debug) en Firebase Console y borrar `app/appcheck-debug-token.txt` (finding Low
   sesión 019); 2 findings Low de la validación de `extraccion-nube` (envoltorio de
   errores de `GeminiCloudEngine`) como mantenimiento no bloqueante.
-- Last verified at: 2026-10-17 (sesión 026: `revision-datos` **accepted** por
+- Last verified at: 2026-10-18 (sesión 028: `edicion-lineas` **passing** — JVM en
+  verde, `:app` E2E 16/16 y `:framework:database` 22/22 en emulator-5554,
+  evidencia visual 01-05; ver sesión 028)
+- Prior verified at: 2026-10-17 (sesión 026: `revision-datos` **accepted** por
   feature-validator (ronda 2, veredicto `accept`) tras validación 1 `revise` por
   **M1** — repair aplicado (reintento de Guardar ya persiste: `Guardar` con nº de
   intento) + L1/L2/L3; `EscanearViewModelTest` 23/23; E2E `:app` 9/9; evidencia
@@ -1973,3 +1976,64 @@
     `listado-gastos`): se cubre en JVM por `TicketRepository.observeByDateRange`.
 - Next best step: `feature-implementer` sobre `docs/specs/edicion-lineas.md` y,
   despues, `feature-validator`; o commit/push del arbol si el usuario lo pide.
+
+### Session 028
+
+- Date: 2026-10-18
+- Goal: Implementar `edicion-lineas` (spec `docs/specs/edicion-lineas.md`).
+- Completed:
+  - Verificacion base `bash init.sh` en verde antes de tocar codigo.
+  - Dominio: `LineaEditable` + helpers puros (`lineasEditablesIniciales`,
+    `nuevaLineaEditable`, `totalRecalculado`, `aLineas`) en
+    `entities/LineaEditable.kt`; `DatosRevision.lineas`; `GuardarTicket` persiste
+    `datos.lineas.aLineas()` (total = `datos.total`, nunca la suma). Sin cambios
+    de Room/`schemas`.
+  - VM: `onLineaAnadida`, `onLineaConceptoEditado`, `onLineaCantidadEditada`
+    (entero >= 1), `onLineaPrecioEditado` (>= 0, coma/punto), `onLineaEliminada`;
+    inválidos se ignoran.
+  - UI: `RevisionDatosContent` con editor de lineas (filas keyeadas por id,
+    borrar en `error`), "Añadir producto o línea" (borde discontinuo), dock con
+    "Total recalculado" (`tnum`, contador real) y "Descartar"/"Guardar cambios".
+    Se conserva el campo "Total (con IVA)" (desviacion ya justificada en spec).
+  - Tests: `LineaEditableTest` (nuevo), `GuardarTicketTest` y
+    `EscanearViewModelTest` ampliados; `RevisionDatosFlujoTest` +2 metodos E2E.
+  - `docs/architecture.md` actualizado (seccion revision/edicion de lineas).
+- Verification run:
+  - `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test
+    :domain:expenses:test --rerun-tasks` → BUILD SUCCESSFUL; LineaEditableTest
+    7/7, GuardarTicketTest 8/8, EscanearViewModelTest 31/31, resto en verde.
+  - `:app:compileDebugAndroidTestKotlin` → OK.
+  - Primer intento del E2E sin emulador (apagado); tras arrancarlo el
+    orquestador, con `ANDROID_SERIAL=emulator-5554` (/data 12G, 17 % usado):
+    - `:app:connectedDebugAndroidTest` → **16/16, 0 skipped** (instalacion
+      limpia): RevisionDatosFlujoTest 3/3 (2 nuevos), ProcesadoFlujoTest 2/2,
+      CapturaFlujoTest 3/3, NavigationTest 3/3, ExtraccionNubeRealTest 5/5.
+      Una pasada intermedia dio `CapturaFlujoTest.denegado` skipped por el
+      `pm grant` manual de la evidencia (assumption preexistente); repetida → 0.
+    - `:framework:database:connectedDebugAndroidTest --rerun` → 22/22
+      (TicketDaoTest 5/5).
+  - Hallazgo visual corregido: en 411dp "Guardar cambios" se partia/recortaba
+    en el dock; fix `contentPadding` 12dp + `maxLines = 1`; gate JVM y suite
+    `:app` re-ejecutados en verde tras el fix.
+- Evidence captured: JUnit XML (JVM + instrumentados) y capturas/uiautomator
+  01-05 (sin lineas → linea editada 4,50 € → dos lineas 6,50 € → eliminada
+  4,50 € con Total (con IVA) intacto en 0,00 → Gastos) en
+  `docs/evidence/edicion-lineas/`; busquedas de decoracion ficticia / versiones
+  literales / diffs prohibidos limpias.
+- Files or artifacts updated: ver `git status` (dominio, VM, UI, Screen, tests,
+  E2E, `docs/architecture.md`, `feature_list.json`, `PROGRESS.md`).
+- Known risk or unresolved issue:
+  - La persistencia exacta de las lineas se verifica en JVM (no hay `sqlite3`
+    en el emulador ni listado real hasta `listado-gastos`).
+  - Los campos de linea usan `rememberSaveable` local (patron de `CampoEditable`):
+    al escribir un valor invalido el campo lo muestra pero el modelo conserva el
+    ultimo valido (el footer refleja el modelo).
+- Status: `edicion-lineas` = **accepted**. `feature-validator` independiente
+  devolvió ACCEPT: re-ejecutó el gate JVM (LineaEditableTest 7/7,
+  GuardarTicketTest 8/8, EscanearViewModelTest 31/31) y el E2E enfocado
+  `RevisionDatosFlujoTest` 3/3 en emulator-5554; escenarios 1-6 cumplidos.
+  Hallazgos bajos no bloqueantes: L1 (texto local del campo vs último valor
+  válido; posible follow-up: precio vacío = 0 o estado de error visual) y L2
+  (id reutilizado tras borrar la línea de id máximo; inocuo).
+- Next best step: `planner` sobre `descarga-modelo` (dep `spike-gemma-mediapipe`
+  accepted); después `extraccion-local`.

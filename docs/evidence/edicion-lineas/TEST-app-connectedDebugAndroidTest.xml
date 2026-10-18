@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuites tests="16" failures="0" errors="0" skipped="0" time="38.79" timestamp="2026-10-18T10:57:23" hostname="localhost">
+  <testsuite name="com.robertomr.tally.captura.CapturaFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="6.771" timestamp="2026-10-18T10:57:23" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="denegadoMuestraEstadoInAppSinCrash" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.49" />
+    <testcase name="obturadorAbreLaRevisionDeLaFotoYRepetirVuelveAlEncuadre" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="2.867" />
+    <testcase name="permisoConcedidoMuestraElEncuadreGuiado" classname="com.robertomr.tally.captura.CapturaFlujoTest" time="1.414" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.captura.ProcesadoFlujoTest" tests="2" failures="0" errors="0" skipped="0" time="5.075" timestamp="2026-10-18T10:57:23" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="procesadoMuestraElBadgeRealYElResultadoSoloLecturaConRevisarHabilitado" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="2.999" />
+    <testcase name="backDesdeElProcesadoVuelveALaFotoConElBorradorIntacto" classname="com.robertomr.tally.captura.ProcesadoFlujoTest" time="2.076" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.captura.RevisionDatosFlujoTest" tests="3" failures="0" errors="0" skipped="0" time="11.569" timestamp="2026-10-18T10:57:23" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="descartarConLineasEditadasVuelveAlResultadoDelProcesado" classname="com.robertomr.tally.captura.RevisionDatosFlujoTest" time="3.61" />
+    <testcase name="anadirEditarYEliminarLineasYGuardarCambiosVuelveALaPestanaGastos" classname="com.robertomr.tally.captura.RevisionDatosFlujoTest" time="5.603" />
+    <testcase name="revisarElegirCategoriaYGuardarVuelveALaPestanaGastos" classname="com.robertomr.tally.captura.RevisionDatosFlujoTest" time="2.356" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" tests="5" failures="0" errors="0" skipped="0" time="8.139" timestamp="2026-10-18T10:57:23" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="ticket1ExtractionIsValidWithTotal3530" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="4.223" />
+    <testcase name="ticket2ExtractionUsesTheTotalWithVatNotTheBase" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="1.507" />
+    <testcase name="ticket4ExtractionIsValidWithTotal791" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="1.435" />
+    <testcase name="ticket3ExtractionIsValidWithTotal1390" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.974" />
+    <testcase name="theInjectedEngineIsTheCloudOne" classname="com.robertomr.tally.extraccion.ExtraccionNubeRealTest" time="0.0" />
+  </testsuite>
+  <testsuite name="com.robertomr.tally.navigation.NavigationTest" tests="3" failures="0" errors="0" skipped="0" time="6.634" timestamp="2026-10-18T10:57:23" hostname="localhost">
+    <properties>
+      <property name="device" value="Medium_Phone_API_36.1(AVD) - 16" />
+      <property name="flavor" value="" />
+      <property name="project" value=":app" />
+    </properties>
+    <testcase name="startsOnResumenWithActivePill" classname="com.robertomr.tally.navigation.NavigationTest" time="1.97" />
+    <testcase name="systemBackReturnsToResumenAndNextBackExitsTheApp" classname="com.robertomr.tally.navigation.NavigationTest" time="2.179" />
+    <testcase name="bottomBarNavigatesAcrossTheThreeDestinations" classname="com.robertomr.tally.navigation.NavigationTest" time="2.485" />
+  </testsuite>
+</testsuites>

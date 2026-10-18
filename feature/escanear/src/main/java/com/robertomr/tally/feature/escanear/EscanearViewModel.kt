@@ -6,9 +6,11 @@ import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
+import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.datosRevisionInicial
+import com.robertomr.tally.domain.expenses.entities.nuevaLineaEditable
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
@@ -51,7 +53,9 @@ import kotlinx.coroutines.launch
  * Spec revision-datos (mockup 07): desde el resultado, "Revisar ticket" abre la
  * revision editable ([CapturaUiState.RevisionDatos]); "Guardar" persiste el
  * ticket ([CapturaUiState.Guardando] -> [CapturaUiState.Guardado]) y la pantalla
- * emite el evento de vuelta al listado. Las lineas son de solo lectura.
+ * emite el evento de vuelta al listado. Spec edicion-lineas (mockup 08): en la
+ * misma revision se anaden, eliminan y editan las lineas; el total del ticket no
+ * se deriva de ellas.
  */
 sealed interface CapturaUiState {
     data object PermisoPendiente : CapturaUiState
@@ -102,8 +106,8 @@ sealed interface CapturaUiState {
 
     /**
      * Ticket digitalizado editable (spec revision-datos, mockup 07): la cabecera
-     * corregida ([datos]) sobre la extraccion tal cual ([extraido]; lineas en
-     * solo lectura). [errorGuardado] lleva el motivo real si el guardado fallo
+     * corregida y las lineas editables ([datos]) sobre la extraccion tal cual
+     * ([extraido]). [errorGuardado] lleva el motivo real si el guardado fallo
      * (la UI lo pinta con la paleta `error`); null en la revision normal.
      */
     data class RevisionDatos(
@@ -257,8 +261,8 @@ class EscanearViewModel @Inject constructor(
 
     /**
      * "Revisar ticket" (resultado, spec revision-datos): abre la revision
-     * editable con la cabecera prefijada por [datosRevisionInicial]. Las lineas
-     * NO se editan (solo lectura; `edicion-lineas` es otra feature).
+     * editable con la cabecera y las lineas prefijadas por [datosRevisionInicial]
+     * (las lineas se editan con los eventos `onLinea*`, spec edicion-lineas).
      */
     fun onRevisar() {
         val actual = estado.value
@@ -286,6 +290,36 @@ class EscanearViewModel @Inject constructor(
     /** Chips de categoria: solo las 6 de la enum fija (CONTEXT.md). */
     fun onCategoriaElegida(categoria: Categoria) {
         actualizarDatos { it.copy(categoria = categoria) }
+    }
+
+    /**
+     * "Añadir producto o linea" (spec edicion-lineas, mockup 08): anade una
+     * fila vacia (concepto "", cantidad 1, precio 0) con id de cliente nuevo.
+     * Nunca toca el total del ticket.
+     */
+    fun onLineaAnadida() {
+        actualizarDatos { it.copy(lineas = it.lineas + nuevaLineaEditable(it.lineas)) }
+    }
+
+    fun onLineaConceptoEditado(id: Long, concepto: String) {
+        actualizarLinea(id) { it.copy(concepto = concepto) }
+    }
+
+    /** Cantidad entera >= 1; un texto no parseable, decimal o < 1 se ignora. */
+    fun onLineaCantidadEditada(id: Long, texto: String) {
+        val cantidad = parsearCantidad(texto) ?: return
+        actualizarLinea(id) { it.copy(cantidad = cantidad) }
+    }
+
+    /** Precio >= 0 con coma o punto decimal; no parseable o negativo se ignora. */
+    fun onLineaPrecioEditado(id: Long, texto: String) {
+        val precio = parsearPrecio(texto) ?: return
+        actualizarLinea(id) { it.copy(precioUnitario = precio) }
+    }
+
+    /** Boton borrar de la fila: elimina la linea por id (el total no cambia). */
+    fun onLineaEliminada(id: Long) {
+        actualizarDatos { datos -> datos.copy(lineas = datos.lineas.filterNot { it.id == id }) }
     }
 
     /**
@@ -344,6 +378,17 @@ class EscanearViewModel @Inject constructor(
         datosRevision.value = transformacion(actual)
         // Una edicion deja la revision limpia (borra un posible error de guardado).
         ordenGuardado.value = OrdenGuardado.Revisar
+    }
+
+    /** Edita SOLO la linea [id] (direccionada por id de cliente, R-EDI2). */
+    private fun actualizarLinea(id: Long, transformacion: (LineaEditable) -> LineaEditable) {
+        actualizarDatos { datos ->
+            datos.copy(
+                lineas = datos.lineas.map { linea ->
+                    if (linea.id == id) transformacion(linea) else linea
+                },
+            )
+        }
     }
 
     private fun resultadoDeCaptura(entrada: EntradaCaptura): Flow<CapturaEnProgreso> =
@@ -624,6 +669,15 @@ class EscanearViewModel @Inject constructor(
 
         fun parsearTotal(texto: String): Double? =
             texto.trim().replace(',', '.').toDoubleOrNull()
+
+        /** Cantidad de linea: entero >= 1 (docs/domain-model.md); si no, null. */
+        fun parsearCantidad(texto: String): Int? =
+            texto.trim().toIntOrNull()?.takeIf { it >= 1 }
+
+        /** Precio unitario: numero finito >= 0, coma o punto decimal; si no, null. */
+        fun parsearPrecio(texto: String): Double? =
+            texto.trim().replace(',', '.').toDoubleOrNull()
+                ?.takeIf { it.isFinite() && it >= 0.0 }
     }
 }
 

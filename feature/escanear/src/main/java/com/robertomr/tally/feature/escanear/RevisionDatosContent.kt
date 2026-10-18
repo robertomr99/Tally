@@ -3,8 +3,10 @@ package com.robertomr.tally.feature.escanear
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -13,40 +15,56 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Functions
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LocalHospital
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -54,34 +72,43 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
-import com.robertomr.tally.domain.expenses.entities.Linea
+import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.domain.expenses.entities.totalRecalculado
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Pantalla 07: revision del ticket digitalizado (spec revision-datos, mockup 07
- * adaptado a DESIGN.md). Sobre la extraccion tal cual salio del motor, el
- * usuario corrige SOLO la cabecera (comercio, fecha, total y categoria con
- * chips de la enum fija de 6); las lineas se muestran en solo lectura
- * (`edicion-lineas` es otra feature).
+ * Pantalla de revision y edicion del ticket digitalizado (spec revision-datos,
+ * mockup 07; spec edicion-lineas, mockup 08; adaptados a DESIGN.md). Sobre la
+ * extraccion tal cual salio del motor, el usuario corrige la cabecera
+ * (comercio, fecha, total y categoria con chips de la enum fija de 6) y, en el
+ * editor de lineas, anade, elimina y edita concepto/cantidad/precio.
  *
- * Contenedor de recibo normativo del mockup: superficie
- * `surface-container-lowest` (blanco), acento `primary` arriba, cabecera de
- * comercio con icono `storefront`, chips de categoria (activo
- * `secondary-container` + check), filas de linea (concepto x cantidad +
- * importe con `tnum`), separador discontinuo antes del total y total destacado
- * con `tnum`; dock inferior con "Guardar" (filled pill, >= 44dp).
+ * Contenedor de recibo normativo: superficie `surface-container-lowest`
+ * (blanco), acento `primary` arriba, cabecera de comercio con icono
+ * `storefront`, chips de categoria (activo `secondary-container` + check),
+ * separador discontinuo antes del total y total destacado con `tnum`. Editor de
+ * lineas (mockup 08): "Desglose de articulos" con contador REAL, filas
+ * editables con borrar en paleta `error`, "Anadir producto o linea" con borde
+ * discontinuo `primary`. Dock: "Total recalculado" (`tnum`, solo REFERENCIA) +
+ * "Descartar" (outlined) / "Guardar cambios" (filled pill), >= 44dp.
+ *
+ * El campo "Total (con IVA)" se conserva (desviacion justificada del mockup 08):
+ * el total es el dato autoritativo y NUNCA se sobrescribe con la suma de lineas
+ * (docs/domain-model.md, "Total vs lineas").
  *
  * Decoracion ficticia PROHIBIDA (DESIGN.md Do's and Don'ts): NIF, direccion,
- * "Operacion #8294", "Deduccion IRPF", "Subtotal/Cuota IVA", "HASH", "Registro
- * contable", "Tarjeta Debito", "Almacenamiento cifrado", "% verificado",
- * "6 items detectados", "Tally Vision". El badge de motor es real.
+ * "Operacion #8294", "Deduccion IRPF", "Subtotal/Cuota IVA", IVA desglosado,
+ * "HASH", "Registro contable", "Tarjeta Debito", "Almacenamiento cifrado",
+ * "% verificado", contadores inventados, "Tally Vision". El badge de motor es
+ * real.
  */
 @Composable
 fun RevisionDatosContent(
@@ -92,6 +119,12 @@ fun RevisionDatosContent(
     onFechaEditada: (String) -> Unit,
     onTotalEditado: (String) -> Unit,
     onCategoriaElegida: (Categoria) -> Unit,
+    onLineaAnadida: () -> Unit,
+    onLineaConceptoEditado: (Long, String) -> Unit,
+    onLineaCantidadEditada: (Long, String) -> Unit,
+    onLineaPrecioEditado: (Long, String) -> Unit,
+    onLineaEliminada: (Long) -> Unit,
+    onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -113,14 +146,23 @@ fun RevisionDatosContent(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             ContenedorRecibo(
                 datos = datos,
-                extraido = extraido,
                 onComercioEditado = onComercioEditado,
                 onFechaEditada = onFechaEditada,
                 onTotalEditado = onTotalEditado,
                 onCategoriaElegida = onCategoriaElegida,
+            )
+            EditorLineas(
+                lineas = datos.lineas,
+                onLineaAnadida = onLineaAnadida,
+                onLineaConceptoEditado = onLineaConceptoEditado,
+                onLineaCantidadEditada = onLineaCantidadEditada,
+                onLineaPrecioEditado = onLineaPrecioEditado,
+                onLineaEliminada = onLineaEliminada,
+                modifier = Modifier.padding(bottom = 16.dp),
             )
         }
 
@@ -132,24 +174,16 @@ fun RevisionDatosContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 24.dp, vertical = 4.dp)
                     .testTag("revision_error_guardado"),
             )
         }
 
-        // Dock inferior (mockup 07): "Guardar" persiste el ticket.
-        Button(
-            onClick = onGuardar,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
-                .fillMaxWidth()
-                .height(48.dp)
-                .testTag("revision_guardar"),
-            shape = RoundedCornerShape(9999.dp),
-            colors = ButtonDefaults.buttonColors(),
-        ) {
-            Text(text = "Guardar")
-        }
+        DockEdicion(
+            lineas = datos.lineas,
+            onDescartar = onDescartar,
+            onGuardar = onGuardar,
+        )
     }
 }
 
@@ -195,7 +229,6 @@ private fun BadgeMotorRevision(
 @Composable
 private fun ContenedorRecibo(
     datos: DatosRevision,
-    extraido: TicketExtraido,
     onComercioEditado: (String) -> Unit,
     onFechaEditada: (String) -> Unit,
     onTotalEditado: (String) -> Unit,
@@ -268,8 +301,6 @@ private fun ContenedorRecibo(
                 seleccionada = datos.categoria,
                 onElegida = onCategoriaElegida,
             )
-
-            LineasSoloLectura(lineas = extraido.lineas)
 
             SeparadorDiscontinuo(
                 modifier = Modifier
@@ -399,49 +430,293 @@ private fun ChipsCategoria(
     }
 }
 
-/** Lineas en SOLO LECTURA (su edicion es `edicion-lineas`, otra feature). */
+/**
+ * Editor de lineas (mockup 08, "Desglose de articulos"): filas keyeadas por
+ * [LineaEditable.id] (R-EDI2: borrar/anadir no "migra" el texto tecleado), con
+ * concepto, cantidad y precio editables y boton borrar en paleta `error`.
+ */
 @Composable
-private fun LineasSoloLectura(
-    lineas: List<Linea>,
+private fun EditorLineas(
+    lineas: List<LineaEditable>,
+    onLineaAnadida: () -> Unit,
+    onLineaConceptoEditado: (Long, String) -> Unit,
+    onLineaCantidadEditada: (Long, String) -> Unit,
+    onLineaPrecioEditado: (Long, String) -> Unit,
+    onLineaEliminada: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().testTag("revision_lineas")) {
-        Text(
-            text = "L\u00edneas",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (lineas.isEmpty()) {
-            Text(
-                text = "\u2014",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceContainerLowest,
+                RoundedCornerShape(16.dp),
             )
-        } else {
-            lineas.forEach { linea ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Text(
-                        text = linea.concepto,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(16.dp),
+            )
+            .padding(16.dp)
+            .testTag("revision_lineas"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.Receipt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Desglose de art\u00edculos",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = contadorArticulos(lineas.size),
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        RoundedCornerShape(4.dp),
                     )
-                    Text(
-                        text = "${linea.cantidad}\u00d7 ${formatoImporte(linea.precioUnitario)}",
-                        style = MaterialTheme.typography.bodyMedium.cifrasTabulares(),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.End,
-                    )
-                }
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .testTag("revision_lineas_contador"),
+            )
+        }
+
+        lineas.forEach { linea ->
+            key(linea.id) {
+                FilaLinea(
+                    linea = linea,
+                    onConceptoEditado = { onLineaConceptoEditado(linea.id, it) },
+                    onCantidadEditada = { onLineaCantidadEditada(linea.id, it) },
+                    onPrecioEditado = { onLineaPrecioEditado(linea.id, it) },
+                    onEliminar = { onLineaEliminada(linea.id) },
+                )
+            }
+        }
+
+        BotonAnadirLinea(onClick = onLineaAnadida)
+    }
+}
+
+@Composable
+private fun FilaLinea(
+    linea: LineaEditable,
+    onConceptoEditado: (String) -> Unit,
+    onCantidadEditada: (String) -> Unit,
+    onPrecioEditado: (String) -> Unit,
+    onEliminar: () -> Unit,
+) {
+    val prefijo = "revision_linea_${linea.id}"
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceContainerLow,
+                RoundedCornerShape(8.dp),
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(8.dp),
+            )
+            .padding(8.dp)
+            .testTag(prefijo),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        CampoEditable(
+            etiqueta = "Concepto",
+            valorInicial = linea.concepto,
+            onValorCambiado = onConceptoEditado,
+            testTag = "${prefijo}_concepto",
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CampoEditable(
+                etiqueta = "Cant.",
+                valorInicial = linea.cantidad.toString(),
+                onValorCambiado = onCantidadEditada,
+                testTag = "${prefijo}_cantidad",
+                keyboardType = KeyboardType.Number,
+                cifrasTabulares = true,
+                modifier = Modifier.width(96.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            CampoEditable(
+                etiqueta = "Precio (\u20ac)",
+                valorInicial = formatoPrecioLinea(linea.precioUnitario),
+                onValorCambiado = onPrecioEditado,
+                testTag = "${prefijo}_precio",
+                keyboardType = KeyboardType.Decimal,
+                cifrasTabulares = true,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            IconButton(
+                onClick = onEliminar,
+                modifier = Modifier
+                    .size(48.dp)
+                    .testTag("${prefijo}_borrar"),
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Delete,
+                    contentDescription = "Eliminar ${linea.concepto.ifBlank { "l\u00ednea" }}",
+                )
             }
         }
     }
 }
+
+/** "Anadir producto o linea" (mockup 08): borde discontinuo `primary`, >= 44dp. */
+@Composable
+private fun BotonAnadirLinea(onClick: () -> Unit) {
+    val colorBorde = MaterialTheme.colorScheme.primary
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .drawBehind {
+                drawRoundRect(
+                    color = colorBorde,
+                    style = Stroke(
+                        width = 2.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f)),
+                    ),
+                    cornerRadius = CornerRadius(12.dp.toPx()),
+                )
+            }
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag("revision_anadir_linea"),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.AddCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "A\u00f1adir producto o l\u00ednea",
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+/**
+ * Dock inferior en edicion (mockup 08): "Total recalculado" como REFERENCIA
+ * (suma de lineas con [totalRecalculado]; no toca el total del ticket) y
+ * acciones "Descartar" (outlined, no escribe) / "Guardar cambios" (filled).
+ */
+@Composable
+private fun DockEdicion(
+    lineas: List<LineaEditable>,
+    onDescartar: () -> Unit,
+    onGuardar: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Functions,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Total recalculado",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Calculado a partir de ${contadorArticulos(lineas.size)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+            Text(
+                text = formatoImporte(totalRecalculado(lineas)),
+                style = MaterialTheme.typography.headlineSmall
+                    .copy(fontWeight = FontWeight.SemiBold)
+                    .cifrasTabulares(),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag("revision_total_recalculado"),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedButton(
+                onClick = onDescartar,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .testTag("revision_descartar"),
+                shape = RoundedCornerShape(9999.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "Descartar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Button(
+                onClick = onGuardar,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .testTag("revision_guardar"),
+                shape = RoundedCornerShape(9999.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+                colors = ButtonDefaults.buttonColors(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Save,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "Guardar cambios", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+/** Contador REAL de filas (DESIGN.md: nada de "6 articulos" inventados). */
+private fun contadorArticulos(n: Int): String =
+    if (n == 1) "1 art\u00edculo" else "$n art\u00edculos"
+
+/** Precio de linea editable: vacio si es 0 (fila nueva lista para escribir). */
+private fun formatoPrecioLinea(precio: Double): String =
+    if (precio == 0.0) "" else formatoTotalRevision(precio)
 
 /** Separador discontinuo antes del total (mockup 07). */
 @Composable

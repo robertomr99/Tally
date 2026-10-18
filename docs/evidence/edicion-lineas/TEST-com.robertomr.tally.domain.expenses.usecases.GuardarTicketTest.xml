@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-18T10:48:42.528Z" hostname="DESKTOP-O5DBCC6" time="0.022">
+  <properties/>
+  <testcase name="editarLineasNoCambiaElTotalPersistido" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.008"/>
+  <testcase name="observeByDateRangeEmiteElTicketEnLaFechaCorregida" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.003"/>
+  <testcase name="cancellationIsNeverSwallowed" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.001"/>
+  <testcase name="guardarConLineasFotoYTextoPersisteElAgregadoCompleto" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.002"/>
+  <testcase name="eliminarTodasLasLineasPersisteCeroAunqueLaExtraccionTuviera" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.003"/>
+  <testcase name="guardarPersisteLasLineasEditadasYNoLasExtraidas" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.002"/>
+  <testcase name="datosRevisionInicialRellenaSoloLosCamposAusentes" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.002"/>
+  <testcase name="extraccionVaciaConDefaultsSePersisteSinBloquear" classname="com.robertomr.tally.domain.expenses.usecases.GuardarTicketTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

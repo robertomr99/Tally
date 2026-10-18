@@ -4,6 +4,7 @@ import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.domain.expenses.entities.aLineas
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -21,7 +22,10 @@ import javax.inject.Inject
  * Reglas del mapeo (docs/domain-model.md):
  * - `fechaCaptura` = momento del guardado; el `motor` que extrajo los datos sale
  *   del propio [TicketExtraido].
- * - Las lineas son las de la extraccion, sin editar (solo lectura aqui).
+ * - Las lineas son las EDITADAS por el usuario ([DatosRevision.lineas], spec
+ *   edicion-lineas) mapeadas con `aLineas()` (filas sin concepto descartadas,
+ *   cantidad >= 1, precio >= 0); `TicketDao.upsert` reemplaza el conjunto.
+ * - El total es [DatosRevision.total] (autoritativo), NUNCA la suma de lineas.
  * - `nota` se persiste `null` (fuera de alcance; "Añadir nota" es non-goal).
  * - `textoCrudoOcr` viaja tal cual desde el Borrador (evidencia del OCR).
  *
@@ -33,11 +37,11 @@ class GuardarTicket @Inject constructor(
 ) {
 
     /**
-     * @param extraido resultado validado del motor (su `motor` y `lineas` se
-     * conservan).
+     * @param extraido resultado validado del motor (se conserva su `motor`).
      * @param rutaFoto nombre relativo bajo `filesDir` de la foto ya capturada.
      * @param textoCrudo texto crudo del OCR registrado con el Borrador.
-     * @param datos cabecera corregida (comercio, fecha, total, categoria).
+     * @param datos cabecera corregida (comercio, fecha, total, categoria) y
+     * lineas editadas.
      * @return id asignado al ticket guardado.
      */
     suspend operator fun invoke(
@@ -57,7 +61,7 @@ class GuardarTicket @Inject constructor(
             rutaFoto = rutaFoto,
             nota = null,
             textoCrudoOcr = textoCrudo,
-            lineas = extraido.lineas,
+            lineas = datos.lineas.aLineas(),
         ),
     )
 }

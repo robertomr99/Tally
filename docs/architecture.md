@@ -162,8 +162,20 @@ app ──────────► feature:* ──────────�
 - `revision-datos` cierra el flujo de escaneo: desde el resultado (pantalla 06)
   "Revisar ticket" abre el estado `RevisionDatos` del `EscanearViewModel` (mockup
   07), donde el usuario corrige la **cabecera** (comercio, fecha, total y categoría
-  con chips de la enum fija de 6) y Guarda. Las líneas son de solo lectura
-  (`edicion-lineas` es una feature aparte).
+  con chips de la enum fija de 6) y Guarda.
+- `edicion-lineas` (mockup 08) evoluciona la **misma pantalla y el mismo estado**
+  (`RevisionDatos`, sin rutas ni estados nuevos): editor de líneas (añadir,
+  eliminar, editar concepto/cantidad/precio), footer "Total recalculado" y dock
+  "Descartar" / "Guardar cambios". El modelo de edición es dominio puro:
+  `LineaEditable` (id de cliente, no persistido, usado como `key` de Compose) +
+  `lineasEditablesIniciales`, `nuevaLineaEditable`, `totalRecalculado` y
+  `List<LineaEditable>.aLineas()` (descarta conceptos en blanco, cantidad ≥ 1,
+  precio ≥ 0). `DatosRevision.lineas` lleva lo editado y `GuardarTicket` persiste
+  `datos.lineas.aLineas()`; `TicketDao.upsert @Transaction` reemplaza el conjunto
+  (sin cambios de Room). El **total del ticket no se deriva de las líneas**
+  (regla "Total vs líneas"): el recalculado es solo referencia y el total solo
+  cambia editando el campo "Total (con IVA)". El VM ignora cantidades/precios
+  no parseables o fuera de rango (conserva el último valor válido).
 - El mapeo `TicketExtraido` → `Ticket`/`Linea` vive en **dominio**: el caso de uso
   `GuardarTicket` (`@Inject constructor(TicketRepository)`, `operator fun invoke`)
   construye el agregado `Ticket` (con `DatosRevision` corregido, `fechaCaptura` =

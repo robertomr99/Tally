@@ -6,9 +6,11 @@ import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.Linea
+import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.domain.expenses.entities.totalRecalculado
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
@@ -38,7 +40,9 @@ import org.junit.Test
  * el procesado de la extraccion: pasos/estados reales, cancelacion con
  * [FakeTextEngine.gate] (aborta sin borrar la foto ni tocar `TicketRepository`),
  * error honesto, texto blank -> resultado rapido "0/5" sin invocar el motor y
- * badge con el motor real.
+ * badge con el motor real. Spec revision-datos: revision y guardado. Spec
+ * edicion-lineas: anadir/editar/eliminar lineas, total intacto, entradas
+ * invalidas ignoradas y persistencia de las lineas editadas.
  *
  * Las transiciones se observan con Turbine; cuando hace falta ver un estado
  * intermedio ("Procesando" o "ProcesandoExtraccion") se retiene el doble con un
@@ -645,6 +649,182 @@ class EscanearViewModelTest {
         val igual = esperarEstado { it is CapturaUiState.RevisionDatos } as CapturaUiState.RevisionDatos
         assertEquals(12.34, igual.datos.total, 0.0)
         assertEquals(LocalDate.of(2026, 10, 3), igual.datos.fechaEmision.toLocalDate())
+    }
+
+    // --- Edicion de lineas (spec edicion-lineas) ---
+
+    @Test
+    fun revisarPrefijaLasLineasExtraidasComoEditables() = runTest {
+        val revision = abrirRevisionDatos()
+
+        assertEquals(
+            listOf(LineaEditable(0, "LECHE", 2, 1.05)),
+            revision.datos.lineas,
+        )
+    }
+
+    @Test
+    fun anadirEditarYEliminarLineasPersisteExactamenteLasEditadas() = runTest {
+        // Escenario 1: se parte de LECHE (id 0); se anaden dos filas, se edita
+        // una, se elimina LECHE y se guarda.
+        abrirRevisionDatos()
+
+        viewModel.onLineaAnadida() // id 1
+        viewModel.onLineaAnadida() // id 2
+        viewModel.onLineaConceptoEditado(1, "PAN")
+        viewModel.onLineaCantidadEditada(1, "3")
+        viewModel.onLineaPrecioEditado(1, "0,90")
+        viewModel.onLineaConceptoEditado(2, "CAFE")
+        viewModel.onLineaPrecioEditado(2, "1.5")
+        viewModel.onLineaEliminada(0)
+
+        val editada = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.lineas.size == 2 &&
+                it.datos.lineas.none { linea -> linea.id == 0L }
+        } as CapturaUiState.RevisionDatos
+        assertEquals(
+            listOf(
+                LineaEditable(1, "PAN", 3, 0.90),
+                LineaEditable(2, "CAFE", 1, 1.5),
+            ),
+            editada.datos.lineas,
+        )
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+
+        val ticket = ticketsGuardados().single()
+        assertEquals(listOf(Linea("PAN", 3, 0.90), Linea("CAFE", 1, 1.5)), ticket.lineas)
+    }
+
+    @Test
+    fun editarLineasNoCambiaElTotalDelTicketNiElPersistido() = runTest {
+        // Escenario 2: total extraido 35.30; las lineas suman otra cosa.
+        abrirRevisionDatos()
+
+        viewModel.onLineaCantidadEditada(0, "10")
+        viewModel.onLineaAnadida()
+        viewModel.onLineaConceptoEditado(1, "EXTRA")
+        viewModel.onLineaPrecioEditado(1, "4,00")
+        val editada = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.lineas.size == 2 &&
+                it.datos.lineas[1].precioUnitario == 4.0
+        } as CapturaUiState.RevisionDatos
+
+        assertEquals(10 * 1.05 + 4.0, totalRecalculado(editada.datos.lineas), 1e-9)
+        assertEquals(35.30, editada.datos.total, 0.0)
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+        assertEquals(35.30, ticketsGuardados().single().total, 0.0)
+    }
+
+    @Test
+    fun editarElTotalExplicitamenteSiCambiaElTotalPersistido() = runTest {
+        // Escenario 2 (contraparte): solo la edicion explicita del total lo cambia.
+        abrirRevisionDatos()
+        viewModel.onLineaEliminada(0)
+        viewModel.onTotalEditado("20,00")
+        esperarEstado { it is CapturaUiState.RevisionDatos && it.datos.total == 20.0 }
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+
+        val ticket = ticketsGuardados().single()
+        assertEquals(20.0, ticket.total, 0.0)
+        assertTrue(ticket.lineas.isEmpty())
+    }
+
+    @Test
+    fun cantidadOPrecioInvalidosSeIgnoranSinRomperLaRevision() = runTest {
+        // Escenario 4: "abc", "0", "-3", "2,5" en cantidad; "abc" y "-1" en precio.
+        abrirRevisionDatos()
+
+        listOf("abc", "0", "-3", "2,5", "").forEach {
+            viewModel.onLineaCantidadEditada(0, it)
+        }
+        listOf("abc", "-1", "", "NaN").forEach {
+            viewModel.onLineaPrecioEditado(0, it)
+        }
+        // Una edicion a una fila inexistente tampoco rompe nada.
+        viewModel.onLineaConceptoEditado(99, "FANTASMA")
+        viewModel.onLineaEliminada(99)
+
+        val actual = esperarEstado { it is CapturaUiState.RevisionDatos } as CapturaUiState.RevisionDatos
+        assertEquals(listOf(LineaEditable(0, "LECHE", 2, 1.05)), actual.datos.lineas)
+
+        // "Guardar cambios" sigue disponible y persiste.
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+        assertEquals(listOf(Linea("LECHE", 2, 1.05)), ticketsGuardados().single().lineas)
+    }
+
+    @Test
+    fun extraccionVaciaAnadirLineasAManoYGuardarPersisteLasIntroducidas() = runTest {
+        // Escenario 5: OCR vacio -> extraccion sin lineas -> se anaden a mano.
+        engine.result = ""
+        val revision = abrirRevisionDatos()
+        assertTrue(revision.datos.lineas.isEmpty())
+
+        viewModel.onLineaAnadida() // id 0
+        viewModel.onLineaConceptoEditado(0, "MENU DEL DIA")
+        viewModel.onLineaPrecioEditado(0, "12,50")
+        viewModel.onLineaAnadida() // id 1, se queda en blanco -> se descarta
+        esperarEstado { it is CapturaUiState.RevisionDatos && it.datos.lineas.size == 2 }
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+
+        val ticket = ticketsGuardados().single()
+        assertEquals(listOf(Linea("MENU DEL DIA", 1, 12.50)), ticket.lineas)
+        assertEquals(0.0, ticket.total, 0.0)
+    }
+
+    @Test
+    fun descartarConLineasEditadasNoEscribeYRevisarDeNuevoPartiendoDeLaExtraccion() = runTest {
+        // Escenario 6: "Descartar" (= back) no escribe; volver a revisar parte
+        // otra vez de las lineas extraidas.
+        abrirRevisionDatos()
+        viewModel.onLineaEliminada(0)
+        viewModel.onLineaAnadida()
+        // Sin filas, la nueva toma id 0 (max + 1 de lista vacia) y va en blanco.
+        esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.lineas.singleOrNull()?.concepto == ""
+        }
+
+        viewModel.onVolverAlResultado()
+        esperarEstado { it is CapturaUiState.ExtraccionLista }
+        assertTrue(ticketsGuardados().isEmpty())
+        assertTrue(store.deletedPaths.isEmpty())
+
+        viewModel.onRevisar()
+        val otraVez = esperarEstado { it is CapturaUiState.RevisionDatos } as CapturaUiState.RevisionDatos
+        assertEquals(listOf(LineaEditable(0, "LECHE", 2, 1.05)), otraVez.datos.lineas)
+    }
+
+    @Test
+    fun editarUnaLineaTrasUnFalloDeGuardadoLimpiaElError() = runTest {
+        ticketDataSource.saveError = IllegalStateException("disco lleno")
+        abrirRevisionDatos()
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.RevisionDatos && it.errorGuardado != null }
+
+        viewModel.onLineaConceptoEditado(0, "LECHE ENTERA")
+        val limpia = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.errorGuardado == null
+        } as CapturaUiState.RevisionDatos
+        assertEquals("LECHE ENTERA", limpia.datos.lineas.single().concepto)
+    }
+
+    /** Captura -> Continuar -> Revisar ticket; devuelve la revision abierta. */
+    private fun abrirRevisionDatos(): CapturaUiState.RevisionDatos {
+        viewModel.onPermisoCambiado(true)
+        viewModel.onImageCapturado(byteArrayOf(1), crop)
+        esperarRevision()
+        viewModel.onContinuar()
+        esperarEstado { it is CapturaUiState.ExtraccionLista }
+        viewModel.onRevisar()
+        return esperarEstado { it is CapturaUiState.RevisionDatos } as CapturaUiState.RevisionDatos
     }
 
     /** Espera con Turbine hasta el estado indicado, saltandose los intermedios

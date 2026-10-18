@@ -3,10 +3,13 @@ package com.robertomr.tally.captura
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.robertomr.tally.MainActivity
@@ -85,7 +88,99 @@ class RevisionDatosFlujoTest {
         )
     }
 
+    // E2E enfocado de edicion-lineas (spec, T7): extraccion vacia -> Revisar ->
+    // anadir dos lineas -> editarlas -> eliminar una -> el "Total recalculado"
+    // sigue la suma y el total del ticket NO cambia -> Guardar cambios -> Gastos.
+    // La persistencia exacta de las lineas editadas se verifica en JVM
+    // (GuardarTicketTest/EscanearViewModelTest) hasta que exista listado-gastos.
+    @Test
+    fun anadirEditarYEliminarLineasYGuardarCambiosVuelveALaPestanaGastos() {
+        if (!abrirRevisionDatos()) return
+
+        composeRule.onNodeWithTag("revision_lineas").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("0 artículos", substring = true)
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("0,00", substring = true)
+
+        // Anadir dos lineas (ids 0 y 1) y rellenarlas.
+        composeRule.onNodeWithTag("revision_anadir_linea").performScrollTo().performClick()
+        composeRule.onNodeWithTag("revision_anadir_linea").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        escribir("revision_linea_0_concepto", "PAN")
+        escribir("revision_linea_0_cantidad", "3")
+        escribir("revision_linea_0_precio", "1,50")
+        escribir("revision_linea_1_concepto", "AGUA")
+        escribir("revision_linea_1_precio", "2")
+        composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("2 artículos", substring = true)
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+
+        // Una cantidad invalida se ignora: la pantalla sigue viva y la suma igual.
+        escribir("revision_linea_0_cantidad", "0")
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+        escribir("revision_linea_0_cantidad", "3")
+
+        // Eliminar la segunda linea.
+        composeRule.onNodeWithTag("revision_linea_1_borrar").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        assertTrue(
+            "la linea eliminada no debe seguir en pantalla",
+            composeRule.onAllNodesWithTag("revision_linea_1").fetchSemanticsNodes().isEmpty(),
+        )
+        composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("1 artículo", substring = true)
+        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("4,50", substring = true)
+
+        // El total del ticket (autoritativo) no se ha tocado al editar lineas.
+        composeRule.onNodeWithTag("revision_total").performScrollTo().assertTextContains("0,00", substring = true)
+
+        composeRule.onNodeWithTag("revision_guardar").assertIsEnabled()
+        composeRule.onNodeWithTag("revision_guardar").performClick()
+
+        esperarTag("pantalla_gastos")
+        composeRule.onNodeWithTag("pantalla_gastos").assertIsDisplayed()
+    }
+
+    // Escenario 6 de edicion-lineas: "Descartar" con cambios sin guardar vuelve al
+    // resultado del procesado sin escribir (la persistencia nula se verifica en JVM).
+    @Test
+    fun descartarConLineasEditadasVuelveAlResultadoDelProcesado() {
+        if (!abrirRevisionDatos()) return
+
+        composeRule.onNodeWithTag("revision_anadir_linea").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        escribir("revision_linea_0_concepto", "SIN GUARDAR")
+
+        composeRule.onNodeWithTag("revision_descartar").performClick()
+        esperarTag("procesado_completitud")
+        composeRule.onNodeWithTag("procesado_completitud").assertIsDisplayed()
+        assertTrue(
+            "no debe quedar la pantalla de revision",
+            composeRule.onAllNodesWithTag("revision_pantalla").fetchSemanticsNodes().isEmpty(),
+        )
+    }
+
     // --- helpers (misma politica que ProcesadoFlujoTest) ---
+
+    /**
+     * Captura -> Continuar -> Revisar ticket. `false` (con assumption) si la
+     * extraccion REAL fallo en el entorno (red/cuota).
+     */
+    private fun abrirRevisionDatos(): Boolean {
+        capturarFoto()
+        composeRule.onNodeWithTag("captura_continuar").performClick()
+        val hayResultado = esperarFinDeExtraccion()
+        assumeTrue(
+            "La extraccion REAL fallo en este entorno (red/cuota); la " +
+                "verificacion con datos reales es el paso fisico del orquestador.",
+            hayResultado,
+        )
+        composeRule.onNodeWithTag("procesado_revisar").performClick()
+        esperarTag("revision_pantalla")
+        return true
+    }
+
+    private fun escribir(tag: String, texto: String) {
+        composeRule.onNodeWithTag(tag).performScrollTo().performTextReplacement(texto)
+        composeRule.waitForIdle()
+    }
 
     private fun capturarFoto() {
         concederPermisoCamara()

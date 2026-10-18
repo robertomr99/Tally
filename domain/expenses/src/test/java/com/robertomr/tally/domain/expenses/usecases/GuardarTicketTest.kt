@@ -7,7 +7,10 @@ import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.Ticket
+import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.datosRevisionInicial
+import com.robertomr.tally.domain.expenses.entities.lineasEditablesIniciales
+import com.robertomr.tally.domain.expenses.entities.totalRecalculado
 import com.robertomr.tally.test.unit.CoroutineTestRule
 import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakeTicketDataSource
@@ -58,6 +61,7 @@ class GuardarTicketTest {
             fechaEmision = LocalDateTime.of(2026, 10, 14, 20, 30),
             total = 35.30,
             categoria = Categoria.HOGAR,
+            lineas = lineasEditablesIniciales(extraido.lineas),
         )
 
         val id = guardarTicket(
@@ -119,6 +123,7 @@ class GuardarTicketTest {
             fechaEmision = LocalDateTime.of(2026, 9, 5, 18, 0),
             total = 12.0,
             categoria = Categoria.OCIO,
+            lineas = emptyList(),
         )
 
         val id = guardarTicket(extraido, "fotos/captura_test.jpg", "texto", datos)
@@ -145,12 +150,72 @@ class GuardarTicketTest {
         assertEquals(fechaExtraida, parcial.fechaEmision)
         assertEquals(35.30, parcial.total, 0.0)
         assertEquals(Categoria.ALIMENTACION, parcial.categoria)
+        // Spec edicion-lineas: las lineas extraidas llegan como editables.
+        assertEquals(
+            listOf(
+                LineaEditable(0, "LECHE", 2, 1.05),
+                LineaEditable(1, "PAN", 1, 0.90),
+            ),
+            parcial.lineas,
+        )
 
         val vacio = datosRevisionInicial(TicketExtraido(motor = Motor.LOCAL), hoy)
         assertEquals("", vacio.comercio)
         assertEquals(hoy, vacio.fechaEmision)
         assertEquals(0.0, vacio.total, 0.0)
         assertEquals(Categoria.OTROS, vacio.categoria)
+        assertTrue(vacio.lineas.isEmpty())
+    }
+
+    @Test
+    fun guardarPersisteLasLineasEditadasYNoLasExtraidas() = runTest {
+        // Spec edicion-lineas, escenario 1: se edita PAN (cantidad y precio),
+        // se elimina LECHE, se anade CAFE y una fila en blanco que se descarta.
+        val datos = datosRevisionInicial(extraido).copy(
+            lineas = listOf(
+                LineaEditable(1, "PAN", 3, 1.10),
+                LineaEditable(2, "CAFE", 1, 1.50),
+                LineaEditable(3, "  ", 1, 0.0),
+            ),
+        )
+
+        val id = guardarTicket(extraido, "fotos/captura_test.jpg", "texto", datos)
+
+        val ticket = repository.getById(id)!!
+        assertEquals(
+            listOf(Linea("PAN", 3, 1.10), Linea("CAFE", 1, 1.50)),
+            ticket.lineas,
+        )
+        // Tambien observable por el flujo por fechas (como el futuro listado).
+        val emitido = repository
+            .observeByDateRange(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31))
+            .first()
+            .single()
+        assertEquals(ticket.lineas, emitido.lineas)
+    }
+
+    @Test
+    fun editarLineasNoCambiaElTotalPersistido() = runTest {
+        // Spec edicion-lineas, escenario 2: total autoritativo 35.30 y lineas
+        // cuya suma es distinta; el total guardado NO se deriva de las lineas.
+        val datos = datosRevisionInicial(extraido).copy(
+            lineas = listOf(LineaEditable(0, "TODO", 10, 9.99)),
+        )
+        assertTrue(totalRecalculado(datos.lineas) != datos.total)
+
+        val id = guardarTicket(extraido, "fotos/captura_test.jpg", "texto", datos)
+
+        assertEquals(35.30, repository.getById(id)!!.total, 0.0)
+    }
+
+    @Test
+    fun eliminarTodasLasLineasPersisteCeroAunqueLaExtraccionTuviera() = runTest {
+        // Si el usuario borra todas las filas, no reaparecen las extraidas.
+        val datos = datosRevisionInicial(extraido).copy(lineas = emptyList())
+
+        val id = guardarTicket(extraido, "fotos/captura_test.jpg", "texto", datos)
+
+        assertTrue(repository.getById(id)!!.lineas.isEmpty())
     }
 
     @Test
