@@ -113,7 +113,7 @@ app ──────────► feature:* ──────────�
   (`Dispatchers.IO`, modelo lazy, `responseMimeType` + `responseSchema`, backend
    `googleAI`, `gemini-flash-lite-latest` — variante **lite** elegida por el
    usuario 2026-10-17 tras deprecar el servidor `gemini-2.5-flash` y agotarse la
-   cuota de `gemini-3.8-flash`; ver R2); se binding con `@Provides TextEngine` en el
+   cuota de `gemini-3.8-flash`; ver R2); se binding con `@Provides @Named("nube") TextEngine` en el
   `di.kt` del módulo. Errores de red/cuota/config se propagan al llamador y una
   `CancellationException` jamás se convierte en resultado.
 - `GemmaLocalEngine` (`extraccion-local`, `internal` en `:framework:ai/extraccion/`)
@@ -127,8 +127,20 @@ app ──────────► feature:* ──────────�
   (tras cancelar, se espera a que termine la generación nativa); parámetros
   `maxTokens=2048` (entrada+salida), `topK=1`, `temperature=0.2`, semilla fija. Modelo
   ausente → `ModeloLocalNoDisponibleException`. Se binding como
-  `@Provides @Singleton @Named("local") TextEngine` en el mismo `di.kt`; el
-  `TextEngine` sin calificar sigue siendo la nube hasta `router-automatico`.
+  `@Provides @Singleton @Named("local") TextEngine` en el mismo `di.kt`.
+- **Router (`router-automatico`)**: `EngineRouter` (dominio, Kotlin puro,
+  `data/EngineRouter.kt`) es el `TextEngine` **sin calificar** del grafo Hilt y
+  delega por extracción en `@Named("local")` o `@Named("nube")`. La política es la
+  función pura `elegirMotor(preferencia, capaz, modeloDisponible)`: `NUBE` → Nube;
+  `LOCAL` → Local sin comprobar nada (si falta el modelo se propaga
+  `ModeloLocalNoDisponibleException`); `AUTO` (D1, **local primero**) → Local solo
+  si `capaz && modeloDisponible`, si no Nube. `capaz` = `CapacidadDispositivo`
+  (`RamCapacidadDispositivo`, `internal`, RAM total >= 10 GB, heurística) y
+  `modeloDisponible` = `ModelDownloader.rutaModelo() != null`. La preferencia sale
+  de `PreferenciaMotorSource` (hoy fija `AUTO`; `ajustes-motor` la sustituirá en
+  `AiModule`). **Sin fallback automático** (ADR 0001): el error del motor elegido
+  se propaga. `EngineRouter.motor` re-evalúa la política en cada lectura (badge
+  previo a extraer); el badge final y `Ticket.motor` usan `TicketExtraido.motor`.
 - El caso de uso `ExtraerTicket` (dominio) envuelve el motor: texto blank →
   `TicketExtraido` vacío **sin invocar el motor** (sin gastar cuota); es el
   punto de extensión futuro de `log-extracciones`.

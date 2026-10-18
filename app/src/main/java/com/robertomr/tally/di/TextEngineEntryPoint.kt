@@ -21,9 +21,14 @@ import javax.inject.Named
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface TextEngineEntryPoint {
+    /** `TextEngine` sin calificar: el router (spec router-automatico). */
     fun textEngine(): TextEngine
 
-    /** Motor local (spec extraccion-local); el router llegara con `router-automatico`. */
+    /** Motor de nube (Gemini) directo, sin router. */
+    @Named("nube")
+    fun textEngineNube(): TextEngine
+
+    /** Motor local (spec extraccion-local) directo, sin router. */
     @Named("local")
     fun textEngineLocal(): TextEngine
 }

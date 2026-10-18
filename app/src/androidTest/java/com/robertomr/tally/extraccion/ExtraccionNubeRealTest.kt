@@ -65,7 +65,7 @@ class ExtraccionNubeRealTest {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         EntryPointAccessors
             .fromApplication(contexto, TextEngineEntryPoint::class.java)
-            .textEngine()
+            .textEngineNube()
     }
 
     @Before

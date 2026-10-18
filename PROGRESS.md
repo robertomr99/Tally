@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `router-automatico` (`extraccion-local` `accepted`, sesión 033; sin spec → `planner`).
+- Current next ready feature: `reintento-otro-motor` (`router-automatico` `accepted`, sesión 035; sin spec → `planner`); luego `ajustes-motor`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2232,3 +2232,75 @@
   - Calidad 2/4 en totales (ambiguedad OCR, R3): hallazgo de la comparativa con la nube.
   - Test inestable ajeno visto una vez: `EscanearViewModelTest.emptyOcrResultReachesRevisionAsEmptyTextWithoutBlocking`.
 - Next best step: `planner` sobre `router-automatico` (deps `extraccion-local` y `extraccion-nube` accepted). Opcional: endurecer el test flaky `EscanearViewModelTest.emptyOcrResult...` y aislar `AjustesModeloFlujoTest` del token guardado.
+
+### Session 034
+
+- Date: 2026-10-18
+- Goal: push de `extraccion-local` (hecho: `ddbb2c9` en `origin/master`) y planificar
+  `router-automatico` (deps `extraccion-local`, `extraccion-nube`, `descarga-modelo` accepted).
+- Completed:
+  - Spec creada: `docs/specs/router-automatico.md` (~170 lineas), sin decisiones bloqueantes.
+  - Diseno: `EngineRouter` en dominio como el `TextEngine` sin calificar del grafo Hilt,
+    delegando en `@Named("local")` o `@Named("nube")`; politica pura
+    `elegirMotor(preferencia, capaz, modeloDisponible)`; Local solo si `capaz` (RAM total >= 10 GB,
+    heuristica) y `ModelDownloader.rutaModelo() != null`, si no Nube; sin fallback ante fallo
+    (ADR 0001); `PreferenciaMotorSource` fija en AUTO (punto que sustituira `ajustes-motor`);
+    sin cambios de `ExtraerTicket`, `EscanearViewModel`, UI ni Room. `reintento-otro-motor` y
+    `ajustes-motor` quedan fuera de alcance.
+  - D1 (producto) decidida por el usuario: **Auto = LOCAL PRIMERO** (el local acierta 2/4 totales
+    y tarda 26-41 s en la Tab; mitigacion con `reintento-otro-motor`).
+- Verification run: planificacion (sin gates de producto; cero cambios de codigo).
+- Evidence captured: `docs/specs/router-automatico.md`.
+- Known risk or unresolved issue:
+  - RAM del realme GT 2 desconocida (registrar `MemTotal` de ambos dispositivos).
+  - Con el modelo en el emulador el router elegiria Local si el emulador fuera "capaz"; la
+    heuristica de RAM (>= 10 GB) lo evita, pero hay que verificar la regresion de E2E.
+  - Cuota de Gemini agotada desde 2026-10-17: la prueba fisica de nube puede no poder ejecutarse.
+- Next best step: `implementer` sobre `docs/specs/router-automatico.md`.
+
+### Session 035
+
+- Date: 2026-10-18
+- Goal: implementar `router-automatico` (spec `docs/specs/router-automatico.md`, D1 = Auto local primero).
+- Completed:
+  - Dominio: `PreferenciaMotor`, `CapacidadDispositivo`, `PreferenciaMotorSource`, `EngineRouter` +
+    `elegirMotor` (pura). Framework: `router/RamCapacidadDispositivo` (`internal`, RAM >= 10 GB,
+    `ramSuficiente`). `AiModule`: `@Named("nube")`, `@Named("local")`, capacidad, preferencia fija
+    AUTO y el `TextEngine` sin calificar = router. `TextEngineEntryPoint` + `textEngineNube()`;
+    `ExtraccionNubeRealTest` usa `textEngineNube()`; test de identidad de `ExtraccionLocalRealTest`
+    reescrito. Doble `FakeCapacidadDispositivo`. Sin cambios de VM/UI/Room/`init.sh`/`schemas`.
+  - Docs: `docs/architecture.md` (router) y `docs/risks-and-open-questions.md` (R-RT).
+- Verification run:
+  - `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test` verde;
+    169 tests JVM, 0 fallos (EngineRouterTest 5, RamCapacidadDispositivoTest 2).
+  - emulator-5554 (MemTotal 5033804 kB): `installDebug installDebugAndroidTest` + `am instrument`
+    sin AjustesModeloFlujoTest/ExtraccionLocalRealTest/ExtraccionNubeRealTest: OK 11 tests; identidad
+    del router OK. El modelo en el emulador siguio presente (3655827456 B) antes y despues; el router
+    elige Nube por RAM < 10 GB. ExtraccionNubeRealTest no se ejecuto (cuota Gemini agotada).
+- Known risk or unresolved issue: verificacion fisica pendiente (Tab S9+ y realme GT 2); MemTotal
+  del realme sin medir; R-RT1 calidad local 2/4.
+- Next best step: verificacion fisica con permiso del usuario; `feature_list.json` queda `in_progress`.
+- Update (sesión 035, verificación en Tab S9+): test nuevo `ExtraccionLocalRealTest#routerPicksLocalOnCapableDeviceWithModel`
+  (assume RAM >= 10 GB y modelo). Tab S9+ (MemTotal 11454088 kB), `installDebug installDebugAndroidTest` sin
+  desinstalar (modelo intacto, 3655827456 B) + `am instrument`: identidad + router OK (2 tests, 113 s); el router
+  eligio LOCAL y extrajo texto_crudo_2 (total 3.5, 47149 ms, motor=LOCAL). Evidencia: `docs/evidence/router-automatico/`.
+  `router-automatico` -> **passing**. Pendiente OPCIONAL no bloqueante: UI con camara real en la Tab (badge Local,
+  cancelacion fisica de procesado-ui) y realme GT 2 sin modelo (cuota Gemini, MemTotal).
+
+### Session 035 (seguimiento): validacion de router-automatico
+
+- Date: 2026-10-18
+- Completed:
+  - `feature-validator` independiente: **ACCEPT**. Re-ejecuto el gate JVM (169 tests, `EngineRouterTest` 5/5,
+    `RamCapacidadDispositivoTest` 2/2) y repitio en la Tab S9+ los dos tests del router por `am instrument`
+    (OK, 2 tests): router sin calificar `motor=LOCAL`, total 3,5, `loadMillis=574` + `generationMillis=29390`
+    (~30 s, < 60 s).
+  - Aclarada la incoherencia de latencia: el `generationMillis=107103` del log original no es atribuible a la
+    extraccion medida; corregido en `docs/evidence/router-automatico/README.md`.
+- Status: `router-automatico` = **accepted**.
+- Known risk or unresolved issue:
+  - Test inestable ajeno (pasa en aislamiento): `EscanearViewModelTest.capturingProcessesAndSavesThePhotoAtCaptureTime`
+    (y `emptyOcrResult...`, visto antes): carrera bajo ejecucion paralela. Endurecer cuando convenga.
+  - Opcionales: UI con camara real en la Tab (badge Local, cancelacion fisica de `procesado-ui`) y realme GT 2
+    sin modelo (cuota Gemini, `MemTotal`; R-RT2 abierto).
+- Next best step: `planner` sobre `reintento-otro-motor` (dep `router-automatico` accepted).

@@ -154,6 +154,16 @@
 - **R5 — Calidad de datos estructurados del modelo local**: JSON inválido o
   campos alucinados. Mitigación: prompt con schema y enum de categorías,
   validación + reintento de parseo, y revisión humana siempre.
+- **R-RT — Política del router (`router-automatico`, 2026-10-18)**: Auto = Local
+  primero (D1, decidido por el usuario): Local si RAM total >= 10 GB y modelo
+  descargado; si no, Nube. Compromiso consciente: la comparativa de sesiones 030-033
+  dio nube 4/4 totales correctos y rápida frente a local 2/4 y 26-41 s/ticket en la
+  Tab S9+ (ambigüedad del OCR); a cambio el ticket no sale del dispositivo y funciona
+  sin red. Mitigación: revisión manual y `reintento-otro-motor`. La red no es entrada
+  de la política (sin modelo y sin red falla honestamente). Umbral de RAM heurístico:
+  RAM del realme GT 2 por medir. Badge transitorio posible si el modelo termina de
+  descargarse durante una extracción (el badge final usa `extraido.motor`). Sin
+  fallback: un fallo de carga local se ve como error hasta `reintento-otro-motor`.
 
 ## Research Tasks
 

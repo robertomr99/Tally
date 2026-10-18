@@ -16,6 +16,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Assume
 import org.junit.Test
@@ -47,11 +48,51 @@ class ExtraccionLocalRealTest {
     }
 
     @Test
-    fun theInjectedEngineIsTheLocalOneAndTheDefaultStaysCloud() {
+    fun qualifiedEnginesAreLocalAndCloudAndTheDefaultIsTheRouter() {
         val contexto = InstrumentationRegistry.getInstrumentation().targetContext
         val ep = EntryPointAccessors.fromApplication(contexto, TextEngineEntryPoint::class.java)
         assertEquals(Motor.LOCAL, ep.textEngineLocal().motor)
-        assertEquals(Motor.NUBE, ep.textEngine().motor)
+        assertEquals(Motor.NUBE, ep.textEngineNube().motor)
+        // El sin calificar es el router: su motor depende del entorno (RAM/modelo).
+        assertTrue(ep.textEngine().motor in setOf(Motor.LOCAL, Motor.NUBE))
+        // Con RAM < 10 GB (p. ej. el emulador) el router elige Nube aunque el modelo exista.
+        val mem = android.app.ActivityManager.MemoryInfo().also {
+            (contexto.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager)
+                .getMemoryInfo(it)
+        }
+        if (mem.totalMem < 10_000_000_000L) assertEquals(Motor.NUBE, ep.textEngine().motor)
+        assertNotSame(ep.textEngineLocal(), ep.textEngine())
+        assertNotSame(ep.textEngineNube(), ep.textEngine())
+    }
+
+    /**
+     * Router real en dispositivo capaz con modelo (Tab S9+): `textEngine()` (sin
+     * calificar) elige LOCAL y extrae via el router, fuera del hilo principal.
+     */
+    @Test
+    fun routerPicksLocalOnCapableDeviceWithModel(): Unit = runBlocking {
+        val contexto = InstrumentationRegistry.getInstrumentation().targetContext
+        val am = contexto.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val mem = android.app.ActivityManager.MemoryInfo().also { am.getMemoryInfo(it) }
+        val modelos = java.io.File(contexto.getExternalFilesDir(null), "models")
+        val hayModelo = modelos.listFiles()?.any { it.isFile && it.length() > 0 } == true
+        Assume.assumeTrue("RAM < 10 GB o sin modelo", mem.totalMem >= 10_000_000_000L && hayModelo)
+        assertFalse("el test no debe correr en el hilo principal", Looper.myLooper() == Looper.getMainLooper())
+
+        val ep = EntryPointAccessors.fromApplication(contexto, TextEngineEntryPoint::class.java)
+        val router = ep.textEngine()
+        assertEquals(Motor.LOCAL, router.motor)
+        val inicio = System.nanoTime()
+        val extraido = router.extract(leerAsset("texto_crudo_2.txt"))
+        val totalMs = (System.nanoTime() - inicio) / 1_000_000
+        assertEquals(Motor.LOCAL, extraido.motor)
+        assertTrue(extraido.categoria in Categoria.entries)
+        Log.i(
+            TAG,
+            "router ticket=2 totalMem=${mem.totalMem} motorRouter=${router.motor} " +
+                "extraccion=<<<$extraido>>> totalMs=$totalMs totalPapel=3.50 " +
+                "acierto=${extraido.total?.let { abs(it - 3.50) <= TOLERANCIA } ?: false}",
+        )
     }
 
     @Test

@@ -319,14 +319,19 @@
     "title": "Router automático de motor con indicador visible",
     "user_visible_behavior": "La app elige motor sola (Local si el dispositivo puede y el modelo está descargado; si no Nube); el motor queda registrado con la extracción y visible (badge en procesado y ticket).",
     "depends_on": ["extraccion-local", "extraccion-nube"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "En directo: Tab S9+ usa Local y realme GT 2 usa Nube",
       "Unit tests del router con combinaciones de capacidad/modelo/override",
       "El badge refleja el motor realmente usado en cada extracción"
     ],
-    "evidence": [],
-    "notes": "ADR 0001. Fallback automático silencioso no existe: el reintento es acción explícita del usuario."
+    "evidence": [
+      "2026-10-18 (sesión 035) JVM: assembleDebug + testDebugUnitTest + :test:unit:test + :domain:expenses:test + :framework:ai:testDebugUnitTest en verde (169 tests, 0 fallos/skipped); EngineRouterTest 5/5 (política 3 preferencias x 4 combinaciones, delegación solo al elegido, error sin fallback, ModeloLocalNoDisponibleException con preferencia LOCAL, cancelación) y RamCapacidadDispositivoTest 2/2 (frontera del umbral 10_000_000_000 B)",
+      "2026-10-18 emulator-5554 (MemTotal 5033804 kB < 10 GB, modelo presente en /sdcard/Android/data/com.robertomr.tally/files/models/, intacto antes y después): am instrument (sin AjustesModeloFlujoTest, ExtraccionLocalRealTest ni ExtraccionNubeRealTest por cuota/modelo) OK 11 tests (CapturaFlujoTest, ProcesadoFlujoTest, RevisionDatosFlujoTest, NavigationTest); ExtraccionLocalRealTest#qualifiedEnginesAreLocalAndCloudAndTheDefaultIsTheRouter OK 1 test (local=LOCAL, nube=NUBE, router sin calificar = Nube por RAM < 10 GB aun con el modelo presente)",
+      "2026-10-18 Tab S9+ (MemTotal 11454088 kB, modelo presente e intacto): am instrument ExtraccionLocalRealTest identidad + routerPicksLocalOnCapableDeviceWithModel OK 2 tests; router sin calificar motor=LOCAL, extraccion real de texto_crudo_2 via router total 3.5 en 47149 ms, motor=LOCAL; ver docs/evidence/router-automatico/",
+      "2026-10-18 ACEPTADA por feature-validator independiente (sesión 035): re-ejecutó gate JVM (169 tests, EngineRouterTest 5/5, RamCapacidadDispositivoTest 2/2; un flaky previo ajeno en EscanearViewModelTest que pasa en aislamiento 3/3) y REPITIÓ en la Tab S9+ los dos tests del router por am instrument (OK, 2 tests): router sin calificar motor=LOCAL, TicketExtraido.motor=LOCAL, total 3,5, loadMillis 574 + generationMillis 29390 (~30 s, < 60 s). Aclarado: el generationMillis=107103 del log original no es atribuible a la extracción medida. Escenarios de la spec cumplidos, sin hallazgos bloqueantes. Pendientes opcionales: UI con cámara real en la Tab y realme GT 2 sin modelo (cuota Gemini, MemTotal)."
+    ],
+    "notes": "IMPLEMENTADO y verificado 2026-10-18 (sesión 035): router elige LOCAL en la Tab S9+ (test real por am instrument). PENDIENTE OPCIONAL no bloqueante: flujo UI con cámara real en la Tab (badge Local, cancelación física de procesado-ui) y realme GT 2 sin modelo (Nube; cuota Gemini; MemTotal). ADR 0001. Fallback automático silencioso no existe: el reintento es acción explícita del usuario. PLANIFICACIÓN 2026-10-18 (sesión 034): spec en docs/specs/router-automatico.md (EngineRouter en dominio como TextEngine sin calificar; elegirMotor pura; Local solo si capaz (RAM >= 10 GB) y modelo descargado, si no Nube; sin fallback ante fallo (ADR 0001); sin cambios de ViewModel/UI/Room; reintento-otro-motor y ajustes-motor fuera de alcance). D1 decidida por el usuario: Auto = LOCAL PRIMERO. Verificación física: Tab S9+ con modelo (badge Local, motor=LOCAL en el ticket) y realme GT 2 sin modelo (Nube; requiere cuota Gemini); registrar MemTotal de ambos."
   },
   {
     "id": "reintento-otro-motor",

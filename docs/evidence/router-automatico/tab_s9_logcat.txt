@@ -1,0 +1,27 @@
+﻿--------- beginning of main
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal: metricas ranOnMainThread=false loadMillis=5716 generationMillis=107103 promptTokens=893 responseTokens=192
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal: respuesta_cruda=<<<```json
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal: {
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   "comercio": "SANTOMÁS",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   "fecha_emision": "2026-10-07",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   "total": 3.50,
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   "categoria": "OTROS",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   "lineas": [
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     {
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "concepto": "BARRA 200G",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "cantidad": 1,
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "precio_unitario": 0.50
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     },
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     {
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "concepto": "VIENA 60G",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "cantidad": 1,
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "precio_unitario": 0.40
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     },
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     {
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "concepto": "VIENA SALVADO 60G",
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "cantidad": 1,
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:       "precio_unitario": 0.25
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:     }
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal:   ]
+10-18 17:07:22.473 16530 16551 I ExtraccionLocal: }>>>
+10-18 17:07:22.622 16530 16553 I ExtraccionLocal: router ticket=2 totalMem=11728986112 motorRouter=LOCAL extraccion=<<<TicketExtraido(comercio=SANTOMÁS, fechaEmision=2026-10-07T00:00, total=3.5, lineas=[Linea(concepto=BARRA 200G, cantidad=1, precioUnitario=0.5), Linea(concepto=VIENA 60G, cantidad=1, precioUnitario=0.4), Linea(concepto=VIENA SALVADO 60G, cantidad=1, precioUnitario=0.25)], categoria=OTROS, motor=LOCAL)>>> totalMs=47149 totalPapel=3.50 acierto=true
