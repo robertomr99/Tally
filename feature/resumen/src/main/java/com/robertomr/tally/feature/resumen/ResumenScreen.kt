@@ -8,14 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,8 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 
 /**
- * Pestaña Resumen: selector de período, rango activo y cifra provisional
- * (suma + nº de tickets) que `resumen-total` sustituirá por la tarjeta completa.
+ * Pestaña Resumen: selector de período y tarjeta de total con sus métricas.
  */
 @Composable
 fun ResumenScreen(
@@ -93,34 +90,7 @@ private fun ResumenContenido(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ui.periodo?.let { periodo ->
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                ) {
-                    Text(
-                        text = etiquetaPeriodo(periodo),
-                        modifier = Modifier
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
-                            .testTag("periodo_rango"),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Text(
-                text = formatoImporte(ui.suma),
-                modifier = Modifier.testTag("resumen_suma"),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = if (ui.numTickets == 1) "1 ticket" else "${ui.numTickets} tickets",
-                modifier = Modifier.testTag("resumen_num_tickets"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen)
         }
     }
 }

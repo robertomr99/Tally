@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
-import com.robertomr.tally.domain.expenses.usecases.ObservarTicketsDelPeriodo
+import com.robertomr.tally.domain.expenses.entities.ResumenPeriodo
+import com.robertomr.tally.domain.expenses.usecases.ObservarResumenDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -17,16 +18,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * Estado del panel (spec periodo-selector). Campos pensados para ampliarse con
- * `resumen-total`; la cifra provisional ([suma] + [numTickets]) la sustituirá la
- * tarjeta de total.
+ * Estado del panel (specs periodo-selector y resumen-total). [resumen] lleva las
+ * métricas de la tarjeta de total y es `null` mientras carga.
  */
 data class ResumenUiState(
     val cargando: Boolean = true,
     val tipo: PeriodoTipo = PeriodoTipo.MES,
     val periodo: Periodo? = null,
-    val numTickets: Int = 0,
-    val suma: Double = 0.0,
+    val resumen: ResumenPeriodo? = null,
 )
 
 /**
@@ -41,7 +40,7 @@ data class ResumenUiState(
 @HiltViewModel
 class ResumenViewModel @Inject constructor(
     private val obtenerPeriodo: ObtenerPeriodo,
-    private val observarTicketsDelPeriodo: ObservarTicketsDelPeriodo,
+    private val observarResumenDelPeriodo: ObservarResumenDelPeriodo,
 ) : ViewModel() {
 
     private val tipoSeleccionado = MutableStateFlow(PeriodoTipo.MES)
@@ -49,13 +48,12 @@ class ResumenViewModel @Inject constructor(
     val uiState: StateFlow<ResumenUiState> = tipoSeleccionado
         .flatMapLatest { tipo ->
             val periodo = obtenerPeriodo(tipo)
-            observarTicketsDelPeriodo(periodo).map { tickets ->
+            observarResumenDelPeriodo(periodo).map { resumen ->
                 ResumenUiState(
                     cargando = false,
                     tipo = tipo,
                     periodo = periodo,
-                    numTickets = tickets.size,
-                    suma = tickets.sumOf { it.total },
+                    resumen = resumen,
                 )
             }
         }

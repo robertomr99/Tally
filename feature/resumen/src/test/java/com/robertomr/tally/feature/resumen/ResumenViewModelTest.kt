@@ -6,6 +6,8 @@ import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
+import com.robertomr.tally.domain.expenses.usecases.CalcularResumenPeriodo
+import com.robertomr.tally.domain.expenses.usecases.ObservarResumenDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarTicketsDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
 import com.robertomr.tally.test.unit.CoroutineTestRule
@@ -39,7 +41,11 @@ class ResumenViewModelTest {
 
     private fun viewModel() = ResumenViewModel(
         obtenerPeriodo = ObtenerPeriodo(clock),
-        observarTicketsDelPeriodo = ObservarTicketsDelPeriodo(repository),
+        observarResumenDelPeriodo = ObservarResumenDelPeriodo(
+            ObservarTicketsDelPeriodo(repository),
+            CalcularResumenPeriodo(),
+            clock,
+        ),
     )
 
     private fun ticket(emision: LocalDateTime, total: Double, captura: LocalDateTime = emision) = Ticket(
@@ -69,8 +75,8 @@ class ResumenViewModelTest {
             assertEquals(PeriodoTipo.MES, actual.tipo)
             assertEquals(LocalDate.of(2026, 10, 1), actual.periodo?.desde)
             assertEquals(LocalDate.of(2026, 10, 31), actual.periodo?.hasta)
-            assertEquals(3, actual.numTickets)
-            assertEquals(70.0, actual.suma, 0.001)
+            assertEquals(3, actual.resumen?.numTickets)
+            assertEquals(70.0, actual.resumen?.total ?: -1.0, 0.001)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -83,20 +89,20 @@ class ResumenViewModelTest {
             awaitItem()
             vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
             var s = esperar(PeriodoTipo.DIA)
-            assertEquals(1, s.numTickets)
-            assertEquals(10.0, s.suma, 0.001)
+            assertEquals(1, s.resumen?.numTickets)
+            assertEquals(10.0, s.resumen?.total ?: -1.0, 0.001)
 
             vm.onSeleccionarPeriodo(PeriodoTipo.SEMANA)
             s = esperar(PeriodoTipo.SEMANA)
             assertEquals(LocalDate.of(2026, 10, 12), s.periodo?.desde)
             assertEquals(LocalDate.of(2026, 10, 18), s.periodo?.hasta)
-            assertEquals(2, s.numTickets)
-            assertEquals(30.0, s.suma, 0.001)
+            assertEquals(2, s.resumen?.numTickets)
+            assertEquals(30.0, s.resumen?.total ?: -1.0, 0.001)
 
             vm.onSeleccionarPeriodo(PeriodoTipo.MES)
             s = esperar(PeriodoTipo.MES)
-            assertEquals(3, s.numTickets)
-            assertEquals(70.0, s.suma, 0.001)
+            assertEquals(3, s.resumen?.numTickets)
+            assertEquals(70.0, s.resumen?.total ?: -1.0, 0.001)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -111,8 +117,8 @@ class ResumenViewModelTest {
         vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
         vm.uiState.test {
             val s = esperarSiguiente(PeriodoTipo.DIA)
-            assertEquals(1, s.numTickets)
-            assertEquals(5.0, s.suma, 0.001)
+            assertEquals(1, s.resumen?.numTickets)
+            assertEquals(5.0, s.resumen?.total ?: -1.0, 0.001)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -123,11 +129,36 @@ class ResumenViewModelTest {
         vm.uiState.test {
             var s = awaitItem()
             if (s.cargando) s = awaitItem()
-            assertEquals(0, s.numTickets)
+            assertEquals(0, s.resumen?.numTickets)
             repository.save(ticket(hoy.atTime(10, 0), 12.5))
             s = awaitItem()
-            assertEquals(1, s.numTickets)
-            assertEquals(12.5, s.suma, 0.001)
+            assertEquals(1, s.resumen?.numTickets)
+            assertEquals(12.5, s.resumen?.total ?: -1.0, 0.001)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun laComparativaYElPromedioSeCalculanContraElPeriodoAnterior() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            // Mes: 70 vs septiembre 80 (hoy = 15 oct, 15 dias transcurridos).
+            var s = esperar(PeriodoTipo.MES)
+            assertEquals(-0.125, s.resumen?.variacion ?: 0.0, 1e-9)
+            assertEquals(70.0 / 15, s.resumen?.promedioDiario ?: -1.0, 1e-9)
+
+            // Dia: hoy 10 vs ayer sin tickets -> sin referencia.
+            vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
+            s = esperar(PeriodoTipo.DIA)
+            assertEquals(null, s.resumen?.variacion)
+            assertEquals(10.0, s.resumen?.promedioDiario ?: -1.0, 1e-9)
+
+            // Semana (12-18 oct): 30 vs semana previa sin tickets -> sin referencia.
+            vm.onSeleccionarPeriodo(PeriodoTipo.SEMANA)
+            s = esperar(PeriodoTipo.SEMANA)
+            assertEquals(null, s.resumen?.variacion)
+            assertEquals(30.0 / 4, s.resumen?.promedioDiario ?: -1.0, 1e-9)
             cancelAndIgnoreRemainingEvents()
         }
     }

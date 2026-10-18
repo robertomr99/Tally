@@ -16,5 +16,5 @@ fun etiquetaPeriodo(periodo: Periodo): String =
     if (periodo.desde == periodo.hasta) periodo.desde.corta()
     else "${periodo.desde.corta()} – ${periodo.hasta.corta()}"
 
-/** Importe provisional en español, p. ej. `1.428,50 €` (tnum llega con resumen-total). */
+/** Importe en español, p. ej. `1.428,50 €`. Las cifras tabulares se aplican en el composable (`EstiloTabular`). */
 fun formatoImporte(valor: Double): String = String.format(Locale.forLanguageTag("es-ES"), "%,.2f €", valor)

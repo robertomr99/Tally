@@ -259,9 +259,17 @@ app ──────────► feature:* ──────────�
   pasan `Clock.fixed(...)`.
 - `ResumenViewModel` (`:feature:resumen`): `MutableStateFlow<PeriodoTipo>` (Mes por
   defecto, sin persistir) -> `flatMapLatest` -> Flow de Room; sin `load()`. La pantalla
-  muestra rango y una cifra provisional (suma + nº de tickets) que `resumen-total`
-  sustituirá. Desviación conocida: `stateAsResultIn`/`AcScaffold` de AGENTS.md no
-  existen aún; se usa `stateIn` como en Ajustes.
+  muestra la `TarjetaTotal`. Desviación conocida: `stateAsResultIn`/`AcScaffold` de
+  AGENTS.md no existen aún; se usa `stateIn` como en Ajustes.
+- Tarjeta de total (`resumen-total`): `Periodo.anterior()` devuelve siempre el período
+  anterior **completo** (día = ayer, semana = lunes-domingo previo, mes natural previo).
+  `CalcularResumenPeriodo` (pura, con `hoy` explícito) produce `ResumenPeriodo(total,
+  numTickets, promedioDiario, totalAnterior, variacion)`: el promedio divide entre los
+  días transcurridos si el período está en curso y entre los totales si ya terminó
+  (mín. 1); `variacion` es `null` si el anterior no tiene gasto (badge neutro "Sin datos
+  del período anterior"). `ObservarResumenDelPeriodo` combina los Flow del período y del
+  anterior con el `Clock` inyectado. `ResumenUiState.resumen` alimenta `TarjetaTotal`;
+  importes en `Double`, redondeo solo al formatear (`FormatoResumen.kt`, cifras `tnum`).
 
 ## Convenciones de build
 

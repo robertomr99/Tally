@@ -391,12 +391,15 @@
     "title": "Tarjeta de total del período con métricas",
     "user_visible_behavior": "El resumen muestra total del período, promedio diario, nº de tickets y comparativa vs período anterior (mockup 02).",
     "depends_on": ["periodo-selector"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Unit tests de métricas con datasets conocidos (incluido período anterior vacío)",
       "Formato español 1.428,50 € con cifras tabulares (tnum)"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-18 (sesion 043): JVM verde (assembleDebug testDebugUnitTest; :feature:escanear fallo una vez de forma intermitente y paso al reejecutar): PeriodoTest 15, CalcularResumenPeriodoTest 12, ObservarResumenDelPeriodoTest 2, ResumenViewModelTest 6, FormatoResumenTest 6. E2E emulator-5556: ResumenTotalFlujoTest 3/3 y suite :app 23/23 (sin *RealTest; siembra y limpia lo suyo, expectativas desde linea base). Capturas Dia/Semana/Mes con 1.428,50 EUR y badge neutro en docs/evidence/resumen-total/README.md. tnum: fuente Inter contiene la feature; efecto visual pendiente de revision humana",
+      "2026-10-18 sesion 044: validator independiente -> accept (tests de dominio y feature:resumen re-ejecutados; matematica de metricas, formato y capturas revisados; E2E apoyado en evidencia de emulator-5556, OK 23 tests). Pendiente humano no bloqueante: revision visual de tnum."
+    ],
     "notes": "Mockup 02. El badge comparativo se incluyó por decisión del descubrimiento (barato: suma del rango previo)."
   },
   {

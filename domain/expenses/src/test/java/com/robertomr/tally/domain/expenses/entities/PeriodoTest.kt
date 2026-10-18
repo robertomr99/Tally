@@ -91,6 +91,49 @@ class PeriodoTest {
         assertEquals(LocalDate.of(2026, 1, 31), ene.hasta)
     }
 
+    private fun anterior(tipo: PeriodoTipo, ref: LocalDate) = Periodo.de(tipo, ref).anterior()
+
+    @Test
+    fun anteriorDeDiaCruzaMesYAnio() {
+        assertEquals(LocalDate.of(2026, 2, 28), anterior(PeriodoTipo.DIA, LocalDate.of(2026, 3, 1)).desde)
+        assertEquals(LocalDate.of(2028, 2, 29), anterior(PeriodoTipo.DIA, LocalDate.of(2028, 3, 1)).hasta)
+        assertEquals(LocalDate.of(2025, 12, 31), anterior(PeriodoTipo.DIA, LocalDate.of(2026, 1, 1)).desde)
+    }
+
+    @Test
+    fun anteriorDeSemanaEsLaSemanaLunesDomingoPrevia() {
+        val p = anterior(PeriodoTipo.SEMANA, LocalDate.of(2026, 4, 27)) // lunes
+        assertEquals(LocalDate.of(2026, 4, 20), p.desde)
+        assertEquals(LocalDate.of(2026, 4, 26), p.hasta)
+        // 1-ene-2026 es jueves: su semana es 29 dic - 4 ene; la anterior, 22-28 dic.
+        val cruza = anterior(PeriodoTipo.SEMANA, LocalDate.of(2026, 1, 1))
+        assertEquals(LocalDate.of(2025, 12, 22), cruza.desde)
+        assertEquals(LocalDate.of(2025, 12, 28), cruza.hasta)
+    }
+
+    @Test
+    fun anteriorDeMesEsElMesNaturalCompleto() {
+        val feb = anterior(PeriodoTipo.MES, LocalDate.of(2026, 3, 15))
+        assertEquals(LocalDate.of(2026, 2, 1), feb.desde)
+        assertEquals(LocalDate.of(2026, 2, 28), feb.hasta)
+        assertEquals(LocalDate.of(2028, 2, 29), anterior(PeriodoTipo.MES, LocalDate.of(2028, 3, 1)).hasta)
+        val dic = anterior(PeriodoTipo.MES, LocalDate.of(2026, 1, 10))
+        assertEquals(LocalDate.of(2025, 12, 1), dic.desde)
+        assertEquals(LocalDate.of(2025, 12, 31), dic.hasta)
+        assertEquals(LocalDate.of(2026, 4, 30), anterior(PeriodoTipo.MES, LocalDate.of(2026, 5, 31)).hasta)
+    }
+
+    @Test
+    fun anteriorConservaTipoYEncadenaSinHuecos() {
+        PeriodoTipo.entries.forEach { tipo ->
+            val p = Periodo.de(tipo, LocalDate.of(2026, 3, 18))
+            val a = p.anterior()
+            assertEquals(tipo, a.tipo)
+            assertEquals(p.desde.minusDays(1), a.hasta)
+            assertEquals(a.desde.minusDays(1), a.anterior().hasta)
+        }
+    }
+
     @Test
     fun rechazaDesdePosteriorAHasta() {
         assertThrows(IllegalArgumentException::class.java) {

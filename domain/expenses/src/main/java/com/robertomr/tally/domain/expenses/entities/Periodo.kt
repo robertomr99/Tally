@@ -19,6 +19,17 @@ data class Periodo(
         require(!desde.isAfter(hasta)) { "desde ($desde) no puede ser posterior a hasta ($hasta)" }
     }
 
+    /**
+     * Período inmediatamente anterior del mismo [tipo], siempre COMPLETO aunque
+     * el actual esté en curso: día = ayer, semana = lunes-domingo previo y mes =
+     * mes natural previo (nunca `minusDays(longitud)`, los meses difieren).
+     */
+    fun anterior(): Periodo = when (tipo) {
+        PeriodoTipo.DIA -> desde.minusDays(1).let { Periodo(tipo, it, it) }
+        PeriodoTipo.SEMANA -> Periodo(tipo, desde.minusDays(7), hasta.minusDays(7))
+        PeriodoTipo.MES -> YearMonth.from(desde).minusMonths(1).let { Periodo(tipo, it.atDay(1), it.atEndOfMonth()) }
+    }
+
     companion object {
         /** Período de [tipo] que contiene la fecha [referencia]. */
         fun de(tipo: PeriodoTipo, referencia: LocalDate): Periodo = when (tipo) {

@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `resumen-total`, `grafica-donut`, `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`, `accepted` sesión 042).
+- Current next ready feature: `grafica-donut`, `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`; `resumen-total` `accepted` sesión 044).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2436,3 +2436,28 @@
   calendario y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
 - Nota menor: `sembrarUno` del E2E decide la fecha de captura por el total sembrado (fragil).
 - Status: `periodo-selector` = **accepted**.
+
+## Session 043 - resumen-total implementacion (2026-10-18)
+
+- Implementado (spec `docs/specs/resumen-total.md`, defaults D1-D6): promedio sobre dias transcurridos si el
+  periodo esta en curso; comparativa contra el periodo anterior completo; anterior vacio = `variacion` null y
+  badge neutro "Sin datos del período anterior"; badge sin semantica verde/rojo; texto "N tickets"; `Double`
+  con redondeo al formatear. Dominio: `Periodo.anterior()`, `ResumenPeriodo`, `CalcularResumenPeriodo`,
+  `ObservarResumenDelPeriodo`. `:feature:resumen`: `TarjetaTotal`, `FormatoResumen` (`EstiloTabular` tnum),
+  `ResumenUiState.resumen` (sustituye `numTickets`/`suma`), `ResumenViewModel` con el nuevo caso de uso.
+  Sin modulos ni dependencias nuevas; `build-logic/` intacto. `docs/architecture.md` actualizado.
+- Verificacion: `assembleDebug testDebugUnitTest` verde; PeriodoTest 15, CalcularResumenPeriodoTest 12,
+  ObservarResumenDelPeriodoTest 2, ResumenViewModelTest 6, FormatoResumenTest 6. E2E en emulator-5556 (5554
+  offline; sin fisicos ni connected*): `OK (23 tests)` incluyendo `ResumenTotalFlujoTest` 3/3. Evidencia y
+  capturas en `docs/evidence/resumen-total/README.md`.
+- Pendiente: revision visual humana de tnum/capturas (la fuente Inter si contiene `tnum`). Test inestable
+  ajeno de `:feature:escanear` fallo una vez y paso al reejecutar. La base del emulador conserva tickets de
+  otros E2E (el test usa linea base).
+- Status: `resumen-total` = **passing** (listo para validator).
+
+## Session 044 - resumen-total validacion (2026-10-18)
+
+- Validator independiente: **accept** (tests de dominio y `:feature:resumen` re-ejecutados; matematica de
+  metricas, formato espanol y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
+- Pendiente humano no bloqueante: revision visual de las cifras tabulares (`tnum`).
+- Status: `resumen-total` = **accepted**.
