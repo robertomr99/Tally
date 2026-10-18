@@ -2053,8 +2053,10 @@
   :app:compileDebugAndroidTestKotlin --rerun-tasks` → BUILD SUCCESSFUL;
   LineaEditableTest 9/9, GuardarTicketTest 8/8, EscanearViewModelTest 33/33.
 - Known risk or unresolved issue:
-  - E2E `RevisionDatosFlujoTest` (paso nuevo: precio vacío → total baja) sin
+  - (RESUELTO) E2E `RevisionDatosFlujoTest` (paso nuevo: precio vacío → total baja) sin
     ejecutar: `emulator-5554` apagado (solo había un dispositivo inalámbrico, que
     no se usó). Estado de la feature sigue `accepted`.
 - Next best step: arrancar `emulator-5554` y ejecutar `RevisionDatosFlujoTest`;
   después `planner` sobre `descarga-modelo`.
+- Seguimiento: con `emulator-5554` arrancado, `RevisionDatosFlujoTest` 3/3
+  (0 fallos, 0 skipped) incluido el paso de precio vacío. Pendiente cerrado.
