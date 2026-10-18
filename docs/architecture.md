@@ -12,7 +12,7 @@ dependencias. Las reglas operativas completas están en `AGENTS.md`.
  ├─ :framework:database   (android library internal; implementa interfaces de domain)
  ├─ :framework:ai         (android library internal; implementa interfaces de domain; OCR, motores y modelo/ = descarga con WorkManager)
  ├─ :feature:common       (compose; tema, tipografía y utilidades de UI)
- ├─ :feature:resumen      (compose; pantallas)
+ ├─ :feature:resumen      (compose; panel: selector de período Día/Semana/Mes, usa :domain:expenses)
  ├─ :feature:ajustes      (compose; Ajustes: sección "Modelo local", descarga y token)
  ├─ :feature:gastos       (compose; pantallas)
  └─ :feature:escanear     (compose; pantallas)
@@ -245,6 +245,23 @@ app ──────────► feature:* ──────────�
   `Encuadre`. Las pantallas no reciben el `NavController`.
 - Back desde la revisión = volver al resultado sin escribir en Room
   (`CancellationException` siempre re-lanzada). El badge de motor se conserva.
+
+## Seguimiento: período del panel
+
+- Dominio (`:domain:expenses`, Kotlin puro): `PeriodoTipo` (DIA, SEMANA, MES) y
+  `Periodo(tipo, desde, hasta)` con rangos **inclusivos** por fecha de **emisión**;
+  la semana es siempre lunes-domingo (no depende del `Locale`).
+  `ObtenerPeriodo(Clock)` calcula "hoy" con el `Clock` inyectado (correcto en los
+  cambios de hora de Europe/Madrid) y `ObservarTicketsDelPeriodo` delega en
+  `TicketRepository.observeByDateRange`. Es el punto de entrada que reutilizarán
+  `resumen-total`, `grafica-donut`, `listado-gastos` y `rango-personalizado`.
+- `Clock` se provee en el `di.kt` de `:app` (`Clock.systemDefaultZone()`); los tests
+  pasan `Clock.fixed(...)`.
+- `ResumenViewModel` (`:feature:resumen`): `MutableStateFlow<PeriodoTipo>` (Mes por
+  defecto, sin persistir) -> `flatMapLatest` -> Flow de Room; sin `load()`. La pantalla
+  muestra rango y una cifra provisional (suma + nº de tickets) que `resumen-total`
+  sustituirá. Desviación conocida: `stateAsResultIn`/`AcScaffold` de AGENTS.md no
+  existen aún; se usa `stateIn` como en Ajustes.
 
 ## Convenciones de build
 

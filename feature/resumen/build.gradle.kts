@@ -1,6 +1,7 @@
 plugins {
     id("tally.android.library")
     id("tally.android.compose")
+    id("tally.hilt")
 }
 
 android {
@@ -8,6 +9,21 @@ android {
 }
 
 dependencies {
-    // Icono de Ajustes (Settings); lo gestiona el Compose BOM.
+    // Casos de uso del período y entidades (spec periodo-selector).
+    implementation(project(":domain:expenses"))
+
+    // hiltViewModel() en Compose.
+    implementation(libs.hilt.navigation.compose)
+
+    // collectAsStateWithLifecycle.
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
+    // Iconos (Settings, Check); los gestiona el Compose BOM.
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Tests JVM del ViewModel con dobles de :test:unit + Turbine.
+    testImplementation(project(":test:unit"))
+    testImplementation(libs.junit)
+    testImplementation(libs.turbine)
+    testImplementation(libs.coroutines.test)
 }

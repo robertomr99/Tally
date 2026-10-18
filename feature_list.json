@@ -374,13 +374,16 @@
     "title": "Selector de período Día/Semana/Mes con rangos correctos",
     "user_visible_behavior": "El usuario alterna Día/Semana/Mes en el segmented control (mockup 02) y el rango derivado filtra por fecha de emisión.",
     "depends_on": ["persistencia-room"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Unit tests de bordes: semanas que cruzan mes, meses de 28/29/30/31 días, cambio de hora en España",
       "Con datos sembrados de prueba, el total cambia al alternar período"
     ],
-    "evidence": [],
-    "notes": "docs/domain-model.md: Período por fecha de emisión, no de captura."
+    "evidence": [
+      "2026-10-18 (sesion 041): JVM verde (assembleDebug testDebugUnitTest): PeriodoTest 11, ObtenerPeriodoTest 4, ObservarTicketsDelPeriodoTest 3, ResumenViewModelTest 5, EtiquetaPeriodoTest 5. E2E emulator-5556: PeriodoSelectorFlujoTest 2/2 (siembra hoy/-3d/-40d, alterna Dia/Semana/Mes, limpia lo sembrado) y suite :app 20/20 (sin *RealTest). Capturas y uiautomator (selected) en docs/evidence/periodo-selector/README.md",
+      "2026-10-18 sesion 042: validator independiente -> accept (tests de dominio y feature:resumen re-ejecutados; revision de codigo, bordes de calendario y capturas; E2E apoyado en evidencia de emulator-5556). Nota menor: sembrarUno del E2E decide la captura por el total sembrado (fragil)."
+    ],
+    "notes": "docs/domain-model.md: Período por fecha de emisión, no de captura. Decisiones D1-D7 aprobadas por el usuario (sin persistir selección, sin Personalizado, lunes fijo, Clock en di.kt de :app, sin módulo nuevo, cifra provisional, sin refresco a medianoche). Desviación: stateAsResultIn/AcScaffold no existen; se usa stateIn como Ajustes."
   },
   {
     "id": "resumen-total",

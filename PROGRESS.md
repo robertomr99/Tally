@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: ninguna pendiente (`ajustes-motor` `accepted`, sesión 040); revisar `feature_list.json`.
+- Current next ready feature: `resumen-total`, `grafica-donut`, `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`, `accepted` sesión 042).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2406,3 +2406,33 @@
 - Pendiente opcional no bloqueante: verificacion fisica en Tab S9+ (Nube/Local forzado en la siguiente
   extraccion, Local sin modelo = error visible, persistencia tras reinicio).
 - Status: `ajustes-motor` = **accepted**.
+
+## Session 041 - periodo-selector implementacion (2026-10-18)
+
+- Implementado (spec `docs/specs/periodo-selector.md`; defaults D1-D7 aprobados por el usuario: seleccion sin
+  persistir y Mes por defecto, sin segmento Personalizado, semana lunes-domingo fija, `Clock` en nuevo `di.kt`
+  de `:app`, sin modulo nuevo (se usa `:feature:resumen`), cifra provisional suma + nº de tickets, sin refresco
+  a medianoche). Dominio: `PeriodoTipo`, `Periodo.de`, `ObtenerPeriodo(Clock)`, `ObservarTicketsDelPeriodo`.
+  `:app`: `di/di.kt` (`AppModule`, `Clock`) y `TicketRepositoryEntryPoint` (solo para el E2E, patron de
+  `TextEngineEntryPoint`). `:feature:resumen`: Hilt + dominio, `ResumenViewModel`, `ResumenState`,
+  `PeriodoSelector`, `EtiquetaPeriodo` y `ResumenScreen` (conserva tags `pantalla_resumen`/`boton_ajustes`).
+- Desviacion registrada: `stateAsResultIn` y `AcScaffold` (AGENTS.md) NO existen en el repo; `ResumenViewModel`
+  usa `stateIn` directo como `AjustesViewModel`. No se crearon aqui.
+- Verificacion real: `gradlew.bat :domain:expenses:test :feature:resumen:testDebugUnitTest --rerun` y
+  `gradlew.bat assembleDebug testDebugUnitTest` -> BUILD SUCCESSFUL. JUnit: `PeriodoTest` 11,
+  `ObtenerPeriodoTest` 4, `ObservarTicketsDelPeriodoTest` 3, `ResumenViewModelTest` 5, `EtiquetaPeriodoTest` 5.
+- E2E en emulator-5556 (emulator-5554 offline; ningun dispositivo fisico usado; sin connected*):
+  `PeriodoSelectorFlujoTest` 2/2 y suite `:app` completa sin los *RealTest 20/20. El E2E borra lo que siembra.
+  Evidencia: `docs/evidence/periodo-selector/README.md` (capturas por segmento + `selected` por uiautomator).
+- Observacion: la base del emulador conserva tickets de 0,00 € dejados por otros E2E (`RevisionDatosFlujoTest`);
+  no afecta al test (usa lineas base).
+- Pendiente: revision visual humana de las capturas; tests inestables ajenos conocidos de `EscanearViewModelTest`
+  no se vieron fallar en esta sesion.
+- Status: `periodo-selector` = **passing** (listo para validator). Siguiente: `resumen-total`.
+
+## Session 042 - periodo-selector validacion (2026-10-18)
+
+- Validator independiente: **accept** (tests de dominio y `:feature:resumen` re-ejecutados; codigo, bordes de
+  calendario y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
+- Nota menor: `sembrarUno` del E2E decide la fecha de captura por el total sembrado (fragil).
+- Status: `periodo-selector` = **accepted**.
