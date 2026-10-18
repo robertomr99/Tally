@@ -299,14 +299,19 @@
     "title": "Extracción local con Gemma 3n (TextEngine)",
     "user_visible_behavior": "El mismo contrato TextEngine en el dispositivo: texto crudo → TicketExtraido validado con Gemma 3n/MediaPipe, sin red, con el motor registrado.",
     "depends_on": ["spike-gemma-mediapipe", "ocr-mlkit"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
-      "Los mismos 5 textos crudos producen extracciones válidas en local (Tab S9+)",
+      "Los mismos 4 textos crudos producen extracciones válidas en local (Tab S9+)",
       "Parser/validador compartido con la vía nube (unit tests)",
       "Latencia medida y registrada en PROGRESS.md"
     ],
-    "evidence": [],
-    "notes": "Comparativa honesta: mismo input para ambos motores (ADR 0002). GemaLocalEngine internal en framework/ai."
+    "evidence": [
+      "IMPLEMENTADO sesion 033 (2026-10-18): GemmaLocalEngine + LocalLlm/MediaPipeLocalLlm + JsonObjectStreamDetector + ModeloLocalNoDisponibleException + buildLocalPrompt + binding @Named(\"local\"); JVM verde (GemmaLocalEngineTest 10, JsonObjectStreamDetectorTest 8, TicketExtractionPromptTest 7).",
+      "Humo emulator-5554 (x86_64, -memory 5120): ExtraccionLocalRealTest 5/5, 4/4 pasan parser con motor LOCAL, ranOnMainThread=false, generacion 10,8-26,0 s, 2/4 totales correctos; docs/evidence/extraccion-local/{latencias.md,emulador_humo_logcat.txt}.",
+      "2026-10-18 GATE FISICO Tab S9+ (SM-X810, Android 16, arm64) EJECUTADO: modelo subido con adb push (3655827456 bytes, 95 s) y ExtraccionLocalRealTest por am instrument = OK (5 tests, 144 s). 4/4 extracciones validas con motor=LOCAL, ranOnMainThread=false; carga 6887 ms (fria) y ~0,6 s despues; generacion 36620 / 32526 / 25142 / 39263 ms (< 60 s, plan B de R1 no necesario); totales 2/4 correctos (tickets 2 y 4: 3,50 y 7,91; fallan 1 -> 32,09 vs 35,30 y 3 -> 36,10 vs 13,90 por ambiguedad del OCR), registrados sin ser gate (D5). Log crudo docs/evidence/extraccion-local/tab_s9_logcat.txt y tabla en latencias.md. Nota operativa: el directorio models/ debe crearlo la app o run-as, no el shell de adb (si no, la app ve No descargado).",
+      "2026-10-18 ACEPTADA por feature-validator independiente (sesión 033): re-ejecutó gate JVM --rerun-tasks (GemmaLocalEngineTest 10/10, JsonObjectStreamDetectorTest 8/8, TicketExtractionPromptTest 7/7) y REPITIÓ el gate físico en la Tab S9+ (am instrument OK, 5 tests, 139 s; 4/4 extracciones válidas con motor=LOCAL, ranOnMainThread=false, generación 26,8-41,2 s, totales idénticos 32,09/3,5/36,1/7,91); latencias.md coincide con tab_s9_logcat.txt. Escenarios 1-6 cumplidos, sin hallazgos bloqueantes. EscanearViewModelTest.emptyOcrResult... no reproducible en 13 ejecuciones: flaky previo, ajeno a esta feature."
+    ],
+    "notes": "Comparativa honesta: mismo input para ambos motores (ADR 0002). GemaLocalEngine internal en framework/ai. PLANIFICACIÓN 2026-10-18 (sesión 032): spec en docs/specs/extraccion-local.md (GemmaLocalEngine internal en framework/ai/extraccion con interfaz interna LocalLlm para probar en JVM, binding @Named(\"local\") TextEngine, reutiliza TextEngine/TicketExtraidoParser/ExtraerTicket, detector de JSON completo para cortar la generación, maxTokens 2048, modelo cargado por extracción; sin módulos ni dependencias nuevas). Gate físico: Tab S9+ (4 textos válidos + latencia); emulator-5554 solo humo. Los connected*Test borran el modelo del emulador: ejecutarlos al final."
   },
   {
     "id": "router-automatico",

@@ -91,6 +91,13 @@
   secuencias de parada en el motor definitivo (latencia efectiva ~1–2 s tras
   prefill frente a los 53 s medidos con cola degenerada) y re-medir con prompts
   de extracción reales. Plan B documentado arriba.
+  **Actualización 2026-10-18 (`extraccion-local`, sesión 033)**: parada de generación
+  implementada (`JsonObjectStreamDetector`, probado en JVM). Humo en `emulator-5554`
+  (x86_64, 5 GB de RAM; con los 2,5 GB por defecto el lowmemorykiller mata la app):
+  4 textos → 4/4 pasan el parser, `ranOnMainThread=false`, carga 0,3–1,7 s,
+  generación 10,8–26,0 s (152–426 tokens de salida, 740–1.009 de prompt), 2/4 totales
+  correctos. Latencia normativa pendiente en la Tab S9+ (ver
+  `docs/evidence/extraccion-local/`).
 - **R2 — Quota/latencia de Gemini en la demo**: mitigación: red propia
   (tethering), límites conocidos de antemano, datos sembrados de reserva.
   **Estado 2026-10-17 (`procesado-ui`, sesión 021)**: la latencia ya es visible

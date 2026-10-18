@@ -80,6 +80,17 @@ internal object TicketExtractionPrompt {
     """.trimIndent()
 
     /**
+     * Prompt de la via LOCAL (spec extraccion-local, D4): el mismo de la nube
+     * (mismo schema, enum y regla del total con IVA: comparativa honesta, ADR 0002)
+     * + cierre explicito, porque Gemma local no tiene structured output.
+     */
+    fun buildLocalPrompt(textoCrudo: String): String =
+        buildPrompt(textoCrudo) + "\n\n" + CIERRE_LOCAL
+
+    private const val CIERRE_LOCAL =
+        "Devuelve unicamente el objeto JSON, sin texto antes ni despues y sin comentarios `//`."
+
+    /**
      * `responseSchema` de Firebase AI Logic (structured output): obliga al modelo
      * al JSON del prompt. `fecha_emision`, `total`, `comercio` y `lineas` son
      * opcionales (pueden no aparecer en el ticket); `categoria` es obligatoria y

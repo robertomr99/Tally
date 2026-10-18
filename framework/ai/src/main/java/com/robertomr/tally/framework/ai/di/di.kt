@@ -7,6 +7,8 @@ import com.robertomr.tally.domain.expenses.data.ModelDownloader
 import com.robertomr.tally.domain.expenses.data.OcrEngine
 import com.robertomr.tally.domain.expenses.data.TextEngine
 import com.robertomr.tally.framework.ai.extraccion.GeminiCloudEngine
+import com.robertomr.tally.framework.ai.extraccion.GemmaLocalEngine
+import com.robertomr.tally.framework.ai.extraccion.MediaPipeLocalLlm
 import com.robertomr.tally.framework.ai.modelo.AndroidDownloadConditions
 import com.robertomr.tally.framework.ai.modelo.FileModelAccessTokenStore
 import com.robertomr.tally.framework.ai.modelo.WorkManagerModelDownloader
@@ -16,6 +18,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -33,6 +36,19 @@ internal object AiModule {
      */
     @Provides
     fun provideTextEngine(): TextEngine = GeminiCloudEngine()
+
+    /**
+     * Extraccion local (Gemma 3n via MediaPipe, spec extraccion-local). Calificado
+     * `@Named("local")`: el `TextEngine` sin calificar sigue siendo la nube hasta
+     * `router-automatico` (D1).
+     */
+    @Provides
+    @Singleton
+    @Named("local")
+    fun provideLocalTextEngine(
+        @ApplicationContext context: Context,
+        modelDownloader: ModelDownloader,
+    ): TextEngine = GemmaLocalEngine(modelDownloader, MediaPipeLocalLlm(context))
 
     /** Politica WiFi y espacio libre para la descarga del modelo (spec descarga-modelo). */
     @Provides

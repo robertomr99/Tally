@@ -62,6 +62,16 @@ class TicketExtractionPromptTest {
     }
 
     @Test
+    fun localPromptKeepsTheCloudPromptAndAddsTheJsonOnlyClosing() {
+        val local = TicketExtractionPrompt.buildLocalPrompt(textoCrudo)
+        assertTrue("el prompt local debe contener el de la nube tal cual", local.startsWith(prompt))
+        assertTrue(local.contains("unicamente el objeto JSON"))
+        assertTrue(local.contains("sin comentarios `//`"))
+        assertTrue(local.contains("6 valores"))
+        assertTrue(local.contains("total CON IVA"))
+    }
+
+    @Test
     fun modelConstantIsRegistered() {
         // gemini-flash-lite-latest: variante lite elegida por el usuario
         // (2026-10-17) para la via nube (fallback de ADR 0001) por su mayor cuota

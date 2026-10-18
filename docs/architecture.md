@@ -116,6 +116,19 @@ app ──────────► feature:* ──────────�
    cuota de `gemini-3.8-flash`; ver R2); se binding con `@Provides TextEngine` en el
   `di.kt` del módulo. Errores de red/cuota/config se propagan al llamador y una
   `CancellationException` jamás se convierte en resultado.
+- `GemmaLocalEngine` (`extraccion-local`, `internal` en `:framework:ai/extraccion/`)
+  es el segundo `TextEngine`: Gemma 3n E2B vía MediaPipe `tasks-genai`, sin red,
+  `motor = Motor.LOCAL`. MediaPipe queda tras la interfaz interna `LocalLlm`
+  (`MediaPipeLocalLlm` real; un runner falso permite probar el motor en JVM). Usa
+  el mismo prompt/schema que la nube (`buildLocalPrompt` = `buildPrompt` + cierre
+  "solo JSON") y el mismo `TicketExtraidoParser`. La generación se corta sola con
+  `JsonObjectStreamDetector` (cierre de la `}` de nivel superior o `<end_of_turn>`),
+  el modelo se carga por extracción en `Dispatchers.IO` y se cierra en `finally`
+  (tras cancelar, se espera a que termine la generación nativa); parámetros
+  `maxTokens=2048` (entrada+salida), `topK=1`, `temperature=0.2`, semilla fija. Modelo
+  ausente → `ModeloLocalNoDisponibleException`. Se binding como
+  `@Provides @Singleton @Named("local") TextEngine` en el mismo `di.kt`; el
+  `TextEngine` sin calificar sigue siendo la nube hasta `router-automatico`.
 - El caso de uso `ExtraerTicket` (dominio) envuelve el motor: texto blank →
   `TicketExtraido` vacío **sin invocar el motor** (sin gastar cuota); es el
   punto de extensión futuro de `log-extracciones`.

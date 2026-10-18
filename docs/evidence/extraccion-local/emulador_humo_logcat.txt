@@ -1,0 +1,140 @@
+--------- beginning of main
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal: metricas ranOnMainThread=false loadMillis=607 generationMillis=17287 promptTokens=850 responseTokens=225
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal: respuesta_cruda=<<<```json
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal: {
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   "comercio": "FENDIENTE DE PAQO",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   "fecha_emision": "2026-10-03",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   "total": 32.09,
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   "categoria": "OTROS",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   "lineas": [
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "concepto": "AGUA PET",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "cantidad": 2,
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "precio_unitario": 1.90
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "concepto": "CORTADA CERVEZA",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "precio_unitario": 2.50
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "concepto": "TAPA SALMOREJO",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "precio_unitario": 4.50
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "concepto": "COLISEO",
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:       "precio_unitario": 3.21
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:     }
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal:   ]
+10-18 14:50:00.372  3687  3709 I ExtraccionLocal: }>>>
+10-18 14:50:00.509  3687  3710 I ExtraccionLocal: ticket=1 extraccion=<<<TicketExtraido(comercio=FENDIENTE DE PAQO, fechaEmision=2026-10-03T00:00, total=32.09, lineas=[Linea(concepto=AGUA PET, cantidad=2, precioUnitario=1.9), Linea(concepto=CORTADA CERVEZA, cantidad=1, precioUnitario=2.5), Linea(concepto=TAPA SALMOREJO, cantidad=1, precioUnitario=4.5), Linea(concepto=COLISEO, cantidad=1, precioUnitario=3.21)], categoria=OTROS, motor=LOCAL)>>> totalMs=18311 totalPapel=35.3 totalExtraido=32.09 acierto=false
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal: metricas ranOnMainThread=false loadMillis=480 generationMillis=25973 promptTokens=893 responseTokens=426
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal: respuesta_cruda=<<<```json
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal: {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   "comercio": "BARRA 200G",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   "fecha_emision": "2026-10-07",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   "total": 3.50,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   "categoria": "ALIMENTACION",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   "lineas": [
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "VIENA 60G",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "VIENA SALVADO 60G",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "A4,00%",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.40
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "0,50 A",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "1,50 A",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 1.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "1,50 A",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 1.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "3,50",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 3.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "3,50",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 3.50
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "concepto": "0,00",
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.00
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:     }
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal:   ]
+10-18 14:50:27.212  3687  3709 I ExtraccionLocal: }>>>
+10-18 14:50:27.296  3687  3710 I ExtraccionLocal: ticket=2 extraccion=<<<TicketExtraido(comercio=BARRA 200G, fechaEmision=2026-10-07T00:00, total=3.5, lineas=[Linea(concepto=VIENA 60G, cantidad=1, precioUnitario=0.5), Linea(concepto=VIENA SALVADO 60G, cantidad=1, precioUnitario=0.5), Linea(concepto=A4,00%, cantidad=1, precioUnitario=0.4), Linea(concepto=0,50 A, cantidad=1, precioUnitario=0.5), Linea(concepto=1,50 A, cantidad=1, precioUnitario=1.5), Linea(concepto=1,50 A, cantidad=1, precioUnitario=1.5), Linea(concepto=3,50, cantidad=1, precioUnitario=3.5), Linea(concepto=3,50, cantidad=1, precioUnitario=3.5), Linea(concepto=0,00, cantidad=1, precioUnitario=0.0)], categoria=ALIMENTACION, motor=LOCAL)>>> totalMs=26779 totalPapel=3.5 totalExtraido=3.5 acierto=true
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal: metricas ranOnMainThread=false loadMillis=263 generationMillis=10799 promptTokens=740 responseTokens=152
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal: respuesta_cruda=<<<```json
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal: {
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   "comercio": "FOOD COURT OZONE S.L.",
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   "fecha_emision": "2026-08-15",
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   "total": 36.10,
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   "categoria": "ALIMENTACION",
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   "lineas": [
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "concepto": "TACOS EMMY",
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "precio_unitario": 13.90
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "concepto": "TACOS POLLO",
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:       "precio_unitario": 6.95
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:     }
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal:   ]
+10-18 14:50:38.595  3687  3709 I ExtraccionLocal: }>>>
+10-18 14:50:38.680  3687  3710 I ExtraccionLocal: ticket=3 extraccion=<<<TicketExtraido(comercio=FOOD COURT OZONE S.L., fechaEmision=2026-08-15T00:00, total=36.1, lineas=[Linea(concepto=TACOS EMMY, cantidad=1, precioUnitario=13.9), Linea(concepto=TACOS POLLO, cantidad=1, precioUnitario=6.95)], categoria=ALIMENTACION, motor=LOCAL)>>> totalMs=11380 totalPapel=13.9 totalExtraido=36.1 acierto=false
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal: metricas ranOnMainThread=false loadMillis=252 generationMillis=15516 promptTokens=1009 responseTokens=239
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal: respuesta_cruda=<<<```json
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal: {
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   "comercio": "SERAROJO SL",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   "fecha_emision": "2026-10-04",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   "total": 7.91,
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   "categoria": "ALIMENTACION",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   "lineas": [
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "concepto": "PIKOTAS CEREZA BOLSA",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "cantidad": 2,
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "precio_unitario": 1.39
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "concepto": "CHOCOLATE EXTRAFINO",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "precio_unitario": 3.85
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "concepto": "LECHE SEMI S/LACTOSA BOLSA",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.15
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     },
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     {
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "concepto": "ROSQUILLA PISTACHO",
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "cantidad": 1,
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:       "precio_unitario": 0.79
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:     }
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal:   ]
+10-18 14:50:54.741  3687  3709 I ExtraccionLocal: }>>>
+10-18 14:50:54.824  3687  3710 I ExtraccionLocal: ticket=4 extraccion=<<<TicketExtraido(comercio=SERAROJO SL, fechaEmision=2026-10-04T00:00, total=7.91, lineas=[Linea(concepto=PIKOTAS CEREZA BOLSA, cantidad=2, precioUnitario=1.39), Linea(concepto=CHOCOLATE EXTRAFINO, cantidad=1, precioUnitario=3.85), Linea(concepto=LECHE SEMI S/LACTOSA BOLSA, cantidad=1, precioUnitario=0.15), Linea(concepto=ROSQUILLA PISTACHO, cantidad=1, precioUnitario=0.79)], categoria=ALIMENTACION, motor=LOCAL)>>> totalMs=16141 totalPapel=7.91 totalExtraido=7.91 acierto=true

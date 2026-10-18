@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `extraccion-local` (descarga-modelo `accepted`, sesión 031; sin spec → `planner`).
+- Current next ready feature: `router-automatico` (`extraccion-local` `accepted`, sesión 033; sin spec → `planner`).
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2149,3 +2149,86 @@
   - El modelo real queda en el emulador para `extraccion-local` (no volver a lanzar
     `connected*` si se quiere conservar).
 - Next best step: planificar `extraccion-local` (deps accepted); aislar `AjustesModeloFlujoTest` del token guardado.
+
+### Session 032
+
+- Date: 2026-10-18
+- Goal: push de `descarga-modelo` (hecho: `33290c1` en `origin/master`) y planificar
+  `extraccion-local` (deps `spike-gemma-mediapipe`, `ocr-mlkit`, `descarga-modelo` accepted).
+- Completed:
+  - Spec creada: `docs/specs/extraccion-local.md` (~190 lineas), sin decisiones bloqueantes.
+  - Decisiones con DEFAULT: `GemmaLocalEngine` internal en `framework/ai/extraccion/` con
+    interfaz interna `LocalLlm` (`MediaPipeLocalLlm` real) para probar el motor en JVM;
+    binding `@Named("local") TextEngine` (el `TextEngine` sin calificar sigue siendo la
+    nube); reutiliza `TextEngine`, `TicketExtraidoParser` y `ExtraerTicket`; prompt/schema de
+    la nube + cierre "solo JSON"; detector de objeto JSON completo
+    (`JsonObjectStreamDetector`) que corta la generacion (el spike degenero hasta
+    `maxTokens` en 53 s); `maxTokens` 2048, `topK` 1, `temperature` 0,2; modelo cargado en
+    cada extraccion y cerrado en `finally`; totales contra el papel registrados, no gate duro.
+  - `feature_list.json`: nota de planificacion y "5 textos" -> "4 textos" (alineado con
+    `ocr-mlkit`/`extraccion-nube`).
+- Verification run: planificacion (sin gates de producto; cero cambios de codigo).
+- Evidence captured: `docs/specs/extraccion-local.md`.
+- Known risk or unresolved issue:
+  - Latencia sin medir (9,2 tok/s en el spike -> estimacion 16-45 s por ticket); si supera
+    60 s hay que revisar el plan B de R1.
+  - Gate fisico obligatorio en la Tab S9+ (4 textos validos + latencia); el emulador es solo humo.
+  - `connected*AndroidTest` desinstala la app y borra el modelo del emulador: ejecutarlos al
+    final, tras los `am instrument`.
+- Next best step: `implementer` sobre `docs/specs/extraccion-local.md`.
+
+### Session 033: implementacion de extraccion-local
+
+- Date: 2026-10-18
+- Completed:
+  - `GemmaLocalEngine` (internal, `framework/ai/extraccion`) + interfaz interna `LocalLlm`/`LlmRun`
+    + `MediaPipeLocalLlm` (IO, carga por extraccion, cierre ordenado tras cancelar) +
+    `JsonObjectStreamDetector` (corta la generacion al cerrar el objeto JSON o en
+    `<end_of_turn>`) + `ModeloLocalNoDisponibleException` (dominio) + `buildLocalPrompt`.
+    Binding `@Named("local") TextEngine` en el `di.kt` existente y accesor
+    `textEngineLocal()` en `TextEngineEntryPoint`; el `TextEngine` sin calificar sigue siendo la
+    nube. `maxTokens=2048`, `topK=1`, `temperature=0.2`, semilla 42. Parser compartido sin cambios.
+  - Tests JVM: `GemmaLocalEngineTest` 10, `JsonObjectStreamDetectorTest` 8,
+    `TicketExtractionPromptTest` 7 (+1 local). Test real `ExtraccionLocalRealTest` en `:app`.
+- Verification run:
+  - Base previa: `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test` verde.
+  - Final: `assembleDebug testDebugUnitTest :test:unit:test --rerun :domain:expenses:test
+    --rerun :framework:ai:testDebugUnitTest`: un fallo no reproducible
+    (`EscanearViewModelTest.emptyOcrResultReachesRevisionAsEmptyTextWithoutBlocking`, ajeno);
+    `:feature:escanear:testDebugUnitTest --rerun` verde a continuacion.
+  - Humo `emulator-5554` (x86_64): con 2,5 GB de RAM el lowmemorykiller mata la app al cargar el
+    modelo; con `-memory 5120` (sin tocar el AVD) `ExtraccionLocalRealTest` 5/5 con `am instrument`.
+    4/4 pasan el parser con `motor=LOCAL`, `ranOnMainThread=false`; carga 252-607 ms (primera 1.676),
+    generacion 10,8-26,0 s, prompt 740-1.009 tokens, respuesta 152-426; totales correctos 2/4
+    (ticket 2 = 3,50 OK, ticket 4 = 7,91 OK; ticket 1 = 32,09 vs 35,30; ticket 3 = 36,10 vs 13,90).
+    Detalle en `docs/evidence/extraccion-local/latencias.md` y `emulador_humo_logcat.txt`.
+  - Incidente: al lanzar el resto de la suite `:app` con `am instrument -e notClass` use un nombre
+    de paquete erroneo y `AjustesModeloFlujoTest` se ejecuto y BORRO el modelo del emulador; se
+    restauro con `adb push` desde `E:\AI-Expert\Modelos\` (3.655.827.456 bytes, ya verificado con
+    un ticket posterior) y el fichero `hf_access_token` sigue en `no_backup`. Esa suite :app dio
+    14/14 OK. NO se ejecuto `:app:connectedDebugAndroidTest`.
+- Status: `extraccion-local` = **passing** (gate fisico Tab S9+ ejecutado, ver seguimiento; lista para `feature-validator`).
+- Hallazgo de calidad: tickets 1 y 3 fallan el total en local (R3); iterar prompt local (T8, max 2
+  rondas) tras ver los resultados de la Tab.
+
+### Session 033 (seguimiento): gate fisico en la Tab S9+
+
+- Date: 2026-10-18
+- Completed:
+  - Tab S9+ (`SM-X810`, Android 16, arm64, ~11,4 GB RAM) conectada por adb inalambrico:
+    `installDebug installDebugAndroidTest`, modelo subido con `adb push` desde
+    `E:\AI-Expert\Modelos\` (3.655.827.456 bytes en 95 s) y
+    `am instrument -e class ...ExtraccionLocalRealTest` = **OK (5 tests, 144 s)**.
+  - 4/4 extracciones validas con `motor=LOCAL`, `ranOnMainThread=false`; carga 6.887 ms
+    (fria) y ~0,6 s despues; generacion 36.620 / 32.526 / 25.142 / 39.263 ms (< 60 s: plan B
+    de R1 no necesario). Totales 2/4 correctos (tickets 2 y 4), registrados sin ser gate (D5).
+  - Evidencia: `docs/evidence/extraccion-local/tab_s9_logcat.txt` y seccion Tab S9+ de `latencias.md`.
+- Hallazgo operativo: el primer intento salto los 5 tests por `assumeTrue` (la app veia "No
+  descargado") porque el directorio `models/` lo creo el shell de adb. Se resolvio recreandolo
+  con `run-as com.robertomr.tally mkdir` y moviendo el fichero. El `README.md` del gate debe
+  crear el directorio con `run-as` (o descargar desde Ajustes).
+- Status: `extraccion-local` = **accepted** (validator independiente: ACCEPT; repitio el gate JVM y el gate fisico en la Tab S9+: 4/4 validos, generacion 26,8-41,2 s).
+- Known risk or unresolved issue:
+  - Calidad 2/4 en totales (ambiguedad OCR, R3): hallazgo de la comparativa con la nube.
+  - Test inestable ajeno visto una vez: `EscanearViewModelTest.emptyOcrResultReachesRevisionAsEmptyTextWithoutBlocking`.
+- Next best step: `planner` sobre `router-automatico` (deps `extraccion-local` y `extraccion-nube` accepted). Opcional: endurecer el test flaky `EscanearViewModelTest.emptyOcrResult...` y aislar `AjustesModeloFlujoTest` del token guardado.

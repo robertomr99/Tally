@@ -4,6 +4,7 @@ import com.robertomr.tally.domain.expenses.data.TextEngine
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 
 /**
  * EntryPoint de [TextEngine] para consumidores fuera del patron `@Inject
@@ -21,4 +22,8 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface TextEngineEntryPoint {
     fun textEngine(): TextEngine
+
+    /** Motor local (spec extraccion-local); el router llegara con `router-automatico`. */
+    @Named("local")
+    fun textEngineLocal(): TextEngine
 }
