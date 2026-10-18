@@ -356,14 +356,17 @@
     "title": "Ajustes básicos: forzar motor y estado del modelo",
     "user_visible_behavior": "Pantalla de ajustes mínima: forzar motor (Auto/Local/Nube) y estado del modelo local; el override cambia el comportamiento del router.",
     "depends_on": ["router-automatico", "descarga-modelo"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Forzar Nube en la Tab S9+ fuerza Nube en la siguiente extracción (y viceversa)",
       "El ajuste persiste entre ejecuciones",
       "Unit test de la preferencia y su efecto en el router"
     ],
-    "evidence": [],
-    "notes": "Alcance cerrado en descubrimiento: no pantalla de preferencias genérica."
+    "evidence": [
+      "2026-10-18 (sesion 039): JVM verde: EngineRouterTest 16, PreferenciaMotorUseCasesTest 2, AjustesViewModelTest 13, SharedPreferencesPreferenciaMotorTest 4, EscanearViewModelTest 44. E2E emulator-5556: AjustesMotorFlujoTest 3/3 y suite :app 18/18 (sin *RealTest); persistencia tras force-stop verificada. Ver docs/evidence/ajustes-motor/README.md",
+      "2026-10-18 sesion 040: validator independiente -> accept (assembleDebug + testDebugUnitTest verdes; revision de diff contra spec y AGENTS.md; sin hallazgos bloqueantes). Verificacion fisica en Tab S9+ pendiente no bloqueante."
+    ],
+    "notes": "Alcance cerrado en descubrimiento: no pantalla de preferencias genérica. PENDIENTE (usuario): verificación física 1 en Tab S9+ (Nube/Local forzado en la siguiente extracción, reinicio); verificado solo en emulador y JVM."
   },
   {
     "id": "periodo-selector",

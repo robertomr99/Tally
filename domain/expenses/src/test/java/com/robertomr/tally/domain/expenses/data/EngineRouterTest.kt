@@ -1,7 +1,6 @@
 package com.robertomr.tally.domain.expenses.data
 
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
-import com.robertomr.tally.domain.expenses.entities.ModeloLocalNoDisponibleException
 import com.robertomr.tally.domain.expenses.entities.MotorNoDisponibleException
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
@@ -56,6 +55,7 @@ class EngineRouterTest {
             entorno(capaz, modelo)
             val esperado = elegirMotor(p, capaz, modelo)
             assertEquals(esperado, router.motor)
+            if (p == PreferenciaMotor.LOCAL && !(capaz && modelo)) continue // cubierto en tests propios
             val r = router.extract("texto")
             assertEquals(esperado, r.motor)
             if (esperado == Motor.LOCAL) {
@@ -83,17 +83,80 @@ class EngineRouterTest {
     }
 
     @Test
-    fun preferenciaLocalSinModeloPropagaModeloLocalNoDisponible() = runBlocking {
+    fun preferenciaLocalSinModeloLanzaMotorNoDisponibleSinInvocarMotores() = runBlocking {
         pref = PreferenciaMotor.LOCAL
-        entorno(capaz = false, modelo = false)
-        local.error = ModeloLocalNoDisponibleException()
+        entorno(capaz = true, modelo = false)
+        try {
+            router.extract("t")
+            fail("debia lanzar")
+        } catch (e: MotorNoDisponibleException) {
+            assertEquals(Motor.LOCAL, e.motor)
+            assertEquals(DisponibilidadMotor.SIN_MODELO, e.disponibilidad)
+        }
+        assertTrue(local.received.isEmpty())
+        assertTrue(nube.received.isEmpty())
+    }
+
+    @Test
+    fun preferenciaLocalNoCapazLanzaNoCapazAunqueFalteElModelo() = runBlocking {
+        pref = PreferenciaMotor.LOCAL
+        for (modelo in listOf(true, false)) {
+            entorno(capaz = false, modelo = modelo)
+            try {
+                router.extract("t")
+                fail("debia lanzar")
+            } catch (e: MotorNoDisponibleException) {
+                assertEquals(DisponibilidadMotor.NO_CAPAZ, e.disponibilidad)
+            }
+        }
+        assertTrue(local.received.isEmpty())
+        assertTrue(nube.received.isEmpty())
+    }
+
+    @Test
+    fun preferenciaLocalDisponibleUsaLocal() = runBlocking {
+        pref = PreferenciaMotor.LOCAL
+        entorno(capaz = true, modelo = true)
+        assertEquals(Motor.LOCAL, router.extract("t").motor)
+        assertTrue(nube.received.isEmpty())
+    }
+
+    @Test
+    fun preferenciaNubeIgnoraCapacidadYModeloYUsaNube() = runBlocking {
+        pref = PreferenciaMotor.NUBE
+        for (capaz in listOf(true, false)) for (modelo in listOf(true, false)) {
+            nube.received.clear()
+            entorno(capaz, modelo)
+            assertEquals(Motor.NUBE, router.extract("t").motor)
+            assertEquals(listOf("t"), nube.received)
+        }
+        assertTrue(local.received.isEmpty())
+    }
+
+    @Test
+    fun nubeForzadaConFalloDeRedPropagaElErrorSinFallback() = runBlocking {
+        pref = PreferenciaMotor.NUBE
+        entorno(capaz = true, modelo = true)
+        val sinRed = java.io.IOException("sin red")
+        nube.error = sinRed
         try {
             router.extract("t")
             fail("debia propagar")
-        } catch (e: ModeloLocalNoDisponibleException) {
-            // esperado: no hay caida a Nube
+        } catch (e: java.io.IOException) {
+            assertEquals(sinRed, e)
         }
-        assertTrue(nube.received.isEmpty())
+        assertTrue(local.received.isEmpty())
+    }
+
+    @Test
+    fun laPreferenciaSeRelaeEnCadaExtraccion() = runBlocking {
+        entorno(capaz = true, modelo = true)
+        pref = PreferenciaMotor.NUBE
+        assertEquals(Motor.NUBE, router.extract("a").motor)
+        pref = PreferenciaMotor.LOCAL
+        assertEquals(Motor.LOCAL, router.extract("b").motor)
+        pref = PreferenciaMotor.NUBE
+        assertEquals(Motor.NUBE, router.extract("c").motor)
     }
 
     @Test

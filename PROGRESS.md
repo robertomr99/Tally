@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `ajustes-motor` (`reintento-otro-motor` `accepted`, sesión 038).
+- Current next ready feature: ninguna pendiente (`ajustes-motor` `accepted`, sesión 040); revisar `feature_list.json`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2379,3 +2379,30 @@
 - Pendiente opcional no bloqueante: verificacion fisica en Tab S9+ (Local->Nube sin nuevo OCR, cancelar a
   mitad, modelo eliminado, error de nube; cuota Gemini agotada).
 - Status: `reintento-otro-motor` = **accepted**. Next: `ajustes-motor`.
+
+## Session 039 - ajustes-motor implementacion (2026-10-18)
+
+- Implementado (spec `docs/specs/ajustes-motor.md`, defaults: SharedPreferences sin dependencia nueva; Local
+  forzado no disponible = `MotorNoDisponibleException` sin invocar motor; aviso solo por modelo no
+  descargado; Nube sin red = fallo propio del motor). Dominio: `PreferenciaMotorStore`,
+  `ObservarPreferenciaMotor`, `ConfigurarPreferenciaMotor`, check en `EngineRouter.extract`. Framework:
+  `SharedPreferencesPreferenciaMotor` (internal) + `AiModule`. UI: `SeccionMotor` en Ajustes,
+  `AjustesViewModel` (`preferencia`, `avisoLocal`, `onElegirMotor`). Doble `FakePreferenciaMotorStore`.
+- Verificacion real: `gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test
+  --rerun-tasks` -> BUILD SUCCESSFUL. JUnit: `EngineRouterTest` 16, `PreferenciaMotorUseCasesTest` 2,
+  `AjustesViewModelTest` 13, `SharedPreferencesPreferenciaMotorTest` 4, `EscanearViewModelTest` 44/44.
+- E2E en emulator-5556 (solo emulador; ningun dispositivo fisico usado): `AjustesMotorFlujoTest` 3/3 y suite
+  `:app` completa (sin los *RealTest) OK (18 tests). Persistencia tras `am force-stop` verificada con
+  uiautomator + captura. Evidencia: `docs/evidence/ajustes-motor/README.md`.
+- Pendiente (usuario): verificacion fisica en Tab S9+ (Nube forzada -> badge Nube en el siguiente ticket y
+  viceversa con Local; Local sin modelo -> error visible; reinicio). Cuota Gemini agotada puede limitar Nube.
+- Status: `ajustes-motor` = **passing** (listo para validator).
+
+## Session 040 - ajustes-motor validacion (2026-10-18)
+
+- Validator independiente: **accept** (assembleDebug + testDebugUnitTest verdes, diff revisado contra spec y
+  AGENTS.md, E2E de la Session 039 apoyado en el README de evidencia). Hallazgo menor: orden de imports en
+  `AjustesScreen.kt`.
+- Pendiente opcional no bloqueante: verificacion fisica en Tab S9+ (Nube/Local forzado en la siguiente
+  extraccion, Local sin modelo = error visible, persistencia tras reinicio).
+- Status: `ajustes-motor` = **accepted**.

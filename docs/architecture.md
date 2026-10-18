@@ -132,15 +132,27 @@ app ──────────► feature:* ──────────�
   `data/EngineRouter.kt`) es el `TextEngine` **sin calificar** del grafo Hilt y
   delega por extracción en `@Named("local")` o `@Named("nube")`. La política es la
   función pura `elegirMotor(preferencia, capaz, modeloDisponible)`: `NUBE` → Nube;
-  `LOCAL` → Local sin comprobar nada (si falta el modelo se propaga
-  `ModeloLocalNoDisponibleException`); `AUTO` (D1, **local primero**) → Local solo
+  `LOCAL` → Local (la política es pura; `EngineRouter.extract` rechaza LOCAL
+  forzado si Local no está disponible, ver `ajustes-motor` abajo); `AUTO` (D1, **local primero**) → Local solo
   si `capaz && modeloDisponible`, si no Nube. `capaz` = `CapacidadDispositivo`
   (`RamCapacidadDispositivo`, `internal`, RAM total >= 10 GB, heurística) y
   `modeloDisponible` = `ModelDownloader.rutaModelo() != null`. La preferencia sale
-  de `PreferenciaMotorSource` (hoy fija `AUTO`; `ajustes-motor` la sustituirá en
-  `AiModule`). **Sin fallback automático** (ADR 0001): el error del motor elegido
+  de `PreferenciaMotorSource`, implementada por `PreferenciaMotorStore` (`ajustes-motor`). **Sin fallback automático** (ADR 0001): el error del motor elegido
   se propaga. `EngineRouter.motor` re-evalúa la política en cada lectura (badge
   previo a extraer); el badge final y `Ticket.motor` usan `TicketExtraido.motor`.
+- **Preferencia de motor (`ajustes-motor`)**: Ajustes tiene la sección "Motor de
+  extracción" (Auto/Local/Nube, tags `motor_opcion_*`). `PreferenciaMotorStore`
+  (dominio, extiende `PreferenciaMotorSource` con `preferencia: Flow` y `guardar`)
+  se implementa en `framework/ai/preferencias/SharedPreferencesPreferenciaMotor`
+  (`internal`; fichero `tally_ajustes`, clave `preferencia_motor`; valor ilegible o
+  desconocido = AUTO; `MutableStateFlow` interno + `apply()`); sin dependencia
+  nueva. El router relee `actual()` en cada extracción: el cambio aplica a la
+  siguiente. Casos de uso `ObservarPreferenciaMotor`/`ConfigurarPreferenciaMotor`.
+  Con LOCAL forzado y Local no disponible (`NO_CAPAZ` tiene prioridad sobre
+  `SIN_MODELO`), `extract` lanza `MotorNoDisponibleException` sin invocar ningún
+  motor ni pasar a Nube; NUBE forzada sin red = fallo propio de `GeminiCloudEngine`.
+  El reintento explícito (`extract(motor, texto)`) sigue ignorando la preferencia.
+  Ajustes avisa (`motor_aviso_local`) si se elige Local sin modelo descargado.
 - El caso de uso `ExtraerTicket` (dominio) envuelve el motor: texto blank →
   `TicketExtraido` vacío **sin invocar el motor** (sin gastar cuota); es el
   punto de extensión futuro de `log-extracciones`.

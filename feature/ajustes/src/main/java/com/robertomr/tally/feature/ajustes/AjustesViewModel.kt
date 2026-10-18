@@ -3,12 +3,15 @@ package com.robertomr.tally.feature.ajustes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
+import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
 import com.robertomr.tally.domain.expenses.entities.ResultadoDescarga
 import com.robertomr.tally.domain.expenses.usecases.CancelarDescargaModelo
+import com.robertomr.tally.domain.expenses.usecases.ConfigurarPreferenciaMotor
 import com.robertomr.tally.domain.expenses.usecases.ConfigurarTokenModelo
 import com.robertomr.tally.domain.expenses.usecases.DescargarModelo
 import com.robertomr.tally.domain.expenses.usecases.EliminarModelo
 import com.robertomr.tally.domain.expenses.usecases.ObservarEstadoModelo
+import com.robertomr.tally.domain.expenses.usecases.ObservarPreferenciaMotor
 import com.robertomr.tally.domain.expenses.usecases.ObservarTokenModelo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -33,6 +36,10 @@ data class AjustesUiState(
     val estado: EstadoModelo = EstadoModelo.NoDescargado,
     val hayToken: Boolean = false,
     val aviso: AvisoDescarga? = null,
+    /** Motor forzado (spec ajustes-motor); AUTO por defecto. */
+    val preferencia: PreferenciaMotor = PreferenciaMotor.AUTO,
+    /** Local elegido pero sin modelo descargado: la extraccion fallara (S6). */
+    val avisoLocal: Boolean = false,
 )
 
 /**
@@ -44,6 +51,8 @@ data class AjustesUiState(
 class AjustesViewModel @Inject constructor(
     observarEstadoModelo: ObservarEstadoModelo,
     observarTokenModelo: ObservarTokenModelo,
+    observarPreferenciaMotor: ObservarPreferenciaMotor,
+    private val configurarPreferenciaMotor: ConfigurarPreferenciaMotor,
     private val descargarModelo: DescargarModelo,
     private val cancelarDescargaModelo: CancelarDescargaModelo,
     private val eliminarModelo: EliminarModelo,
@@ -55,8 +64,9 @@ class AjustesViewModel @Inject constructor(
     val uiState: StateFlow<AjustesUiState> = combine(
         observarEstadoModelo(),
         observarTokenModelo(),
+        observarPreferenciaMotor(),
         aviso,
-    ) { estado, hayToken, avisoActual ->
+    ) { estado, hayToken, preferencia, avisoActual ->
         // El aviso solo tiene sentido mientras no hay descarga en marcha.
         val visible = avisoActual.takeIf {
             estado is EstadoModelo.NoDescargado || estado is EstadoModelo.Fallo
@@ -66,6 +76,8 @@ class AjustesViewModel @Inject constructor(
             estado = estado,
             hayToken = hayToken,
             aviso = visible,
+            preferencia = preferencia,
+            avisoLocal = preferencia == PreferenciaMotor.LOCAL && estado !is EstadoModelo.Descargado,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AjustesUiState())
 
@@ -93,6 +105,8 @@ class AjustesViewModel @Inject constructor(
             eliminarModelo()
         }
     }
+
+    fun onElegirMotor(preferencia: PreferenciaMotor) = configurarPreferenciaMotor(preferencia)
 
     fun onGuardarToken(token: String) = configurarTokenModelo(token)
 

@@ -9,8 +9,8 @@ import com.robertomr.tally.domain.expenses.data.ModelAccessTokenStore
 import com.robertomr.tally.domain.expenses.data.ModelDownloader
 import com.robertomr.tally.domain.expenses.data.OcrEngine
 import com.robertomr.tally.domain.expenses.data.PreferenciaMotorSource
+import com.robertomr.tally.domain.expenses.data.PreferenciaMotorStore
 import com.robertomr.tally.domain.expenses.data.TextEngine
-import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
 import com.robertomr.tally.framework.ai.extraccion.GeminiCloudEngine
 import com.robertomr.tally.framework.ai.extraccion.GemmaLocalEngine
 import com.robertomr.tally.framework.ai.extraccion.MediaPipeLocalLlm
@@ -18,6 +18,7 @@ import com.robertomr.tally.framework.ai.modelo.AndroidDownloadConditions
 import com.robertomr.tally.framework.ai.modelo.FileModelAccessTokenStore
 import com.robertomr.tally.framework.ai.modelo.WorkManagerModelDownloader
 import com.robertomr.tally.framework.ai.ocr.MlKitOcrEngine
+import com.robertomr.tally.framework.ai.preferencias.SharedPreferencesPreferenciaMotor
 import com.robertomr.tally.framework.ai.router.RamCapacidadDispositivo
 import dagger.Module
 import dagger.Provides
@@ -60,11 +61,19 @@ internal object AiModule {
         @ApplicationContext context: Context,
     ): CapacidadDispositivo = RamCapacidadDispositivo(context)
 
-    /** Preferencia fija AUTO: unico punto que sustituira `ajustes-motor` (D6). */
+    /** Preferencia de motor persistida en SharedPreferences (spec ajustes-motor, D3). */
     @Provides
     @Singleton
-    fun providePreferenciaMotorSource(): PreferenciaMotorSource =
-        PreferenciaMotorSource { PreferenciaMotor.AUTO }
+    fun providePreferenciaMotorStore(
+        @ApplicationContext context: Context,
+    ): PreferenciaMotorStore = SharedPreferencesPreferenciaMotor(
+        context.getSharedPreferences(SharedPreferencesPreferenciaMotor.FICHERO, Context.MODE_PRIVATE),
+    )
+
+    /** Misma instancia que el almacen: es lo que lee el router en cada extraccion. */
+    @Provides
+    @Singleton
+    fun providePreferenciaMotorSource(store: PreferenciaMotorStore): PreferenciaMotorSource = store
 
     /**
      * Router Local/Nube (ADR 0001, spec router-automatico): una unica

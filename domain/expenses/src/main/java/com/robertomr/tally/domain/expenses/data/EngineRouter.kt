@@ -10,7 +10,7 @@ import com.robertomr.tally.domain.expenses.entities.TicketExtraido
  * Politica pura de seleccion de motor (ADR 0001, spec router-automatico D1):
  * - [PreferenciaMotor.NUBE] -> siempre Nube.
  * - [PreferenciaMotor.LOCAL] -> siempre Local, sin comprobar capacidad ni modelo
- *   (si falta el modelo, el motor local lanza `ModeloLocalNoDisponibleException`).
+ *   (politica pura; [EngineRouter.extract] rechaza LOCAL si no esta disponible).
  * - [PreferenciaMotor.AUTO] -> Local solo si [capaz] y [modeloDisponible]; si no, Nube.
  */
 fun elegirMotor(
@@ -69,8 +69,21 @@ class EngineRouter(
 
     override val motor: Motor get() = elegido().motor
 
-    override suspend fun extract(textoCrudo: String): TicketExtraido =
-        elegido().extract(textoCrudo)
+    /**
+     * Con preferencia LOCAL forzada y Local no disponible (dispositivo no capaz
+     * o sin modelo) falla con [MotorNoDisponibleException] sin invocar ningun
+     * motor ni cambiar a Nube (spec ajustes-motor, S4; ADR 0001). NUBE no
+     * comprueba nada: su fallo (p. ej. sin red) es del propio motor.
+     */
+    override suspend fun extract(textoCrudo: String): TicketExtraido {
+        if (preferencia.actual() == PreferenciaMotor.LOCAL) {
+            val disponibilidad = disponibilidad(Motor.LOCAL)
+            if (disponibilidad != DisponibilidadMotor.DISPONIBLE) {
+                throw MotorNoDisponibleException(Motor.LOCAL, disponibilidad)
+            }
+        }
+        return elegido().extract(textoCrudo)
+    }
 
     override fun disponibilidad(motor: Motor): DisponibilidadMotor = disponibilidadMotor(
         motor = motor,

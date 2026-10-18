@@ -4,6 +4,10 @@ import app.cash.turbine.test
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
+import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
+import com.robertomr.tally.domain.expenses.usecases.ConfigurarPreferenciaMotor
+import com.robertomr.tally.domain.expenses.usecases.ObservarPreferenciaMotor
+import com.robertomr.tally.test.unit.FakePreferenciaMotorStore
 import com.robertomr.tally.domain.expenses.usecases.CancelarDescargaModelo
 import com.robertomr.tally.domain.expenses.usecases.ConfigurarTokenModelo
 import com.robertomr.tally.domain.expenses.usecases.DescargarModelo
@@ -35,10 +39,13 @@ class AjustesViewModelTest {
     private val downloader = FakeModelDownloader()
     private val conditions = FakeDownloadConditions()
     private val tokenStore = FakeModelAccessTokenStore()
+    private val motorStore = FakePreferenciaMotorStore()
 
     private fun viewModel() = AjustesViewModel(
         observarEstadoModelo = ObservarEstadoModelo(downloader),
         observarTokenModelo = ObservarTokenModelo(tokenStore),
+        observarPreferenciaMotor = ObservarPreferenciaMotor(motorStore),
+        configurarPreferenciaMotor = ConfigurarPreferenciaMotor(motorStore),
         descargarModelo = DescargarModelo(downloader, conditions),
         cancelarDescargaModelo = CancelarDescargaModelo(downloader),
         eliminarModelo = EliminarModelo(downloader),
@@ -178,6 +185,45 @@ class AjustesViewModelTest {
             assertEquals("hf_abc", tokenStore.token)
             vm.onBorrarToken()
             assertFalse(awaitItem().hayToken)
+        }
+    }
+
+    @Test
+    fun laPreferenciaPorDefectoEsAutoSinAvisoLocal() = runTest {
+        viewModel().uiState.test {
+            var ui = awaitItem()
+            if (ui.cargando) ui = awaitItem()
+            assertEquals(PreferenciaMotor.AUTO, ui.preferencia)
+            assertFalse(ui.avisoLocal)
+        }
+    }
+
+    @Test
+    fun elegirMotorGuardaLaPreferenciaYLaExpone() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            skipCargando()
+            vm.onElegirMotor(PreferenciaMotor.NUBE)
+            assertEquals(PreferenciaMotor.NUBE, awaitItem().preferencia)
+        }
+        assertEquals(PreferenciaMotor.NUBE, motorStore.actual())
+    }
+
+    @Test
+    fun avisoLocalSoloConLocalYModeloNoDescargado() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            skipCargando()
+            vm.onElegirMotor(PreferenciaMotor.LOCAL)
+            val sinModelo = awaitItem()
+            assertEquals(PreferenciaMotor.LOCAL, sinModelo.preferencia)
+            assertTrue(sinModelo.avisoLocal)
+
+            downloader.estadoFlow.value = EstadoModelo.Descargado(ModeloLocal.TAMANO_ESPERADO_BYTES)
+            assertFalse(awaitItem().avisoLocal)
+
+            vm.onElegirMotor(PreferenciaMotor.NUBE)
+            assertFalse(awaitItem().avisoLocal)
         }
     }
 

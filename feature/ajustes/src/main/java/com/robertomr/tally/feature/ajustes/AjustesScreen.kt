@@ -1,6 +1,11 @@
 package com.robertomr.tally.feature.ajustes
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.semantics.Role
+import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -47,9 +52,9 @@ import com.robertomr.tally.domain.expenses.entities.MotivoPausa
 import java.util.Locale
 
 /**
- * Pantalla Ajustes (spec descarga-modelo): por ahora solo la seccion "Modelo
- * local" (estado, progreso, descargar/cancelar/eliminar y token de Hugging Face).
- * "Forzar motor" es de `ajustes-motor`. La pantalla recibe callbacks, nunca el
+ * Pantalla Ajustes: seccion "Motor de extraccion" (Auto/Local/Nube, spec
+ * ajustes-motor) y seccion "Modelo local" (estado, progreso,
+ * descargar/cancelar/eliminar y token de Hugging Face, spec descarga-modelo). La pantalla recibe callbacks, nunca el
  * NavController.
  */
 @Composable
@@ -62,6 +67,7 @@ fun AjustesScreen(onBack: () -> Unit) {
         ui = ui,
         estadoVisual = estadoVisual,
         onBack = onBack,
+        onElegirMotor = viewModel::onElegirMotor,
         onDescargar = viewModel::onDescargar,
         onCancelar = viewModel::onCancelar,
         onEliminar = viewModel::onEliminar,
@@ -76,6 +82,7 @@ internal fun AjustesContent(
     ui: AjustesUiState,
     estadoVisual: AjustesState,
     onBack: () -> Unit,
+    onElegirMotor: (PreferenciaMotor) -> Unit,
     onDescargar: () -> Unit,
     onCancelar: () -> Unit,
     onEliminar: () -> Unit,
@@ -111,6 +118,7 @@ internal fun AjustesContent(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                SeccionMotor(ui = ui, onElegir = onElegirMotor)
                 SeccionModeloLocal(
                     ui = ui,
                     onDescargar = onDescargar,
@@ -148,6 +156,75 @@ internal fun AjustesContent(
             dismissButton = {
                 TextButton(onClick = estadoVisual::cerrarConfirmarEliminar) { Text("Cancelar") }
             },
+        )
+    }
+}
+
+@Composable
+private fun SeccionMotor(
+    ui: AjustesUiState,
+    onElegir: (PreferenciaMotor) -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("seccion_motor"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text("Motor de extracción", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Se aplica a la siguiente extracción. Auto usa Local si el dispositivo puede " +
+                    "y el modelo está descargado; si no, Nube.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(Modifier.selectableGroup()) {
+                OpcionMotor("Auto", PreferenciaMotor.AUTO, "motor_opcion_auto", ui.preferencia, onElegir)
+                OpcionMotor("Local", PreferenciaMotor.LOCAL, "motor_opcion_local", ui.preferencia, onElegir)
+                OpcionMotor("Nube", PreferenciaMotor.NUBE, "motor_opcion_nube", ui.preferencia, onElegir)
+            }
+            if (ui.avisoLocal) {
+                Text(
+                    text = "Local necesita el modelo descargado; sin él la extracción fallará",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("motor_aviso_local"),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun OpcionMotor(
+    etiqueta: String,
+    valor: PreferenciaMotor,
+    tag: String,
+    seleccionada: PreferenciaMotor,
+    onElegir: (PreferenciaMotor) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(
+                selected = seleccionada == valor,
+                onClick = { onElegir(valor) },
+                role = Role.RadioButton,
+            )
+            .padding(vertical = 4.dp)
+            .testTag(tag),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = seleccionada == valor, onClick = null)
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 12.dp),
         )
     }
 }
