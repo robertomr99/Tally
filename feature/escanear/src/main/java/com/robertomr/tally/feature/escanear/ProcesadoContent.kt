@@ -496,7 +496,8 @@ private fun PasosDeProceso(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            // Aire respecto al texto "Procesado en ..." de la cabecera y al contenido de debajo.
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 12.dp)
             .testTag("procesado_pasos"),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
