@@ -39,3 +39,12 @@ locale en-US). No se uso ningun dispositivo fisico.
 - `03-resumen-rango.png`: Resumen con `1 Oct - 12 Oct` (sin gastos en el tramo en este emulador).
 - `04-gastos-rango.png`: Gastos con el mismo rango.
 - `05-selector-360dp.png`: selector a 360 dp con Personalizado activo.
+
+## Correccion posterior a la validacion (2026-10-19)
+
+Reporte del usuario en la Tab: en el selector de rango la fecha final se apilaba en vertical
+("Oct, 19, 2026") y las etiquetas salian en ingles ("End Date"). Correccion en `RangoFechasDialog.kt`:
+cabecera propia (`CabeceraRango`) con las dos fechas en una linea ("1 oct 2026 - 12 oct 2026", placeholders
+"Fecha inicial"/"Fecha final") y el picker envuelto con una `Configuration` en `es-ES` para que meses, dias de
+la semana y descripciones accesibles salgan en espanol. Captura: `06-picker-cabecera-es.png`.
+Verificado en emulator-5556 (suite `:app` OK 37 tests, `:feature:common` JVM verde). Pendiente: confirmarlo en la Tab.
