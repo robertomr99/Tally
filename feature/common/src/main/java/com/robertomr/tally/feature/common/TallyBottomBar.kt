@@ -72,20 +72,23 @@ fun TallyBottomBar(
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .navigationBarsPadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BottomBarDestino.entries.forEach { destination ->
-                TallyBottomBarItem(
-                    destination = destination,
-                    active = destination == activeDestination,
-                    onClick = { onNavigate(destination) },
-                )
+        // El fondo y el borde llegan a todo el ancho; los items, agrupados en la columna.
+        ColumnaCentrada {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BottomBarDestino.entries.forEach { destination ->
+                    TallyBottomBarItem(
+                        destination = destination,
+                        active = destination == activeDestination,
+                        onClick = { onNavigate(destination) },
+                    )
+                }
             }
         }
     }

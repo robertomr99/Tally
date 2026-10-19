@@ -521,6 +521,26 @@
     "notes": "Petición del usuario (2026-10-19): splash screen con animación al inicio; seed-demo se deja para el final. Sin módulos Gradle nuevos; la dependencia androidx.core:core-splashscreen, si hace falta, solo en libs.versions.toml (decisión del planner con justificación). Coherente con DESIGN.md (identidad de marca verde, sin decoración ficticia)."
   },
   {
+    "id": "layout-tablet-coherente",
+    "area": "diseno",
+    "title": "Layout coherente en tablet y horizontal, con cabeceras comunes",
+    "user_visible_behavior": "Todas las pantallas siguen una única regla de ancho (columna centrada de 720 dp en tablet/horizontal; móvil sin cambios) y comparten cabecera con título y subtítulo; el donut, el selector de periodo y la barra inferior quedan bien alineados.",
+    "depends_on": ["listado-gastos", "detalle-ticket", "papel-ticket", "splash-animado"],
+    "status": "accepted",
+    "verification": [
+      "Capturas antes/después de Resumen, Gastos, Detalle, Ajustes y Escanear en móvil, 360 dp y horizontal ancho en emulator-5556",
+      "Suite :app completa y JVM en verde conservando todos los tags existentes",
+      "Una sola constante de ancho máximo y un solo componente de cabecera compartidos en :feature:common"
+    ],
+    "evidence": [
+      "2026-10-19 sesión 059: gradlew assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest en verde (testDebugUnitTest 197 tests, 0 fallos); emulator-5556: am instrument con notClass de los reales OK (45 tests) sin tocar tests",
+      "Capturas antes/después en docs/evidence/layout-tablet-coherente/ (móvil ~427 dp, 360 dp y horizontal ~1280x800 dp; Resumen, Gastos, Detalle, Ajustes, Escanear; más 700/840 dp): columna de 720 dp centrada medida en captura, móvil/360 dp sin cambios salvo cabecera; ver README.md de esa carpeta",
+      "NO cubierto con captura: donut vacío/cargando centrado (no se pudo forzar un periodo sin gastos en emulator-5556; está por código y por donut_vacio en E2E); estados Procesado/Revisión solo con captura después (sin antes); wm size/density/rotación restaurados",
+      "2026-10-19 sesion 060: validator independiente -> accept (assembleDebug y testDebugUnitTest re-ejecutados; tags conservados sin eliminar ninguno, tests sin modificar, sin scrolls anidados, tope de 720 dp fuera de los paddings, statusBarsPadding sin duplicar, DESIGN.md y architecture coherentes, capturas antes y despues revisadas; instrumentados apoyados en evidencia de emulator-5556, OK 45 tests). Tras el accept el orquestador anadio semantics heading() al titulo de CabeceraPantalla y reejecuto la suite app: OK 45 tests (una ejecucion intermedia con el APK anterior dio 1 fallo no identificado que no se repitio). Seguimiento: quitar el chip de rango duplicado de TarjetaTotal en Resumen, unificar padding 16 y 20 dp, cabecera comun en Procesado, revision visual humana."
+    ],
+    "notes": "Petición del usuario (2026-10-19) en la Tab S9+ horizontal: donut pegado a la izquierda en Resumen, selector a todo el ancho en Resumen pero colapsado en Gastos, titulos inconsistentes. Decisiones del usuario: columna centrada de 720 dp en todo y cabecera común titulo+subtitulo. Rama correcciones-visuales; sin WindowSizeClass, sin módulos ni dependencias nuevas. Plan en el fichero de plan de la sesión."
+  },
+  {
     "id": "seed-demo",
     "area": "demo",
     "title": "Datos de demo sembrados (build debug)",

@@ -2,14 +2,12 @@ package com.robertomr.tally.feature.gastos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
@@ -23,21 +21,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.feature.common.CabeceraDia
+import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FilaTicket
 import com.robertomr.tally.feature.common.PeriodoSelector
 import java.time.LocalDate
 import com.robertomr.tally.feature.common.etiquetaPeriodo
 import com.robertomr.tally.feature.common.formaFilaTicket
-
-/** Ancho máximo del contenido en tablet (mockup 03: `max-w-3xl`). */
-private val ANCHO_MAXIMO = 720.dp
 
 /**
  * Pestaña Gastos (spec listado-gastos): tickets del período agrupados por día.
@@ -72,41 +68,28 @@ fun GastosContenido(
     onEscanear: () -> Unit,
 ) {
     val estado = rememberGastosState()
-    Box(
+    ColumnaCentrada(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
             .testTag("pantalla_gastos"),
-        contentAlignment = Alignment.TopCenter,
     ) {
-        Column(modifier = Modifier.widthIn(max = ANCHO_MAXIMO).fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Cabecera fija (no desplazable); la lista ocupa el resto con weight.
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                Text(
-                    text = "Gastos",
-                    modifier = Modifier.padding(top = 12.dp),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                PeriodoSelector(
-                    seleccionado = ui.tipo,
-                    rango = ui.rango,
-                    hoy = ui.hoy,
-                    onSeleccionarTipo = onSeleccionarPeriodo,
-                    onSeleccionarRango = onSeleccionarRango,
-                    modifier = Modifier.padding(vertical = 12.dp),
-                )
-                ui.periodo?.let {
-                    Text(
-                        text = etiquetaPeriodo(it, ui.hoy),
-                        modifier = Modifier.testTag("gastos_rango"),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            CabeceraPantalla(
+                titulo = "Gastos",
+                subtitulo = ui.periodo?.let { etiquetaPeriodo(it, ui.hoy) },
+                subtituloTag = "gastos_rango",
+            )
+            PeriodoSelector(
+                seleccionado = ui.tipo,
+                rango = ui.rango,
+                hoy = ui.hoy,
+                onSeleccionarTipo = onSeleccionarPeriodo,
+                onSeleccionarRango = onSeleccionarRango,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            )
 
             val grupos = ui.grupos
             when {

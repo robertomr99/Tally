@@ -12,6 +12,9 @@ dependencies {
     // Casos de uso y estado del modelo local (spec descarga-modelo).
     implementation(project(":domain:expenses"))
 
+    // Cabecera y columna centrada compartidas (spec layout-tablet-coherente).
+    implementation(project(":feature:common"))
+
     // hiltViewModel() en Compose.
     implementation(libs.hilt.navigation.compose)
 

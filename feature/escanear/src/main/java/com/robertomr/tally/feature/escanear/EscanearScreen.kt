@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.robertomr.tally.feature.common.ColumnaCentrada
 
 /**
  * Pantalla Escanear (spec captura-foto): sustituye al placeholder de
@@ -115,89 +116,105 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
             .background(MaterialTheme.colorScheme.surface)
             .testTag("pantalla_escanear"),
     ) {
-        when (val actual = estado) {
-            CapturaUiState.PermisoPendiente -> PermisoCamaraContent(
-                permisoDenegadoAntes = uiState.permisoDenegadoAntes,
-                onPermitir = { launcher.launch(Manifest.permission.CAMERA) },
-            )
+        // Cámara/encuadre, revisión de foto y revisión de datos van a todo el ancho (cada una
+        // limita por dentro su cabecera, controles y dock); el resto, en la columna de 720 dp.
+        val enColumna = estado !is CapturaUiState.Encuadre && estado !is CapturaUiState.Revision &&
+            estado !is CapturaUiState.RevisionDatos
+        ContenedorEscanear(enColumna = enColumna) {
+            when (val actual = estado) {
+                CapturaUiState.PermisoPendiente -> PermisoCamaraContent(
+                    permisoDenegadoAntes = uiState.permisoDenegadoAntes,
+                    onPermitir = { launcher.launch(Manifest.permission.CAMERA) },
+                )
 
-            CapturaUiState.Encuadre -> CameraEncuadre(
-                onCapturado = viewModel::onImageCapturado,
-                onCapturaFallida = viewModel::onCapturaFallida,
-                onCerrar = { backDispatcher?.onBackPressed() },
-            )
+                CapturaUiState.Encuadre -> CameraEncuadre(
+                    onCapturado = viewModel::onImageCapturado,
+                    onCapturaFallida = viewModel::onCapturaFallida,
+                    onCerrar = { backDispatcher?.onBackPressed() },
+                )
 
-            CapturaUiState.Procesando -> ProcesandoContent()
+                CapturaUiState.Procesando -> ProcesandoContent()
 
-            is CapturaUiState.Revision -> RevisionFotoContent(
-                rutaFoto = actual.rutaFoto,
-                textoCrudo = actual.textoCrudo,
-                ocrNoDisponible = actual.ocrNoDisponible,
-                onRepetirFoto = viewModel::onRepetirFoto,
-                onContinuar = viewModel::onContinuar,
-            )
+                is CapturaUiState.Revision -> RevisionFotoContent(
+                    rutaFoto = actual.rutaFoto,
+                    textoCrudo = actual.textoCrudo,
+                    ocrNoDisponible = actual.ocrNoDisponible,
+                    onRepetirFoto = viewModel::onRepetirFoto,
+                    onContinuar = viewModel::onContinuar,
+                )
 
-            // Spec procesado-ui (mockup 06): procesado -> resultado/error como
-            // subflujo interno, sin rutas nuevas en :app.
-            is CapturaUiState.ProcesandoExtraccion -> ProcesandoExtraccionContent(
-                motor = actual.motor,
-                onCancelar = viewModel::onCancelarProcesado,
-            )
+                // Spec procesado-ui (mockup 06): procesado -> resultado/error como
+                // subflujo interno, sin rutas nuevas en :app.
+                is CapturaUiState.ProcesandoExtraccion -> ProcesandoExtraccionContent(
+                    motor = actual.motor,
+                    onCancelar = viewModel::onCancelarProcesado,
+                )
 
-            is CapturaUiState.ExtraccionLista -> ExtraccionListaContent(
-                extraido = actual.extraido,
-                otro = actual.otro,
-                onRevisar = viewModel::onRevisar,
-                onReintentarOtro = viewModel::onReintentarConOtroMotor,
-            )
+                is CapturaUiState.ExtraccionLista -> ExtraccionListaContent(
+                    extraido = actual.extraido,
+                    otro = actual.otro,
+                    onRevisar = viewModel::onRevisar,
+                    onReintentarOtro = viewModel::onReintentarConOtroMotor,
+                )
 
-            is CapturaUiState.ExtraccionFallida -> ExtraccionFallidaContent(
-                mensaje = actual.mensaje,
-                motor = actual.motor,
-                otro = actual.otro,
-                hayAnterior = actual.anterior != null,
-                onReintentar = viewModel::onReintentarExtraccion,
-                onReintentarOtro = viewModel::onReintentarConOtroMotor,
-                onVolverALaFoto = viewModel::onVolverALaFoto,
-                onVolverAnterior = viewModel::onVolverAlResultadoAnterior,
-            )
+                is CapturaUiState.ExtraccionFallida -> ExtraccionFallidaContent(
+                    mensaje = actual.mensaje,
+                    motor = actual.motor,
+                    otro = actual.otro,
+                    hayAnterior = actual.anterior != null,
+                    onReintentar = viewModel::onReintentarExtraccion,
+                    onReintentarOtro = viewModel::onReintentarConOtroMotor,
+                    onVolverALaFoto = viewModel::onVolverALaFoto,
+                    onVolverAnterior = viewModel::onVolverAlResultadoAnterior,
+                )
 
-            // Spec revision-datos (mockup 07) + edicion-lineas (mockup 08): revision
-            // editable de la cabecera y de las lineas; "Descartar" = back (no escribe).
-            is CapturaUiState.RevisionDatos -> RevisionDatosContent(
-                extraido = actual.extraido,
-                datos = actual.datos,
-                errorGuardado = actual.errorGuardado,
-                onComercioEditado = viewModel::onComercioEditado,
-                onFechaEditada = viewModel::onFechaEditada,
-                onTotalEditado = viewModel::onTotalEditado,
-                onCategoriaElegida = viewModel::onCategoriaElegida,
-                onLineaAnadida = viewModel::onLineaAnadida,
-                onLineaConceptoEditado = viewModel::onLineaConceptoEditado,
-                onLineaCantidadEditada = viewModel::onLineaCantidadEditada,
-                onLineaPrecioEditado = viewModel::onLineaPrecioEditado,
-                onLineaEliminada = viewModel::onLineaEliminada,
-                onDescartar = viewModel::onVolverAlResultado,
-                onGuardar = viewModel::onGuardar,
-            )
+                // Spec revision-datos (mockup 07) + edicion-lineas (mockup 08): revision
+                // editable de la cabecera y de las lineas; "Descartar" = back (no escribe).
+                is CapturaUiState.RevisionDatos -> RevisionDatosContent(
+                    extraido = actual.extraido,
+                    datos = actual.datos,
+                    errorGuardado = actual.errorGuardado,
+                    onComercioEditado = viewModel::onComercioEditado,
+                    onFechaEditada = viewModel::onFechaEditada,
+                    onTotalEditado = viewModel::onTotalEditado,
+                    onCategoriaElegida = viewModel::onCategoriaElegida,
+                    onLineaAnadida = viewModel::onLineaAnadida,
+                    onLineaConceptoEditado = viewModel::onLineaConceptoEditado,
+                    onLineaCantidadEditada = viewModel::onLineaCantidadEditada,
+                    onLineaPrecioEditado = viewModel::onLineaPrecioEditado,
+                    onLineaEliminada = viewModel::onLineaEliminada,
+                    onDescartar = viewModel::onVolverAlResultado,
+                    onGuardar = viewModel::onGuardar,
+                )
 
-            CapturaUiState.Guardando -> GuardandoContent()
+                CapturaUiState.Guardando -> GuardandoContent()
 
-            is CapturaUiState.Guardado -> {
-                // El ticket ya esta persistido: se emite el evento de vuelta al
-                // listado y se resetea el subflujo (R-REV3). La clave por id
-                // evita relanzar el efecto.
-                LaunchedEffect(actual.id) {
-                    onGastoGuardado()
-                    viewModel.onGuardadoVisto()
+                is CapturaUiState.Guardado -> {
+                    // El ticket ya esta persistido: se emite el evento de vuelta al
+                    // listado y se resetea el subflujo (R-REV3). La clave por id
+                    // evita relanzar el efecto.
+                    LaunchedEffect(actual.id) {
+                        onGastoGuardado()
+                        viewModel.onGuardadoVisto()
+                    }
+                    GuardandoContent()
                 }
-                GuardandoContent()
+                is CapturaUiState.Error -> ErrorContent(
+                    mensaje = actual.mensaje,
+                    onVolverAlEncuadre = viewModel::onRepetirFoto,
+                )
             }
-            is CapturaUiState.Error -> ErrorContent(
-                mensaje = actual.mensaje,
-                onVolverAlEncuadre = viewModel::onRepetirFoto,
-            )
         }
+    }
+}
+
+/** Envuelve el estado en la columna centrada común salvo cámara y foto a todo el ancho. */
+@Composable
+private fun ContenedorEscanear(enColumna: Boolean, content: @Composable () -> Unit) {
+    if (enColumna) {
+        ColumnaCentrada(modifier = Modifier.fillMaxSize()) { content() }
+    } else {
+        content()
     }
 }
 

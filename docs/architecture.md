@@ -349,6 +349,14 @@ app ──────────► feature:* ──────────�
   `ProcesadoContent.kt`. Sin módulos, dependencias, ficheros de fuente, dominio ni ViewModels tocados. El papel es
   siempre claro (la app no tiene tema oscuro); excepciones documentadas en `DESIGN.md`.
 
+### Layout de ancho y cabecera comun (`layout-tablet-coherente`)
+
+- `:feature:common` aloja `LayoutAncho.kt` (`ANCHO_MAXIMO_CONTENIDO` = 720 dp y `ColumnaCentrada`) y
+  `CabeceraPantalla.kt`. Todas las pantallas (Resumen, Gastos, Detalle, Ajustes, Escanear sin camara) y `TallyBottomBar`
+  / `DockEdicion` componen su contenido con `ColumnaCentrada`; fondos, camara y scroll quedan a todo el ancho. Los
+  features no se importan entre si: solo dependen de `:feature:common`. `:feature:ajustes` gana esa dependencia de
+  proyecto (no es un modulo nuevo). Sin `WindowSizeClass`, dominio ni framework tocados.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

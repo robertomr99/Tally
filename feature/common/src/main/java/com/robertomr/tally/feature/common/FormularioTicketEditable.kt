@@ -472,10 +472,25 @@ fun DockEdicion(
     guardarHabilitado: Boolean = true,
     descartarHabilitado: Boolean = true,
 ) {
+    // El fondo llega a todo el ancho; el contenido va en la columna centrada.
+    ColumnaCentrada(
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        ContenidoDock(lineas, onDescartar, onGuardar, guardarHabilitado, descartarHabilitado)
+    }
+}
+
+@Composable
+private fun ContenidoDock(
+    lineas: List<LineaEditable>,
+    onDescartar: () -> Unit,
+    onGuardar: () -> Unit,
+    guardarHabilitado: Boolean,
+    descartarHabilitado: Boolean,
+) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,6 +57,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.robertomr.tally.domain.expenses.data.CropRegion
+import com.robertomr.tally.feature.common.ANCHO_MAXIMO_CONTENIDO
 import java.io.ByteArrayOutputStream
 
 /**
@@ -159,6 +161,8 @@ fun CameraEncuadre(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                // Controles dentro de la columna única; el visor sigue a todo el ancho.
+                .widthIn(max = ANCHO_MAXIMO_CONTENIDO)
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp, vertical = 24.dp),
             verticalAlignment = Alignment.CenterVertically,

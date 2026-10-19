@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Image
@@ -49,6 +47,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.feature.common.BadgeMotor
+import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
 import com.robertomr.tally.feature.common.FormularioTicketEditable
 import com.robertomr.tally.feature.common.FotoOriginal
@@ -165,27 +165,33 @@ internal fun TicketDetalleContenido(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .verticalScroll(estado.scroll)
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                            .verticalScroll(estado.scroll),
                     ) {
-                        SeccionFoto(
-                            rutaFoto = ui.ticket.rutaFoto,
-                            onVerFoto = estado::abrirFoto,
-                        )
-                        key(estado.versionFormulario) {
-                            FormularioTicketEditable(
-                                datos = ui.datos,
-                                onComercioEditado = onComercioEditado,
-                                onFechaEditada = onFechaEditada,
-                                onTotalEditado = onTotalEditado,
-                                onCategoriaElegida = onCategoriaElegida,
-                                onLineaAnadida = onLineaAnadida,
-                                onLineaConceptoEditado = onLineaConceptoEditado,
-                                onLineaCantidadEditada = onLineaCantidadEditada,
-                                onLineaPrecioEditado = onLineaPrecioEditado,
-                                onLineaEliminada = onLineaEliminada,
-                            )
+                        // El scroll ocupa todo el ancho; el contenido va en la columna centrada.
+                        ColumnaCentrada {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                SeccionFoto(
+                                    rutaFoto = ui.ticket.rutaFoto,
+                                    onVerFoto = estado::abrirFoto,
+                                )
+                                key(estado.versionFormulario) {
+                                    FormularioTicketEditable(
+                                        datos = ui.datos,
+                                        onComercioEditado = onComercioEditado,
+                                        onFechaEditada = onFechaEditada,
+                                        onTotalEditado = onTotalEditado,
+                                        onCategoriaElegida = onCategoriaElegida,
+                                        onLineaAnadida = onLineaAnadida,
+                                        onLineaConceptoEditado = onLineaConceptoEditado,
+                                        onLineaCantidadEditada = onLineaCantidadEditada,
+                                        onLineaPrecioEditado = onLineaPrecioEditado,
+                                        onLineaEliminada = onLineaEliminada,
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -238,46 +244,33 @@ private fun BarraSuperior(
     eliminarHabilitado: Boolean,
     mostrarEliminar: Boolean,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .size(48.dp)
-                .testTag("detalle_atras"),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = "Volver",
-            )
-        }
-        Text(
-            text = "Detalle del ticket",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
+    ColumnaCentrada {
+        CabeceraPantalla(
+            titulo = "Detalle del ticket",
+            onBack = onBack,
+            backTag = "detalle_atras",
+            accion = if (mostrarEliminar) {
+                {
+                    IconButton(
+                        onClick = onEliminar,
+                        enabled = eliminarHabilitado,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("detalle_eliminar"),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.DeleteOutline,
+                            contentDescription = "Eliminar ticket",
+                        )
+                    }
+                }
+            } else {
+                null
+            },
         )
-        if (mostrarEliminar) {
-            IconButton(
-                onClick = onEliminar,
-                enabled = eliminarHabilitado,
-                modifier = Modifier
-                    .size(48.dp)
-                    .testTag("detalle_eliminar"),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error,
-                ),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
-                    contentDescription = "Eliminar ticket",
-                )
-            }
-        }
     }
 }
 

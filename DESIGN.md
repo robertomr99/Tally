@@ -141,12 +141,32 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
 
 ## Layout
 
-- Rejilla de 8dp; márgenes 16dp (móvil) / 24dp (tablet).
+- Rejilla de 8dp; márgenes 16/20dp en todas las anchuras (los 24dp de tablet
+  del mockup quedan como seguimiento, no MVP).
+- **Regla única de ancho**: TODAS las pantallas usan una sola columna centrada
+  de `ANCHO_MAXIMO_CONTENIDO` = 720 dp (`feature/common/LayoutAncho.kt`,
+  contenedor `ColumnaCentrada`). Los 720 dp incluyen los paddings horizontales
+  de cada pantalla. Por debajo de 720 dp de ancho disponible no tiene efecto:
+  el layout es el de móvil. No hay otros anchos máximos de pantalla (los 480 dp
+  de `PapelTicket` y de la fila donut+leyenda son anchos de componente).
+- **A todo el ancho** (no van en la columna): fondos de pantalla y de la barra
+  inferior, la vista de cámara/encuadre, el marco de la foto en "Revisar foto"
+  y el fondo del dock de edición. Su contenido (items de la barra, botones del
+  dock, controles del obturador, títulos) sí se agrupa en la columna.
 - **Compacto** (realme GT 2): columna única, bottom bar de 3 destinos
   (Resumen / Gastos / Escanear), FAB "Escanear" anclado encima.
-- **Expandido** (Tab S9+): MISMO contenido con ancho máximo centrado
-  (`max-w-2xl/3xl/4xl` de los mockups); bottom bar se mantiene en MVP.
-  Navigation rail y split-screen quedan para pulido (no MVP).
+- **Expandido** (Tab S9+ y móvil horizontal): MISMO contenido en la columna
+  de 720 dp centrada (`max-w-3xl` del mockup 03); la barra inferior mantiene
+  su fondo completo con los 3 items agrupados en la columna. Navigation rail y
+  split-screen quedan para pulido (no MVP).
+- **Jerarquía de títulos** (4 niveles): (1) título de pantalla =
+  `CabeceraPantalla` (`titleLarge` SemiBold `onSurface`, subtítulo opcional
+  `labelLarge` `onSurfaceVariant`, altura mínima 56 dp, atrás y acción
+  opcionales); (2) título de sección/tarjeta = `titleMedium` SemiBold con
+  subtítulo `bodySmall`; (3) etiqueta de métrica = `labelMedium`/`labelSmall`
+  en mayúsculas `onSurfaceVariant`; (4) cabecera de grupo de lista
+  (`CabeceraDia`, "Gastos del periodo") = `titleMedium`/`labelLarge` alineada
+  con las filas de la lista.
 - Listas con buffer inferior explícito para no quedar tapadas por
   FAB/bottom bar.
 
@@ -159,8 +179,14 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
 
 ## Components
 
-- **TopAppBar** plana sobre `surface`, título "Tally" o título de pantalla,
-  acciones a la derecha. Sin bordes duros.
+- **Cabecera de pantalla** (`CabeceraPantalla`, sustituye a la TopAppBar M3
+  y a las barras propias): plana sobre `surface`, título de pantalla
+  ("Resumen", "Gastos", "Detalle del ticket", "Ajustes", "Revisar foto",
+  "Revisar ticket"), subtítulo opcional (Resumen y Gastos: rango del período),
+  flecha atrás y acción a la derecha opcionales. Sin bordes duros. La marca
+  "Tally" solo aparece en el splash y como nombre de la app. Procesado
+  mantiene su propio título ("Analizando ticket de compra") y la cámara no
+  lleva cabecera para no tapar el encuadre.
 - **Selector de período** (pantalla 02): segmented control en píldora con
   Día / Semana / Mes / Personalizado; activo en `secondary-container`. Personalizado abre un
   `DatePickerDialog` con `DateRangePicker` M3 (mockup 09 reducido: sin chips de atajos, tarjetas ni "Restablecer";
@@ -168,6 +194,9 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
 - **Tarjeta de total**: etiqueta uppercase, cifra display con `tnum`, badge
   comparativo "vs período anterior", micro-métricas (promedio diario, nº tickets).
 - **Donut de categorías** + leyenda + desglose con barras tonales (pantalla 02).
+  Con ancho interior >= 480 dp donut (franja del 40 %, centrado en ella) y
+  leyenda (60 %) van en fila; por debajo, en columna centrada. Sin porciones
+  (cargando o vacío) el donut va solo, centrado en la tarjeta.
 - **Badge de motor** (componente NUEVO, obligatorio): chip persistente que
   indica el motor real: "Motor Local · Gemma 3n" (icono memory) o "Motor Nube ·
   Gemini" (icono cloud), con estado (procesando/done). Sustituye los chips
@@ -193,8 +222,8 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
   omiten buscador, chips de filtro, insignias y avatar. El texto del chip usa
   `onSurfaceVariant`: el color de categoría no llega a 4,5:1 sobre su fondo.
 
-- **Detalle de ticket guardado** (spec detalle-ticket, mockups 07/08): barra
-  superior con flecha atrás, "Detalle del ticket" y papelera en paleta `error`;
+- **Detalle de ticket guardado** (spec detalle-ticket, mockups 07/08): cabecera
+  común con flecha atrás, "Detalle del ticket" y papelera en paleta `error`;
   badge del motor real, "Ver foto original" (visor a pantalla completa, sin
   zoom) o tarjeta "Foto no disponible"; el mismo formulario y dock que la
   revisión ("Descartar" / "Guardar cambios", ambos deshabilitados sin cambios).
@@ -219,9 +248,12 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
 
 ## Responsive Baseline
 
-Compacto y expandido con el mismo árbol de composables: contenedores con
-max-width centrado y `WindowSizeClass` para paddings. El split-screen del
-design system NO es MVP.
+Compacto y expandido con el mismo árbol de composables y UNA regla de ancho:
+la columna centrada de 720 dp (`ColumnaCentrada`, ver Layout), sin
+`WindowSizeClass`. Verificado a 360 dp, ~427 dp, 700 dp (sin efecto), 840 dp
+(márgenes de 60 dp) y 1280 dp (márgenes de 280 dp en total). `WindowSizeClass`,
+paddings de 24 dp en tablet, navigation rail y el split-screen del design
+system NO son MVP.
 
 ## Accessibility Baseline
 

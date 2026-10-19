@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `seed-demo` (`splash-animado` `accepted`, sesión 058; seed-demo se deja para el final por decisión del usuario).
+- Current next ready feature: `seed-demo` (`layout-tablet-coherente` `accepted` en la rama `correcciones-visuales`, sesión 060).
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2659,3 +2659,40 @@
   frio +0,2-0,4 s medido.
 - Pendiente humano: ver la animacion en la tablet.
 - Status: `splash-animado` = **accepted**.
+
+## Session 059 - layout-tablet-coherente (2026-10-19)
+
+- Implementado (rama `correcciones-visuales`): `ANCHO_MAXIMO_CONTENIDO` = 720 dp y `ColumnaCentrada`
+  (`feature/common/LayoutAncho.kt`) como UNICA regla de ancho; `CabeceraPantalla` (`CabeceraPantalla.kt`) como
+  cabecera comun (titulo `titleLarge` SemiBold `onSurface`, subtitulo `labelLarge`, atras y accion opcionales).
+  Aplicado a Resumen ("Tally" -> "Resumen" + rango, tag `resumen_rango`), Gastos (tag `gastos_rango` conservado, el
+  rango pasa a subtitulo bajo el titulo y el selector queda debajo), Detalle, Ajustes (sin `TopAppBar`; `:feature:ajustes`
+  gana `implementation(project(":feature:common"))`, sin modulo ni version nuevos), Escanear (estados no camara en la
+  columna; "Revisar foto" y "Revisar ticket" como cabeceras nuevas con `statusBarsPadding`; Procesado reutiliza su titulo),
+  barra inferior (fondo completo, items en la columna), `DockEdicion` (fondo completo, contenido en la columna) y
+  controles del obturador. Donut: sin porciones va solo y centrado; en fila, franja 40 % centrada + leyenda 60 %.
+- Cambios de texto/estilo visibles en movil: Resumen "Tally" -> "Resumen" + rango; titulos de pantalla en `onSurface` (antes
+  `primary` en Resumen/Gastos); Detalle y Ajustes titulo SemiBold; Ajustes 600 -> 720 dp y el contenido sube ~8 dp
+  (cabecera de 56 dp en vez de TopAppBar de 64 dp); Escanear: "Revisar foto" y "Revisar ticket" (56 dp extra).
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest` en verde
+  (197 tests JVM, 0 fallos); en `emulator-5556` `am instrument -e notClass ...Real*` = OK (45 tests), sin tocar tests.
+  Capturas antes/despues en `docs/evidence/layout-tablet-coherente/` (movil 1280x2856@480, 360 dp, horizontal
+  2560x1600@320 = 1280x800 dp; 700 y 840 dp). Medido: a 1280 dp la columna mide ~720 dp (140 dp de margen por lado);
+  a 840 dp margen 60 dp; a 700 dp sin efecto. Emulador restaurado (wm size/density reset, user_rotation 0,
+  accelerometer_rotation 1). Tablet fisica no tocada; sin `pm clear`.
+- No cubierto: donut centrado en vacio/cargando solo por codigo (no se forzo un periodo sin gastos); estados
+  Procesado/Revision sin captura "antes"; paddings de 24 dp en tablet (A3) fuera de alcance.
+- Status: `layout-tablet-coherente` = **passing** (listo para validator). Siguiente: `seed-demo`.
+
+## Session 060 - layout-tablet-coherente validacion (2026-10-19, rama correcciones-visuales)
+
+- Validator independiente: **accept** (`assembleDebug` y `testDebugUnitTest` re-ejecutados; tags conservados,
+  tests sin modificar, sin scrolls anidados, tope de 720 dp fuera de los paddings, `statusBarsPadding` sin
+  duplicar, `DESIGN.md` y `architecture.md` coherentes, capturas revisadas; instrumentados apoyados en la
+  evidencia de emulator-5556, OK 45 tests).
+- Orquestador tras el accept: `semantics { heading() }` en el titulo de `CabeceraPantalla` (TalkBack) y suite
+  `:app` re-ejecutada: OK 45 tests. Una ejecucion intermedia con el APK anterior dio 1 fallo no identificado
+  que no se repitio al reinstalar y relanzar.
+- Seguimiento: quitar el chip de rango duplicado de `TarjetaTotal` en Resumen (tocaria el tag `periodo_rango` y
+  sus aserciones), unificar padding 16/20 dp, cabecera comun en Procesado, revision visual humana en la Tab.
+- Status: `layout-tablet-coherente` = **accepted**.

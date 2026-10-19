@@ -6,26 +6,19 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.RadioButton
 import androidx.compose.ui.semantics.Role
 import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -33,7 +26,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,6 +45,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import android.content.pm.ApplicationInfo
 import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
+import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
@@ -108,7 +102,6 @@ fun AjustesScreen(onBack: () -> Unit) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AjustesContent(
     ui: AjustesUiState,
@@ -128,55 +121,48 @@ internal fun AjustesContent(
         modifier = Modifier
             .fillMaxSize()
             .testTag("pantalla_ajustes"),
-        topBar = {
-            TopAppBar(
-                title = { Text("Ajustes") },
-                navigationIcon = {
-                    IconButton(onClick = onBack, modifier = Modifier.testTag("ajustes_volver")) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-            )
-        },
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 600.dp)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                SeccionMotor(ui = ui, onElegir = onElegirMotor)
-                SeccionModeloLocal(
-                    ui = ui,
-                    onDescargar = onDescargar,
-                    onCancelar = onCancelar,
-                    onPedirEliminar = estadoVisual::pedirConfirmarEliminar,
+        // Cabecera común fija arriba; el scroll ocupa el resto, a todo el ancho.
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            ColumnaCentrada {
+                CabeceraPantalla(
+                    titulo = "Ajustes",
+                    onBack = onBack,
+                    backTag = "ajustes_volver",
                 )
-                SeccionToken(
-                    hayToken = ui.hayToken,
-                    escrito = estadoVisual.tokenEscrito,
-                    onEscribir = estadoVisual::onTokenEscrito,
-                    onGuardar = {
-                        onGuardarToken(estadoVisual.tokenEscrito)
-                        estadoVisual.limpiarToken()
-                    },
-                    onBorrar = onBorrarToken,
-                )
-                if (mostrarDiagnostico) {
-                    SeccionDiagnostico(
-                        diagnostico = ui.diagnostico,
-                        csvCopiado = estadoVisual.csvCopiado,
-                        onCopiarCsv = onCopiarCsv,
-                        onBorrar = onBorrarRegistro,
+            }
+            ColumnaCentrada(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    SeccionMotor(ui = ui, onElegir = onElegirMotor)
+                    SeccionModeloLocal(
+                        ui = ui,
+                        onDescargar = onDescargar,
+                        onCancelar = onCancelar,
+                        onPedirEliminar = estadoVisual::pedirConfirmarEliminar,
                     )
+                    SeccionToken(
+                        hayToken = ui.hayToken,
+                        escrito = estadoVisual.tokenEscrito,
+                        onEscribir = estadoVisual::onTokenEscrito,
+                        onGuardar = {
+                            onGuardarToken(estadoVisual.tokenEscrito)
+                            estadoVisual.limpiarToken()
+                        },
+                        onBorrar = onBorrarToken,
+                    )
+                    if (mostrarDiagnostico) {
+                        SeccionDiagnostico(
+                            diagnostico = ui.diagnostico,
+                            csvCopiado = estadoVisual.csvCopiado,
+                            onCopiarCsv = onCopiarCsv,
+                            onBorrar = onBorrarRegistro,
+                        )
+                    }
                 }
             }
         }

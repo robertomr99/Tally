@@ -85,14 +85,18 @@ internal fun TarjetaDistribucion(
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val enFila = maxWidth >= ANCHO_FILA
                 val donut: @Composable () -> Unit = { DonutConCentro(distribucion) }
-                if (enFila) {
+                if (porciones.isEmpty()) {
+                    // Cargando o vacío: sin leyenda, el donut va solo y centrado.
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { donut() }
+                } else if (enFila) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
-                        donut()
-                        if (porciones.isNotEmpty()) LeyendaCategorias(porciones, Modifier.weight(1f))
+                        // El donut ocupa su franja y se centra en ella (no pegado al borde).
+                        Box(modifier = Modifier.weight(0.4f), contentAlignment = Alignment.Center) { donut() }
+                        LeyendaCategorias(porciones, Modifier.weight(0.6f))
                     }
                 } else {
                     Column(
@@ -101,7 +105,7 @@ internal fun TarjetaDistribucion(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         donut()
-                        if (porciones.isNotEmpty()) LeyendaCategorias(porciones, Modifier.fillMaxWidth())
+                        LeyendaCategorias(porciones, Modifier.fillMaxWidth())
                     }
                 }
             }

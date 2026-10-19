@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FotoOriginal
 
 /**
@@ -59,9 +62,13 @@ fun RevisionFotoContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .statusBarsPadding()
             .testTag("captura_revision"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Título y controles en la columna única; la foto y su fondo, a todo el ancho.
+        ColumnaCentrada { CabeceraPantalla(titulo = "Revisar foto") }
+
         FotoOriginal(
             rutaFoto = rutaFoto,
             testTagImagen = "captura_foto",
@@ -73,21 +80,25 @@ fun RevisionFotoContent(
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
         )
 
-        PanelDebugTextoCrudo(
-            textoCrudo = textoCrudo,
-            ocrNoDisponible = ocrNoDisponible,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp),
-        )
+        ColumnaCentrada {
+            Column {
+                PanelDebugTextoCrudo(
+                    textoCrudo = textoCrudo,
+                    ocrNoDisponible = ocrNoDisponible,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp),
+                )
 
-        DockAcciones(
-            onRepetirFoto = onRepetirFoto,
-            onContinuar = onContinuar,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-        )
+                DockAcciones(
+                    onRepetirFoto = onRepetirFoto,
+                    onContinuar = onContinuar,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                )
+            }
+        }
     }
 }
 

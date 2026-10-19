@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,8 @@ import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.feature.common.BadgeMotor
+import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
 import com.robertomr.tally.feature.common.FormularioTicketEditable
 
@@ -60,34 +63,42 @@ fun RevisionDatosContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .testTag("revision_pantalla"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        ColumnaCentrada { CabeceraPantalla(titulo = "Revisar ticket") }
         BadgeMotor(
             motor = extraido.motor,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
         )
 
         Column(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .verticalScroll(rememberScrollState()),
         ) {
-            FormularioTicketEditable(
-                datos = datos,
-                onComercioEditado = onComercioEditado,
-                onFechaEditada = onFechaEditada,
-                onTotalEditado = onTotalEditado,
-                onCategoriaElegida = onCategoriaElegida,
-                onLineaAnadida = onLineaAnadida,
-                onLineaConceptoEditado = onLineaConceptoEditado,
-                onLineaCantidadEditada = onLineaCantidadEditada,
-                onLineaPrecioEditado = onLineaPrecioEditado,
-                onLineaEliminada = onLineaEliminada,
-            )
+            // El scroll ocupa todo el ancho; el formulario va en la columna centrada.
+            ColumnaCentrada {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    FormularioTicketEditable(
+                        datos = datos,
+                        onComercioEditado = onComercioEditado,
+                        onFechaEditada = onFechaEditada,
+                        onTotalEditado = onTotalEditado,
+                        onCategoriaElegida = onCategoriaElegida,
+                        onLineaAnadida = onLineaAnadida,
+                        onLineaConceptoEditado = onLineaConceptoEditado,
+                        onLineaCantidadEditada = onLineaCantidadEditada,
+                        onLineaPrecioEditado = onLineaPrecioEditado,
+                        onLineaEliminada = onLineaEliminada,
+                    )
+                }
+            }
         }
 
         if (errorGuardado != null) {
