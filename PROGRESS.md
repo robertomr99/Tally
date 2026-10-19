@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `detalle-ticket`, `log-extracciones` (`rango-personalizado` `accepted`, sesión 050); luego `seed-demo`.
+- Current next ready feature: `log-extracciones` (`detalle-ticket` `accepted`, sesión 052); luego `seed-demo`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2542,3 +2542,32 @@
 - Notas menores no bloqueantes: matcher de celdas del E2E dependiente del idioma (en-US), E2E sin probar en
   dia 1 del mes, imports cosmeticos en `GastosScreen.kt`, capturas 03-05 con 0,00 EUR por tickets residuales.
 - Status: `rango-personalizado` = **accepted**.
+
+## Session 051 - detalle-ticket implementacion (2026-10-19)
+
+- Implementado (spec `docs/specs/detalle-ticket.md`, D1-D8 con los defaults): dominio `EdicionDatos.kt` (reductores
+  puros, `conservarHora`), `ObtenerTicket`, `ActualizarTicket`, `BorrarTicket`; `TicketRepository.delete` traga el
+  fallo de la foto (huerfano aceptado) y relanza `CancellationException`. `:feature:common`: `FormularioTicketEditable`,
+  `DockEdicion`, `BadgeMotor`, `FotoOriginal` (muestreo en IO) movidos de escanear (tags `revision_*` intactos);
+  `:feature:escanear` depende ahora de `:feature:common` y `EscanearViewModel` delega en los reductores.
+  `:feature:gastos`: `TicketDetalleScreen/ViewModel/State` (id por `SavedStateHandle`, lectura unica, guarda anti
+  doble toque). `:app`: ruta `ticket/{id}` real, barra inferior oculta, `TicketPendienteScreen` eliminado.
+  `FakePhotoFileStore.deleteError` y `FakeTicketDataSource.deleteError/getByIdError` anadidos en `:test:unit`.
+- Decisiones: la pantalla no recibe `ticketId` (lo lee el VM de la ruta); fallo de lectura = "no existe"; el
+  dialogo de borrado fija forma 28 dp (la `extraLarge` del tema es pildora). Sin migracion Room ni deps nuevas;
+  `framework/`, `schemas/`, `build-logic/`, `libs.versions.toml`, `init.sh` sin cambios.
+- Verificacion y evidencia: ver `feature_list.json` y `docs/evidence/detalle-ticket/README.md` (JVM verde; E2E
+  emulator-5556 `DetalleTicketFlujoTest` 6 OK; suite completa OK 43 tests). emulator-5556 estaba colgado
+  (system_server caido) y se reinicio con `emu kill` + relanzar el AVD.
+- Pendiente: revision visual humana de las capturas; skips por `assumeTrue` no desglosados por el runner.
+- Status: `detalle-ticket` = **passing** (listo para validator).
+
+## Session 052 - detalle-ticket validacion (2026-10-19)
+
+- Validator independiente: **accept** (tests JVM de dominio, gastos, escanear y common re-ejecutados; refactor
+  D1 sin cambio de comportamiento ni tags `revision_*`; borrado en cascada y semantica de fallo de foto;
+  edicion que conserva campos; estados y limpieza revisados; E2E apoyado en la evidencia de emulator-5556).
+- Notas menores: `RevisionFotoContent` ahora muestra "Foto no disponible" en vez de spinner eterno si la foto es
+  ilegible; el dialogo de borrado cita el comercio guardado, no el editado sin guardar.
+- Pendiente humano no bloqueante: revision visual de las capturas 02, 03, 05 y 06.
+- Status: `detalle-ticket` = **accepted**.

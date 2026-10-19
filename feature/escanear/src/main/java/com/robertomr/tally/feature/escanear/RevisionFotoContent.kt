@@ -1,12 +1,8 @@
 package com.robertomr.tally.feature.escanear
 
 import android.content.pm.ApplicationInfo
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,27 +21,18 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.Replay
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import java.io.File
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.robertomr.tally.feature.common.FotoOriginal
 
 /**
  * Pantalla 05: revision de la foto ya procesada (mockup 05, spec captura-foto).
@@ -75,8 +62,11 @@ fun RevisionFotoContent(
             .testTag("captura_revision"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        FotoGuardada(
+        FotoOriginal(
             rutaFoto = rutaFoto,
+            testTagImagen = "captura_foto",
+            testTagAusente = "captura_foto_ausente",
+            contentDescription = "Foto capturada del ticket",
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -137,37 +127,6 @@ private fun PanelDebugTextoCrudo(
                 .heightIn(max = 96.dp)
                 .verticalScroll(rememberScrollState()),
         )
-    }
-}
-
-@Composable
-private fun FotoGuardada(
-    rutaFoto: String,
-    modifier: Modifier = Modifier,
-) {
-    val context = LocalContext.current
-    val foto by produceState<ImageBitmap?>(initialValue = null, rutaFoto) {
-        value = withContext(Dispatchers.IO) {
-            BitmapFactory.decodeFile(File(context.filesDir, rutaFoto).absolutePath)?.asImageBitmap()
-        }
-    }
-
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        val bitmap = foto
-        if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = "Foto capturada del ticket",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                    .testTag("captura_foto"),
-            )
-        } else {
-            CircularProgressIndicator(modifier = Modifier.size(32.dp))
-        }
     }
 }
 

@@ -3,6 +3,7 @@ package com.robertomr.tally.domain.expenses.data
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -27,7 +28,16 @@ class TicketRepository @Inject constructor(
     suspend fun delete(id: Long) {
         val ticket = ticketDataSource.getById(id) ?: return
         ticketDataSource.delete(id)
-        photoFileStore.delete(ticket.rutaFoto)
+        // La BD ya esta borrada: un fallo del fichero deja un huerfano aceptado
+        // (best-effort) y NO convierte el borrado hecho en error. La cancelacion
+        // de la corrutina si se propaga.
+        try {
+            photoFileStore.delete(ticket.rutaFoto)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Huerfano aceptado en filesDir/fotos.
+        }
     }
 
     suspend fun getById(id: Long): Ticket? = ticketDataSource.getById(id)

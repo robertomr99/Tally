@@ -32,12 +32,21 @@ class FakeTicketDataSource : TicketDataSource {
         return id
     }
 
+    /** Si se asigna, [delete] lo lanza antes de borrar (fallo de BD). */
+    var deleteError: Throwable? = null
+
+    /** Si se asigna, [getById] lo lanza (lectura fallida). */
+    var getByIdError: Throwable? = null
+
     override suspend fun delete(id: Long) {
+        deleteError?.let { throw it }
         tickets.update { current -> current.filterNot { it.id == id } }
     }
 
-    override suspend fun getById(id: Long): Ticket? =
-        tickets.value.firstOrNull { it.id == id }
+    override suspend fun getById(id: Long): Ticket? {
+        getByIdError?.let { throw it }
+        return tickets.value.firstOrNull { it.id == id }
+    }
 
     override fun observeByDateRange(from: LocalDate, to: LocalDate): Flow<List<Ticket>> =
         tickets

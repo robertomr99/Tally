@@ -9,6 +9,7 @@ import com.robertomr.tally.test.unit.FakePhotoFileStore
 import com.robertomr.tally.test.unit.FakeTicketDataSource
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -78,6 +79,42 @@ class TicketRepositoryTest {
         repository.delete(id)
 
         assertNull(repository.getById(id))
+        assertEquals(listOf("/data/fotos/ticket.jpg"), photoFileStore.deletedPaths)
+    }
+
+    @Test
+    fun deleteRemovesTicketEvenIfPhotoDeletionThrows() = runTest {
+        photoFileStore.deleteError = java.io.IOException("disco")
+        val id = repository.save(ticket(rutaFoto = "/data/fotos/ticket.jpg"))
+
+        repository.delete(id)
+
+        assertNull(repository.getById(id))
+        assertEquals(listOf("/data/fotos/ticket.jpg"), photoFileStore.deletedPaths)
+    }
+
+    @Test
+    fun deleteRethrowsCancellationFromPhotoStore() = runTest {
+        photoFileStore.deleteError = CancellationException("cancelado")
+        val id = repository.save(ticket())
+
+        val relanzada = try {
+            repository.delete(id)
+            false
+        } catch (e: CancellationException) {
+            true
+        }
+
+        assertTrue(relanzada)
+    }
+
+    @Test
+    fun deleteTwiceSecondIsNoOp() = runTest {
+        val id = repository.save(ticket(rutaFoto = "/data/fotos/ticket.jpg"))
+
+        repository.delete(id)
+        repository.delete(id)
+
         assertEquals(listOf("/data/fotos/ticket.jpg"), photoFileStore.deletedPaths)
     }
 

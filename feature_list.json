@@ -446,13 +446,18 @@
     "title": "Detalle de ticket guardado con foto y borrado en cascada",
     "user_visible_behavior": "Desde el listado se abre el ticket guardado (vista del mockup 07): ver foto original, editar (reutiliza edición) y borrar con confirmación; al borrar desaparecen ticket, líneas y foto.",
     "depends_on": ["revision-datos", "edicion-lineas"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Borrado confirmado elimina registro y fichero de foto (comprobado en filesDir)",
       "Editar un ticket guardado persiste los cambios",
       "Test de borrado en cascada del repositorio"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-19 (sesion 051) JVM: assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test --rerun-tasks BUILD SUCCESSFUL. Dominio: TicketRepositoryTest 9 (cascada, foto que devuelve false/lanza, CancellationException relanzada, doble borrado no-op), EdicionDatosTest 10, DetalleTicketUsecasesTest 4; TicketDetalleViewModelTest 14; GastosViewModelTest 7; EscanearViewModelTest 44 (sin editar aserciones tras mover el formulario a :feature:common); SmokeTest 1. 0 skipped, 0 failures.",
+      "2026-10-19 E2E emulator-5556 (installDebug+installDebugAndroidTest, am instrument): DetalleTicketFlujoTest OK (6 tests: abrir desde Gastos y Resumen con foto real, editar persiste mismo id con hora conservada, descartar/atras no guarda, borrar con confirmacion elimina ticket y fichero (File.exists false), foto ausente, ticket inexistente); suite completa sin *RealTest OK (43 tests) incl. RevisionDatosFlujoTest, ProcesadoFlujoTest, NavigationTest y ListadoGastosFlujoTest (actualizado). El runner no informa de tests saltados por assumeTrue (no verificado cuales).",
+      "2026-10-19 run-as ls files/fotos muestreado durante el test de borrado: detalle_e2e=0 total=66 -> 1/67 -> 0/66. Capturas en docs/evidence/detalle-ticket/ (README). Nota: emulator-5556 estaba con system_server caido (package service ausente); se reinicio con emu kill y relanzando el AVD Pixel_10_Pro -port 5556.",
+      "2026-10-19 sesion 052: validator independiente -> accept (tests JVM de dominio, gastos, escanear y common re-ejecutados; refactor D1 sin cambio de comportamiento ni tags revision_*, borrado en cascada y semantica de fallo de foto, edicion que conserva campos, estados y limpieza revisados; E2E apoyado en evidencia de emulator-5556: DetalleTicketFlujoTest 6 OK, suite :app 43 OK). Pendiente humano no bloqueante: revision visual de las capturas 02, 03, 05 y 06."
+    ],
     "notes": "docs/domain-model.md: Guardado es editable y borrable, foto en cascada."
   },
   {

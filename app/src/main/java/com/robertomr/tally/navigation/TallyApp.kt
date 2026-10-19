@@ -20,6 +20,7 @@ import com.robertomr.tally.feature.common.BottomBarDestino
 import com.robertomr.tally.feature.common.TallyBottomBar
 import com.robertomr.tally.feature.escanear.EscanearScreen
 import com.robertomr.tally.feature.gastos.GastosScreen
+import com.robertomr.tally.feature.gastos.TicketDetalleScreen
 import com.robertomr.tally.feature.resumen.ResumenScreen
 
 // Shell de la app: un único NavHost con los 3 destinos de la bottom bar
@@ -34,10 +35,14 @@ fun TallyApp() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            TallyBottomBar(
-                activeDestination = activeDestination,
-                onNavigate = { destination -> navController.navigateTo(destination) },
-            )
+            // El detalle del ticket (spec detalle-ticket, D5) oculta la barra
+            // inferior: su dock de edicion ya ocupa ese borde.
+            if (backStackEntry?.destination?.route != TallyRoute.Ticket.route) {
+                TallyBottomBar(
+                    activeDestination = activeDestination,
+                    onNavigate = { destination -> navController.navigateTo(destination) },
+                )
+            }
         },
     ) { innerPadding ->
         NavHost(
@@ -55,9 +60,9 @@ fun TallyApp() {
             composable(
                 route = TallyRoute.Ticket.route,
                 arguments = listOf(navArgument(TallyRoute.Ticket.ARG_ID) { type = NavType.LongType }),
-            ) { entry ->
-                TicketPendienteScreen(
-                    ticketId = entry.arguments?.getLong(TallyRoute.Ticket.ARG_ID) ?: 0L,
+            ) {
+                // El id llega al ViewModel por SavedStateHandle (clave = ARG_ID).
+                TicketDetalleScreen(
                     onBack = { navController.popBackStack() },
                 )
             }

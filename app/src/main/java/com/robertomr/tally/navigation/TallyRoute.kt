@@ -10,8 +10,8 @@ sealed class TallyRoute(val route: String) {
     // Pantalla secundaria (sin pestaña de la bottom bar): se abre desde Resumen.
     data object Ajustes : TallyRoute("ajustes")
 
-    // Destino mínimo del listado (spec listado-gastos, D2); detalle-ticket lo
-    // sustituye por la pantalla real manteniendo la ruta.
+    // Detalle del ticket guardado (spec detalle-ticket). ARG_ID debe coincidir con
+    // TicketDetalleViewModel.ARG_ID: el ViewModel lo lee de su SavedStateHandle.
     data object Ticket : TallyRoute("ticket/{ticketId}") {
         const val ARG_ID = "ticketId"
         fun crear(id: Long): String = "ticket/$id"

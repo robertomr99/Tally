@@ -14,6 +14,8 @@ class FakePhotoFileStore(
     /** Payloads por ruta relativa para [read]; una ruta sin entrada -> `null`. */
     var readPayloads: Map<String, ByteArray> = emptyMap(),
     var readError: Throwable? = null,
+    /** Si no es null, [delete] lo lanza tras registrar la ruta (modo "lanza"). */
+    var deleteError: Throwable? = null,
 ) : PhotoFileStore {
 
     val deletedPaths = mutableListOf<String>()
@@ -40,6 +42,7 @@ class FakePhotoFileStore(
 
     override fun delete(path: String): Boolean {
         deletedPaths += path
+        deleteError?.let { throw it }
         return deleteResult
     }
 }

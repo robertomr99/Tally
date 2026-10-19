@@ -9,13 +9,16 @@ import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
 import com.robertomr.tally.domain.expenses.entities.MotorNoDisponibleException
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
-import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.datosRevisionInicial
-import com.robertomr.tally.domain.expenses.entities.nuevaLineaEditable
-import com.robertomr.tally.domain.expenses.entities.parsearCantidad
-import com.robertomr.tally.domain.expenses.entities.parsearPrecio
+import com.robertomr.tally.domain.expenses.entities.conFechaTexto
+import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
+import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
+import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
+import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
+import com.robertomr.tally.domain.expenses.entities.conTotalTexto
+import com.robertomr.tally.domain.expenses.entities.sinLinea
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicketConMotor
 import com.robertomr.tally.domain.expenses.usecases.ObtenerOtroMotor
@@ -23,10 +26,6 @@ import com.robertomr.tally.domain.expenses.usecases.GuardarTicket
 import com.robertomr.tally.domain.expenses.usecases.GuardarFotoCapturada
 import com.robertomr.tally.domain.expenses.usecases.ReconocerTextoCrudo
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -348,14 +347,12 @@ class EscanearViewModel @Inject constructor(
 
     /** Fecha como texto `d/M/yyyy`; un texto no parseable se ignora. */
     fun onFechaEditada(texto: String) {
-        val fecha = parsearFecha(texto) ?: return
-        actualizarDatos { it.copy(fechaEmision = fecha) }
+        actualizarDatosSiValido { it.conFechaTexto(texto, conservarHora = false) }
     }
 
     /** Total como texto; coma o punto decimal; un texto no parseable se ignora. */
     fun onTotalEditado(texto: String) {
-        val total = parsearTotal(texto) ?: return
-        actualizarDatos { it.copy(total = total) }
+        actualizarDatosSiValido { it.conTotalTexto(texto) }
     }
 
     /** Chips de categoria: solo las 6 de la enum fija (CONTEXT.md). */
@@ -369,29 +366,27 @@ class EscanearViewModel @Inject constructor(
      * Nunca toca el total del ticket.
      */
     fun onLineaAnadida() {
-        val nueva = nuevaLineaEditable(proximoIdLinea++)
-        actualizarDatos { it.copy(lineas = it.lineas + nueva) }
+        val idNuevo = proximoIdLinea++
+        actualizarDatos { it.conLineaAnadida(idNuevo) }
     }
 
     fun onLineaConceptoEditado(id: Long, concepto: String) {
-        actualizarLinea(id) { it.copy(concepto = concepto) }
+        actualizarDatos { it.conLineaConcepto(id, concepto) }
     }
 
     /** Cantidad entera >= 1; un texto no parseable, decimal o < 1 se ignora. */
     fun onLineaCantidadEditada(id: Long, texto: String) {
-        val cantidad = parsearCantidad(texto) ?: return
-        actualizarLinea(id) { it.copy(cantidad = cantidad) }
+        actualizarDatosSiValido { it.conLineaCantidad(id, texto) }
     }
 
     /** Precio >= 0 con coma o punto decimal; no parseable o negativo se ignora. */
     fun onLineaPrecioEditado(id: Long, texto: String) {
-        val precio = parsearPrecio(texto) ?: return
-        actualizarLinea(id) { it.copy(precioUnitario = precio) }
+        actualizarDatosSiValido { it.conLineaPrecio(id, texto) }
     }
 
     /** Boton borrar de la fila: elimina la linea por id (el total no cambia). */
     fun onLineaEliminada(id: Long) {
-        actualizarDatos { datos -> datos.copy(lineas = datos.lineas.filterNot { it.id == id }) }
+        actualizarDatos { it.sinLinea(id) }
     }
 
     /**
@@ -452,15 +447,15 @@ class EscanearViewModel @Inject constructor(
         ordenGuardado.value = OrdenGuardado.Revisar
     }
 
-    /** Edita SOLO la linea [id] (direccionada por id de cliente, R-EDI2). */
-    private fun actualizarLinea(id: Long, transformacion: (LineaEditable) -> LineaEditable) {
-        actualizarDatos { datos ->
-            datos.copy(
-                lineas = datos.lineas.map { linea ->
-                    if (linea.id == id) transformacion(linea) else linea
-                },
-            )
-        }
+    /**
+     * Aplica un reductor de edicion (dominio, `EdicionDatos.kt`) que devuelve
+     * `null` si el texto tecleado no es valido; en ese caso se ignora y no se
+     * toca ni el estado ni el error de guardado.
+     */
+    private fun actualizarDatosSiValido(reductor: (DatosRevision) -> DatosRevision?) {
+        val actual = datosRevision.value ?: return
+        val nuevo = reductor(actual) ?: return
+        actualizarDatos { nuevo }
     }
 
     private fun resultadoDeCaptura(entrada: EntradaCaptura): Flow<CapturaEnProgreso> =
@@ -785,18 +780,6 @@ class EscanearViewModel @Inject constructor(
     private companion object {
         const val MENSAJE_ERROR_EXTRACCION = "No se pudieron extraer los datos del ticket"
         const val MENSAJE_ERROR_GUARDADO = "No se pudo guardar el ticket"
-
-        val FORMATO_FECHA_REVISION: DateTimeFormatter =
-            DateTimeFormatter.ofPattern("d/M/yyyy")
-
-        fun parsearFecha(texto: String): LocalDateTime? = try {
-            LocalDate.parse(texto.trim(), FORMATO_FECHA_REVISION).atStartOfDay()
-        } catch (e: DateTimeParseException) {
-            null
-        }
-
-        fun parsearTotal(texto: String): Double? =
-            texto.trim().replace(',', '.').toDoubleOrNull()
     }
 }
 

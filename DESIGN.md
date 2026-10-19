@@ -179,6 +179,15 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
   omiten buscador, chips de filtro, insignias y avatar. El texto del chip usa
   `onSurfaceVariant`: el color de categoría no llega a 4,5:1 sobre su fondo.
 
+- **Detalle de ticket guardado** (spec detalle-ticket, mockups 07/08): barra
+  superior con flecha atrás, "Detalle del ticket" y papelera en paleta `error`;
+  badge del motor real, "Ver foto original" (visor a pantalla completa, sin
+  zoom) o tarjeta "Foto no disponible"; el mismo formulario y dock que la
+  revisión ("Descartar" / "Guardar cambios", ambos deshabilitados sin cambios).
+  Sin barra inferior. Eliminar abre un `AlertDialog` de forma 28 dp (la forma
+  `extraLarge` del tema es una píldora, hay que fijarla) con "Eliminar" en
+  `error` y "Cancelar". Ticket inexistente: "Este ticket ya no existe" + "Volver".
+
 ## Core Screens
 
 | Pantalla | Mockup |
@@ -191,6 +200,7 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
 | Procesando ticket (motor + progreso) | `docs/design/stitch/06-procesando-ticket/` |
 | Ticket digitalizado (revisión/guardar) | `docs/design/stitch/07-ticket-generado/` |
 | Edición del ticket | `docs/design/stitch/08-edicion-ticket/` |
+| Detalle de ticket guardado | `docs/design/stitch/07-ticket-generado/` + `08-edicion-ticket/` |
 | Selector de rango de fechas | `docs/design/stitch/09-selector-rango-fechas/` |
 
 ## Responsive Baseline

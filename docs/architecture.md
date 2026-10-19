@@ -298,9 +298,23 @@ app ──────────► feature:* ──────────�
   su `Column` con scroll, sin lista perezosa anidada.
 - `PeriodoSelector`, `formatoImporte`, `EstiloTabular`, `etiquetaPeriodo`, `etiquetaDia`, `FilaTicket` y
   `CabeceraDia` viven en `:feature:common` para que gastos y resumen no se conozcan entre sí.
-- Navegación: `:app` añade la ruta `ticket/{ticketId}` (`TallyRoute.Ticket`) con `TicketPendienteScreen`
-  como destino mínimo hasta `detalle-ticket`; las pantallas solo reciben callbacks (`onTicketClick`, `onVerTodos`,
-  `onEscanear`).
+- Navegación: `:app` añade la ruta `ticket/{ticketId}` (`TallyRoute.Ticket`) con `TicketDetalleScreen`
+  (`detalle-ticket`); las pantallas solo reciben callbacks (`onTicketClick`, `onVerTodos`, `onEscanear`,
+  `onBack`). La barra inferior se oculta en esa ruta.
+
+### Detalle de ticket y borrado (`detalle-ticket`)
+
+- Dominio: `EdicionDatos.kt` (reductores puros de edición extraídos de `EscanearViewModel`, con
+  `conservarHora`), `ObtenerTicket`, `ActualizarTicket` (mismo id; no toca foto, captura, motor, texto OCR
+  ni nota) y `BorrarTicket`. `TicketRepository.delete` borra primero la BD y luego la foto; un fallo del
+  fichero (false o excepción, salvo `CancellationException`) deja un huérfano en `filesDir/fotos` aceptado y no
+  convierte el borrado en error.
+- `:feature:common` aloja el formulario editable (`FormularioTicketEditable`), `DockEdicion`, `BadgeMotor` y
+  `FotoOriginal` (decodifica en IO con `inSampleSize`), compartidos por la revisión (`:feature:escanear`, que
+  gana la dependencia a `:feature:common`) y el detalle (`:feature:gastos`); los features siguen sin conocerse.
+- `TicketDetalleViewModel`: id por `SavedStateHandle`, lectura única del ticket (`getById`), estado
+  `Cargando | NoExiste | Datos` por cadena de operadores; guardar/borrar con guarda anti doble toque y `hecho`
+  que dispara `onBack` una vez. Sin migración Room ni dependencias nuevas.
 
 ## Convenciones de build
 

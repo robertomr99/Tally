@@ -12,6 +12,10 @@ dependencies {
     // Casos de uso de dominio (GuardarFotoCapturada) + PhotoFileStore.
     implementation(project(":domain:expenses"))
 
+    // Formulario editable, dock, badge de motor y foto compartidos con el
+    // detalle del ticket (spec detalle-ticket, D1).
+    implementation(project(":feature:common"))
+
     // hiltViewModel() en Compose.
     implementation(libs.hilt.navigation.compose)
 
