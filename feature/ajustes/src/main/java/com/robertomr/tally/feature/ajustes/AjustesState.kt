@@ -21,6 +21,18 @@ class AjustesState {
     var tokenEscrito by mutableStateOf("")
         private set
 
+    /** Aviso transitorio "CSV copiado" de la sección de diagnóstico (solo debug). */
+    var csvCopiado by mutableStateOf(false)
+        private set
+
+    fun avisarCsvCopiado() {
+        csvCopiado = true
+    }
+
+    fun ocultarAvisoCsv() {
+        csvCopiado = false
+    }
+
     fun pedirConfirmarEliminar() {
         confirmandoEliminar = true
     }

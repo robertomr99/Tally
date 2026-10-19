@@ -9,7 +9,8 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `log-extracciones` (`papel-ticket` `accepted`, sesión 054); luego `seed-demo`.
+- Current next ready feature: `seed-demo` (`log-extracciones` `accepted`, sesión 056).
+- Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2600,3 +2601,35 @@
   revision editable aun se ve como formulario (campos con caja); semantica agrupada de `FilaRecibo`.
 - Pendiente humano: revision visual.
 - Status: `papel-ticket` = **accepted**.
+
+## Session 055 - log-extracciones implementacion (2026-10-19)
+
+- Feature `log-extracciones`: tabla `extracciones_log` en la misma `TallyDatabase` (v1 -> v2, decision D1 del usuario) con
+  `MIGRATION_1_2` + `addMigrations` (sin `fallbackToDestructiveMigration`), `schemas/.../2.json`, `room-testing` en el
+  catalogo y assets de schemas en `:framework:database`. Dominio: `RegistroExtraccion`, `Reloj`, `RegistroExtracciones`,
+  decorador `EngineConRegistro` (ROUTER/REINTENTO, CANCELADA en `NonCancellable`, fallo del log ignorado), casos de uso
+  observar/borrar/exportar CSV. DI: `:framework:ai` expone el decorador como `TextEngine` y `ExtractorPorMotor`.
+  Ajustes: seccion debug (FLAG_DEBUGGABLE) con resumen, 20 ultimas, Copiar CSV, Borrar registro.
+- Desviacion menor: entidad y DAO del log son publicos (como `TicketEntity`/`TicketDao`) porque Room no maneja bien
+  DAOs `internal`; DataSource, Reloj y modulo Hilt siguen `internal`. `TextEngineEntryPoint` (main de `:app`) amplia
+  3 accesores para los E2E.
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :test:unit:test` en verde; en `emulator-5556`
+  `:framework:database` OK 28 tests y `:app` OK 45 tests (`notClass` de los reales). Migracion real: el emulador tenia
+  el build anterior con BD v1 (28 tickets/17 lineas); tras `installDebug` (install -r) y abrir la app: v2, mismos
+  28/17 (suma 805.0 / 677.0), log vacio. Evidencia en `docs/evidence/log-extracciones/`.
+- No cubierto en E2E: exito y cancelacion (requieren Gemini/motor retenible); estan en `EngineConRegistroTest`.
+- Hallazgo previo no tocado: algun E2E existente (RevisionDatos/Procesado) deja 2 tickets vacios (ids 450, 451) en la
+  BD del emulador por ejecucion completa; no se han borrado.
+- Status: `log-extracciones` = **passing** (listo para validator).
+
+## Session 056 - log-extracciones validacion (2026-10-19)
+
+- Validator independiente: **accept** (`testDebugUnitTest` y `assembleDebug` re-ejecutados; SQL de `Migration(1,2)`
+  identico a `2.json` y a la entidad, `1.json` intacto, sin `fallbackToDestructiveMigration`; privacidad,
+  cancelacion, cobertura ROUTER/REINTENTO, retencion 500 y seccion solo debug revisados; instrumentados
+  apoyados en la evidencia de emulator-5556: database 28 OK, app 45 OK, migracion real v1 a v2 con 28 tickets
+  conservados).
+- Hueco aceptado: E2E sin exito ni cancelacion (solo JVM con dobles y reloj fake).
+- Notas menores: orden de imports en `AjustesScreen.kt`. Hallazgo ajeno: los E2E existentes dejan 2 tickets
+  vacios en el emulador (tarea aparte).
+- Status: `log-extracciones` = **accepted**.

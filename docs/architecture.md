@@ -51,6 +51,30 @@ app ──────────► feature:* ──────────�
   con las tablas `tickets` y `lineas` (borrado en cascada de líneas por FK).
 - Los DAO devuelven `Flow` y las escrituras multi-tabla van con `@Transaction`.
   La foto del ticket vive en `filesDir` y su ruta se guarda en Room.
+- **Versión 2 (`log-extracciones`)**: añade la tabla `extracciones_log` (solo
+  metadatos: marca de tiempo, motor, origen, resultado, tipo/clase de fallo,
+  duración y longitud del texto; nunca texto, datos del ticket ni mensajes de
+  excepción). Primera migración del proyecto: `MIGRATION_1_2` registrada con
+  `addMigrations` (sin `fallbackToDestructiveMigration`), esquemas exportados en
+  `framework/database/schemas/` (`1.json`, `2.json`) y test con
+  `MigrationTestHelper`. Retención de 500 filas (insertar + recortar en una
+  `@Transaction`).
+
+### Registro de extracciones (`log-extracciones`)
+
+- `EngineConRegistro` (dominio, Kotlin puro) decora al `EngineRouter` e
+  implementa `TextEngine` y `ExtractorPorMotor`: es el punto único de registro.
+  `extract(texto)` = origen ROUTER, `extract(motor, texto)` = REINTENTO. En
+  `:framework:ai/di` las dos interfaces se resuelven al mismo singleton
+  decorado; casos de uso y ViewModels no cambian.
+- Duración con `Reloj` inyectable (`RelojSistema` en `:framework:database`).
+  Cancelación: se registra CANCELADA en `NonCancellable` y la
+  `CancellationException` se relanza siempre; un fallo al escribir el log nunca
+  altera la extracción. Texto blank: no se registra (los casos de uso no llegan
+  al motor).
+- Consulta solo en builds debuggables (`FLAG_DEBUGGABLE`, sin `BuildConfig`):
+  sección "Diagnóstico de extracciones" en Ajustes con resumen por motor,
+  últimas 20 filas, "Copiar CSV" y "Borrar registro".
 
 ## Captura de foto
 

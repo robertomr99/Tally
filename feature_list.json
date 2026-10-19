@@ -485,13 +485,19 @@
     "title": "Registro local de extracciones",
     "user_visible_behavior": "Cada extracción queda registrada localmente (motor, duración, resultado, longitud del texto) y es consultable en debug para la memoria del curso.",
     "depends_on": ["extraccion-nube"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Tras varias extracciones, el log registra motor/duración/resultado correctos",
       "Unit test del registrador con dobles"
     ],
-    "evidence": [],
-    "notes": "docs/technical-discovery.md (Observability). Tabla de debug o log persistente."
+    "evidence": [
+      "2026-10-19 sesión 055: gradlew assembleDebug testDebugUnitTest :test:unit:test en verde (EngineConRegistroTest 11/11, RegistroExtraccionesUsecasesTest 6/6, AjustesViewModelTest 16/16)",
+      "emulator-5556: :framework:database am instrument OK (28 tests, MigrationTest 2, ExtraccionLogDaoTest 4); :app E2E OK (45 tests, LogExtraccionesFlujoTest 2)",
+      "Migración sobre datos reales (install -r): user_version 1 -> 2, 28 tickets y 17 líneas idénticos, extracciones_log vacía",
+      "docs/evidence/log-extracciones/README.md y captura 01 (360 dp)",
+      "2026-10-19 sesion 056: validator independiente -> accept (testDebugUnitTest y assembleDebug re-ejecutados; SQL de Migration(1,2) identico a 2.json y a la entidad, 1.json intacto, sin fallbackToDestructive; privacidad (solo metadatos, CSV sin texto ni mensajes), cancelacion, cobertura ROUTER y REINTENTO, retencion 500 y seccion solo debug revisados; instrumentados apoyados en evidencia de emulator-5556: database 28 OK, app 45 OK, migracion real v1 a v2 con 28 tickets conservados). Hueco aceptado: E2E sin exito ni cancelacion (solo JVM con dobles). Notas menores: orden de imports en AjustesScreen. Hallazgo ajeno: E2E existentes dejan 2 tickets vacios en el emulador."
+    ],
+    "notes": "Tabla extracciones_log en TallyDatabase v2 (MIGRATION_1_2), decorador EngineConRegistro, consulta solo debug en Ajustes. Éxito y cancelación solo cubiertos en JVM (E2E sin red)."
   },
   {
     "id": "seed-demo",

@@ -112,6 +112,8 @@ firebase-appcheck-debug = { group = "com.google.firebase", name = "firebase-appc
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+# MigrationTestHelper (test de migracion 1 -> 2 de log-extracciones), misma linea que room.
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 # Coroutines y Turbine (para :test:unit)
 coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }

@@ -45,10 +45,25 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
+import android.content.pm.ApplicationInfo
+import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
 import com.robertomr.tally.domain.expenses.entities.MotivoPausa
+import com.robertomr.tally.domain.expenses.entities.OrigenExtraccion
+import com.robertomr.tally.domain.expenses.entities.RegistroExtraccion
+import com.robertomr.tally.domain.expenses.entities.ResultadoExtraccion
+import com.robertomr.tally.domain.expenses.entities.ResumenMotor
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -62,10 +77,27 @@ fun AjustesScreen(onBack: () -> Unit) {
     val viewModel: AjustesViewModel = hiltViewModel()
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     val estadoVisual = rememberAjustesState()
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    // Diagnostico solo en builds debuggables (spec log-extracciones, D4); sin BuildConfig.
+    val esDebug = remember(context) {
+        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
 
     AjustesContent(
         ui = ui,
         estadoVisual = estadoVisual,
+        mostrarDiagnostico = esDebug,
+        onCopiarCsv = {
+            viewModel.onCopiarCsv { csv ->
+                clipboard.setText(AnnotatedString(csv))
+                estadoVisual.avisarCsvCopiado()
+            }
+        },
+        onBorrarRegistro = {
+            estadoVisual.ocultarAvisoCsv()
+            viewModel.onBorrarRegistro()
+        },
         onBack = onBack,
         onElegirMotor = viewModel::onElegirMotor,
         onDescargar = viewModel::onDescargar,
@@ -81,6 +113,9 @@ fun AjustesScreen(onBack: () -> Unit) {
 internal fun AjustesContent(
     ui: AjustesUiState,
     estadoVisual: AjustesState,
+    mostrarDiagnostico: Boolean,
+    onCopiarCsv: () -> Unit,
+    onBorrarRegistro: () -> Unit,
     onBack: () -> Unit,
     onElegirMotor: (PreferenciaMotor) -> Unit,
     onDescargar: () -> Unit,
@@ -135,6 +170,14 @@ internal fun AjustesContent(
                     },
                     onBorrar = onBorrarToken,
                 )
+                if (mostrarDiagnostico) {
+                    SeccionDiagnostico(
+                        diagnostico = ui.diagnostico,
+                        csvCopiado = estadoVisual.csvCopiado,
+                        onCopiarCsv = onCopiarCsv,
+                        onBorrar = onBorrarRegistro,
+                    )
+                }
             }
         }
     }
@@ -383,6 +426,99 @@ private fun SeccionToken(
             }
         }
     }
+}
+
+/**
+ * Diagnostico de extracciones (spec log-extracciones, D4): SOLO se compone en
+ * builds debuggables. Resumen por motor, ultimas entradas en monoespaciado
+ * compacto (caben a 360 dp), "Copiar CSV" y "Borrar registro". Solo metadatos.
+ */
+@Composable
+private fun SeccionDiagnostico(
+    diagnostico: DiagnosticoExtracciones,
+    csvCopiado: Boolean,
+    onCopiarCsv: () -> Unit,
+    onBorrar: () -> Unit,
+) {
+    val mono = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("diagnostico_extracciones"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("Diagnóstico de extracciones", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Solo metadatos (motor, duración, resultado, longitud); nunca el texto del ticket.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (diagnostico.recientes.isEmpty()) {
+                Text(
+                    "Sin extracciones registradas",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("diagnostico_vacio"),
+                )
+            }
+            diagnostico.resumen.forEach { r ->
+                Text(
+                    text = textoResumen(r),
+                    style = mono,
+                    modifier = Modifier.testTag("diagnostico_resumen_${r.motor.name}"),
+                )
+            }
+            diagnostico.recientes.forEachIndexed { i, fila ->
+                Text(
+                    text = textoFila(fila),
+                    style = mono,
+                    color = if (fila.resultado == ResultadoExtraccion.FALLO) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                    modifier = Modifier.testTag("diagnostico_fila_$i"),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onCopiarCsv,
+                    modifier = Modifier.testTag("diagnostico_copiar_csv"),
+                ) { Text("Copiar CSV") }
+                OutlinedButton(
+                    onClick = onBorrar,
+                    modifier = Modifier.testTag("diagnostico_borrar"),
+                ) { Text("Borrar registro") }
+            }
+            if (csvCopiado) {
+                Text(
+                    "CSV copiado",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.testTag("diagnostico_csv_copiado"),
+                )
+            }
+        }
+    }
+}
+
+private val FORMATO_HORA: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+
+/** "NUBE  n=3 ok=2 media=2000ms" (media de los exitos). */
+internal fun textoResumen(r: ResumenMotor): String =
+    "${r.motor.name.padEnd(5)} n=${r.total} ok=${r.exitos} media=" +
+        (r.duracionMediaExitoMs?.let { "${it}ms" } ?: "-")
+
+/** "19:03:22 NUBE  ROU EXITO  1234ms 812c"; los fallos anaden la clase del error. */
+internal fun textoFila(f: RegistroExtraccion, zona: ZoneId = ZoneId.systemDefault()): String {
+    val hora = FORMATO_HORA.format(Instant.ofEpochMilli(f.marcaTiempo).atZone(zona))
+    val origen = if (f.origen == OrigenExtraccion.ROUTER) "ROU" else "REI"
+    val base = "$hora ${f.motor.name.padEnd(5)} $origen ${f.resultado.name.take(6).padEnd(6)} " +
+        "${f.duracionMs}ms ${f.longitudTexto}c"
+    return f.claseError?.let { "$base\n  ${f.tipoFallo?.name ?: ""} $it" } ?: base
 }
 
 private fun etiquetaEstado(estado: EstadoModelo): String = when (estado) {

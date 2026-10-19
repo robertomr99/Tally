@@ -12,6 +12,12 @@ android {
     defaultConfig {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    // Los esquemas exportados (1.json, 2.json...) son assets de androidTest para
+    // que MigrationTestHelper cree la BD en una version anterior.
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
 }
 
 ksp {
@@ -37,6 +43,8 @@ dependencies {
     androidTestImplementation(libs.coroutines.core)
     androidTestImplementation(libs.turbine)
     androidTestImplementation(libs.room.runtime)
+    androidTestImplementation(libs.room.ktx)
+    androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

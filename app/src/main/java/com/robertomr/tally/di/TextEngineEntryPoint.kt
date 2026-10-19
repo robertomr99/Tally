@@ -1,5 +1,8 @@
 package com.robertomr.tally.di
 
+import com.robertomr.tally.domain.expenses.data.ExtractorPorMotor
+import com.robertomr.tally.domain.expenses.data.PreferenciaMotorStore
+import com.robertomr.tally.domain.expenses.data.RegistroExtracciones
 import com.robertomr.tally.domain.expenses.data.TextEngine
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -31,4 +34,13 @@ interface TextEngineEntryPoint {
     /** Motor local (spec extraccion-local) directo, sin router. */
     @Named("local")
     fun textEngineLocal(): TextEngine
+
+    /** Extraccion explicita por motor (con el decorador de registro; log-extracciones). */
+    fun extractorPorMotor(): ExtractorPorMotor
+
+    /** Log de extracciones (log-extracciones): linea base y limpieza de los E2E. */
+    fun registroExtracciones(): RegistroExtracciones
+
+    /** Preferencia de motor: los E2E la fijan y la restauran. */
+    fun preferenciaMotorStore(): PreferenciaMotorStore
 }

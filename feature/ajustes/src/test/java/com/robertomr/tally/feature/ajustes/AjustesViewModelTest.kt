@@ -4,7 +4,15 @@ import app.cash.turbine.test
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
+import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.OrigenExtraccion
 import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
+import com.robertomr.tally.domain.expenses.entities.RegistroExtraccion
+import com.robertomr.tally.domain.expenses.entities.ResultadoExtraccion
+import com.robertomr.tally.domain.expenses.usecases.BorrarRegistroExtracciones
+import com.robertomr.tally.domain.expenses.usecases.ExportarRegistroExtracciones
+import com.robertomr.tally.domain.expenses.usecases.ObservarRegistroExtracciones
+import com.robertomr.tally.test.unit.FakeRegistroExtracciones
 import com.robertomr.tally.domain.expenses.usecases.ConfigurarPreferenciaMotor
 import com.robertomr.tally.domain.expenses.usecases.ObservarPreferenciaMotor
 import com.robertomr.tally.test.unit.FakePreferenciaMotorStore
@@ -40,11 +48,25 @@ class AjustesViewModelTest {
     private val conditions = FakeDownloadConditions()
     private val tokenStore = FakeModelAccessTokenStore()
     private val motorStore = FakePreferenciaMotorStore()
+    private val registroLog = FakeRegistroExtracciones()
+
+    private fun filaLog(motor: Motor, resultado: ResultadoExtraccion, duracionMs: Long) =
+        RegistroExtraccion(
+            marcaTiempo = 0L,
+            motor = motor,
+            origen = OrigenExtraccion.ROUTER,
+            resultado = resultado,
+            duracionMs = duracionMs,
+            longitudTexto = 8,
+        )
 
     private fun viewModel() = AjustesViewModel(
         observarEstadoModelo = ObservarEstadoModelo(downloader),
         observarTokenModelo = ObservarTokenModelo(tokenStore),
         observarPreferenciaMotor = ObservarPreferenciaMotor(motorStore),
+        observarRegistroExtracciones = ObservarRegistroExtracciones(registroLog),
+        borrarRegistroExtracciones = BorrarRegistroExtracciones(registroLog),
+        exportarRegistroExtracciones = ExportarRegistroExtracciones(registroLog),
         configurarPreferenciaMotor = ConfigurarPreferenciaMotor(motorStore),
         descargarModelo = DescargarModelo(downloader, conditions),
         cancelarDescargaModelo = CancelarDescargaModelo(downloader),
@@ -225,6 +247,48 @@ class AjustesViewModelTest {
             vm.onElegirMotor(PreferenciaMotor.NUBE)
             assertFalse(awaitItem().avisoLocal)
         }
+    }
+
+    @Test
+    fun elDiagnosticoReflejaElLogYSeActualizaAlRegistrar() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            var inicial = awaitItem()
+            if (inicial.cargando) inicial = awaitItem()
+            assertTrue(inicial.diagnostico.recientes.isEmpty())
+
+            registroLog.registrar(filaLog(Motor.NUBE, ResultadoExtraccion.EXITO, 2_000))
+            val conUna = awaitItem().diagnostico
+            assertEquals(1, conUna.recientes.size)
+            assertEquals(1, conUna.resumen.single().exitos)
+            assertEquals(2_000L, conUna.resumen.single().duracionMediaExitoMs)
+        }
+    }
+
+    @Test
+    fun borrarRegistroVaciaElDiagnostico() = runTest {
+        registroLog.registrar(filaLog(Motor.LOCAL, ResultadoExtraccion.FALLO, 5))
+        val vm = viewModel()
+        vm.uiState.test {
+            var actual = awaitItem()
+            while (actual.cargando || actual.diagnostico.recientes.isEmpty()) actual = awaitItem()
+            vm.onBorrarRegistro()
+            assertTrue(awaitItem().diagnostico.recientes.isEmpty())
+        }
+    }
+
+    @Test
+    fun copiarCsvEntregaLaCabeceraYLasFilasDelLog() = runTest {
+        registroLog.registrar(filaLog(Motor.NUBE, ResultadoExtraccion.EXITO, 321))
+        var csv = ""
+
+        viewModel().onCopiarCsv { csv = it }
+
+        val lineas = csv.trimEnd().lines()
+        assertEquals(2, lineas.size)
+        assertTrue(lineas[0].startsWith("id,instante_iso,motor"))
+        assertTrue(lineas[1].contains(",NUBE,ROUTER,EXITO,"))
+        assertTrue(lineas[1].endsWith(",321,8"))
     }
 
     private suspend fun app.cash.turbine.ReceiveTurbine<AjustesUiState>.skipCargando() {

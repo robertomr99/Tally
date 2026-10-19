@@ -84,6 +84,13 @@
 
 ## Risks
 
+- **R-LOG1 — Primera migración de Room y privacidad del log** (`log-extracciones`):
+  la BD pasa de v1 a v2 con `MIGRATION_1_2` (solo añade tabla e índice; prohibido
+  `fallbackToDestructiveMigration`). Mitigado: test `MigrationTest` y verificación
+  instalando encima en `emulator-5556` con 28 tickets reales conservados. Regla de
+  privacidad: el log nunca guarda texto crudo, datos del ticket, mensajes de
+  excepción ni token; solo metadatos. Toda migración futura exige su test y
+  `schemas/N.json`.
 - **R1 — Integración MediaPipe**: **resuelta el 2026-10-12** con el spike
   `spike-gemma-mediapipe` (decisión GO arriba, en "Blocking Next Phase" #1):
   Gemma 3n E2B-it int4 carga y responde en la Tab S9+ con

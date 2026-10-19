@@ -92,9 +92,14 @@ Fijado por AGENTS.md. Solo se detalla lo que AGENTS.md no cubre:
 
 ## Observability
 
-- Mínimo y local: registro (log o tabla de debug) de cada extracción con
-  motor usado, duración, longitud del texto crudo y resultado (éxito/fallo).
-  Sirve para la memoria del curso y para diagnosticar en la demo.
+- Mínimo y local: registro de cada extracción con motor usado, duración,
+  longitud del texto crudo y resultado (éxito/fallo/cancelada). Sirve para la
+  memoria del curso y para diagnosticar en la demo.
+- Decisión (`log-extracciones`, 2026-10-19): tabla Room `extracciones_log` en la
+  misma `TallyDatabase` (v2, migración 1 -> 2), solo metadatos (sin texto ni
+  mensajes de excepción), retención de 500 filas, registro en todos los builds y
+  consulta/exportación CSV solo en debug (sección de Ajustes). Sin telemetría
+  remota.
 
 ## Constraints
 

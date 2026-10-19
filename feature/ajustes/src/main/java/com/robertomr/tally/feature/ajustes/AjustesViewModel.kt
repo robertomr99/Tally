@@ -2,16 +2,20 @@ package com.robertomr.tally.feature.ajustes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.PreferenciaMotor
 import com.robertomr.tally.domain.expenses.entities.ResultadoDescarga
+import com.robertomr.tally.domain.expenses.usecases.BorrarRegistroExtracciones
 import com.robertomr.tally.domain.expenses.usecases.CancelarDescargaModelo
 import com.robertomr.tally.domain.expenses.usecases.ConfigurarPreferenciaMotor
 import com.robertomr.tally.domain.expenses.usecases.ConfigurarTokenModelo
 import com.robertomr.tally.domain.expenses.usecases.DescargarModelo
 import com.robertomr.tally.domain.expenses.usecases.EliminarModelo
+import com.robertomr.tally.domain.expenses.usecases.ExportarRegistroExtracciones
 import com.robertomr.tally.domain.expenses.usecases.ObservarEstadoModelo
 import com.robertomr.tally.domain.expenses.usecases.ObservarPreferenciaMotor
+import com.robertomr.tally.domain.expenses.usecases.ObservarRegistroExtracciones
 import com.robertomr.tally.domain.expenses.usecases.ObservarTokenModelo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -40,6 +44,8 @@ data class AjustesUiState(
     val preferencia: PreferenciaMotor = PreferenciaMotor.AUTO,
     /** Local elegido pero sin modelo descargado: la extraccion fallara (S6). */
     val avisoLocal: Boolean = false,
+    /** Resumen y ultimas entradas del log de extracciones (spec log-extracciones; solo se pinta en debug). */
+    val diagnostico: DiagnosticoExtracciones = DiagnosticoExtracciones(emptyList(), emptyList()),
 )
 
 /**
@@ -52,6 +58,9 @@ class AjustesViewModel @Inject constructor(
     observarEstadoModelo: ObservarEstadoModelo,
     observarTokenModelo: ObservarTokenModelo,
     observarPreferenciaMotor: ObservarPreferenciaMotor,
+    observarRegistroExtracciones: ObservarRegistroExtracciones,
+    private val borrarRegistroExtracciones: BorrarRegistroExtracciones,
+    private val exportarRegistroExtracciones: ExportarRegistroExtracciones,
     private val configurarPreferenciaMotor: ConfigurarPreferenciaMotor,
     private val descargarModelo: DescargarModelo,
     private val cancelarDescargaModelo: CancelarDescargaModelo,
@@ -66,7 +75,8 @@ class AjustesViewModel @Inject constructor(
         observarTokenModelo(),
         observarPreferenciaMotor(),
         aviso,
-    ) { estado, hayToken, preferencia, avisoActual ->
+        observarRegistroExtracciones(),
+    ) { estado, hayToken, preferencia, avisoActual, diagnostico ->
         // El aviso solo tiene sentido mientras no hay descarga en marcha.
         val visible = avisoActual.takeIf {
             estado is EstadoModelo.NoDescargado || estado is EstadoModelo.Fallo
@@ -78,6 +88,7 @@ class AjustesViewModel @Inject constructor(
             aviso = visible,
             preferencia = preferencia,
             avisoLocal = preferencia == PreferenciaMotor.LOCAL && estado !is EstadoModelo.Descargado,
+            diagnostico = diagnostico,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AjustesUiState())
 
@@ -111,6 +122,15 @@ class AjustesViewModel @Inject constructor(
     fun onGuardarToken(token: String) = configurarTokenModelo(token)
 
     fun onBorrarToken() = configurarTokenModelo("")
+
+    /** Genera el CSV del log y lo entrega a [copiar] (el portapapeles es de la UI). */
+    fun onCopiarCsv(copiar: (String) -> Unit) {
+        viewModelScope.launch { copiar(exportarRegistroExtracciones()) }
+    }
+
+    fun onBorrarRegistro() {
+        viewModelScope.launch { borrarRegistroExtracciones() }
+    }
 
     fun onAvisoVisto() {
         aviso.value = null

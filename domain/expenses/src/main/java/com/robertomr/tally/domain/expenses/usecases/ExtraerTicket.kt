@@ -18,7 +18,8 @@ import javax.inject.Inject
  *   inventados; este caso de uso no captura excepciones. Una
  *   [kotlinx.coroutines.CancellationException] jamas se convierte en resultado.
  *
- * Punto de extensión futuro de `log-extracciones` (envolver este caso de uso).
+ * El registro de cada extraccion (`log-extracciones`) no vive aqui: lo hace el
+ * decorador `EngineConRegistro` que envuelve al router en el grafo de DI.
  */
 class ExtraerTicket @Inject constructor(
     private val textEngine: TextEngine,

@@ -3,6 +3,7 @@ package com.robertomr.tally.framework.ai.di
 import android.content.Context
 import com.robertomr.tally.domain.expenses.data.CapacidadDispositivo
 import com.robertomr.tally.domain.expenses.data.DownloadConditions
+import com.robertomr.tally.domain.expenses.data.EngineConRegistro
 import com.robertomr.tally.domain.expenses.data.EngineRouter
 import com.robertomr.tally.domain.expenses.data.ExtractorPorMotor
 import com.robertomr.tally.domain.expenses.data.ModelAccessTokenStore
@@ -10,6 +11,8 @@ import com.robertomr.tally.domain.expenses.data.ModelDownloader
 import com.robertomr.tally.domain.expenses.data.OcrEngine
 import com.robertomr.tally.domain.expenses.data.PreferenciaMotorSource
 import com.robertomr.tally.domain.expenses.data.PreferenciaMotorStore
+import com.robertomr.tally.domain.expenses.data.RegistroExtracciones
+import com.robertomr.tally.domain.expenses.data.Reloj
 import com.robertomr.tally.domain.expenses.data.TextEngine
 import com.robertomr.tally.framework.ai.extraccion.GeminiCloudEngine
 import com.robertomr.tally.framework.ai.extraccion.GemmaLocalEngine
@@ -90,15 +93,28 @@ internal object AiModule {
         preferencia: PreferenciaMotorSource,
     ): EngineRouter = EngineRouter(local, nube, capacidad, modelDownloader, preferencia)
 
-    /** `TextEngine` sin calificar = router Local/Nube. */
+    /**
+     * Decorador de registro (spec log-extracciones, D2): UNA instancia que
+     * envuelve al router y se expone como [TextEngine] y como [ExtractorPorMotor],
+     * de modo que ambas rutas (router y reintento) quedan registradas en un solo sitio.
+     */
     @Provides
     @Singleton
-    fun provideTextEngine(router: EngineRouter): TextEngine = router
+    fun provideEngineConRegistro(
+        router: EngineRouter,
+        registro: RegistroExtracciones,
+        reloj: Reloj,
+    ): EngineConRegistro = EngineConRegistro(router, router, registro, reloj)
 
-    /** Extraccion explicita por motor para el reintento con el otro motor. */
+    /** `TextEngine` sin calificar = router Local/Nube con registro de extracciones. */
     @Provides
     @Singleton
-    fun provideExtractorPorMotor(router: EngineRouter): ExtractorPorMotor = router
+    fun provideTextEngine(engine: EngineConRegistro): TextEngine = engine
+
+    /** Extraccion explicita por motor para el reintento con el otro motor (con registro). */
+    @Provides
+    @Singleton
+    fun provideExtractorPorMotor(engine: EngineConRegistro): ExtractorPorMotor = engine
 
     /** Politica WiFi y espacio libre para la descarga del modelo (spec descarga-modelo). */
     @Provides
