@@ -104,9 +104,10 @@ private fun CabeceraRango(inicio: Long?, fin: Long?) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextoFecha(inicio, "Fecha inicial", Modifier.weight(1f).testTag("rango_cabecera_inicio"))
+        // Sin pesos: con weight(1f) la fecha inicial ocupaba medio ancho y el guion quedaba lejos de ella.
+        TextoFecha(inicio, "Fecha inicial", Modifier.testTag("rango_cabecera_inicio"))
         Text("–", style = MaterialTheme.typography.titleMedium)
-        TextoFecha(fin, "Fecha final", Modifier.weight(1f).testTag("rango_cabecera_fin"))
+        TextoFecha(fin, "Fecha final", Modifier.testTag("rango_cabecera_fin"))
     }
 }
 
