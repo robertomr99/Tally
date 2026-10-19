@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -46,12 +48,28 @@ fun TallyApp() {
             composable(TallyRoute.Resumen.route) {
                 ResumenScreen(
                     onAbrirAjustes = { navController.navigate(TallyRoute.Ajustes.route) },
+                    onTicketClick = { id -> navController.navigate(TallyRoute.Ticket.crear(id)) },
+                    onVerTodos = { navController.navigateTo(BottomBarDestino.Gastos) },
+                )
+            }
+            composable(
+                route = TallyRoute.Ticket.route,
+                arguments = listOf(navArgument(TallyRoute.Ticket.ARG_ID) { type = NavType.LongType }),
+            ) { entry ->
+                TicketPendienteScreen(
+                    ticketId = entry.arguments?.getLong(TallyRoute.Ticket.ARG_ID) ?: 0L,
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable(TallyRoute.Ajustes.route) {
                 AjustesScreen(onBack = { navController.popBackStack() })
             }
-            composable(TallyRoute.Gastos.route) { GastosScreen() }
+            composable(TallyRoute.Gastos.route) {
+                GastosScreen(
+                    onTicketClick = { id -> navController.navigate(TallyRoute.Ticket.crear(id)) },
+                    onEscanear = { navController.navigateTo(BottomBarDestino.Escanear) },
+                )
+            }
             composable(TallyRoute.Escanear.route) {
                 // Tras Guardar (spec revision-datos) se vuelve al listado: la
                 // pestaña Gastos es el placeholder hasta listado-gastos. Sin

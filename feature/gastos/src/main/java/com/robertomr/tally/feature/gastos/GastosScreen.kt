@@ -1,30 +1,178 @@
 package com.robertomr.tally.feature.gastos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ReceiptLong
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
+import com.robertomr.tally.feature.common.CabeceraDia
+import com.robertomr.tally.feature.common.FilaTicket
+import com.robertomr.tally.feature.common.PeriodoSelector
+import com.robertomr.tally.feature.common.etiquetaPeriodo
+import com.robertomr.tally.feature.common.formaFilaTicket
 
-// Placeholder navegable de la feature navegacion-base. El contenido real llega
-// con listado-gastos; sin ViewModel ni estado propio (regla del spec).
+/** Ancho máximo del contenido en tablet (mockup 03: `max-w-3xl`). */
+private val ANCHO_MAXIMO = 720.dp
+
+/**
+ * Pestaña Gastos (spec listado-gastos): tickets del período agrupados por día.
+ * Las pantallas no reciben el NavController: solo callbacks.
+ */
 @Composable
-fun GastosScreen() {
+fun GastosScreen(
+    onTicketClick: (Long) -> Unit = {},
+    onEscanear: () -> Unit = {},
+    viewModel: GastosViewModel = hiltViewModel(),
+) {
+    val ui by viewModel.uiState.collectAsStateWithLifecycle()
+    GastosContenido(
+        ui = ui,
+        onSeleccionarPeriodo = viewModel::onSeleccionarPeriodo,
+        onTicketClick = onTicketClick,
+        onEscanear = onEscanear,
+    )
+}
+
+/**
+ * Contenido sin ViewModel: público para poder pintarlo con estados fijos en los
+ * tests instrumentados (p. ej. el vacío, que no se puede forzar con datos reales).
+ */
+@Composable
+fun GastosContenido(
+    ui: GastosUiState,
+    onSeleccionarPeriodo: (PeriodoTipo) -> Unit,
+    onTicketClick: (Long) -> Unit,
+    onEscanear: () -> Unit,
+) {
+    val estado = rememberGastosState()
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .testTag("pantalla_gastos"),
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.TopCenter,
     ) {
+        Column(modifier = Modifier.widthIn(max = ANCHO_MAXIMO).fillMaxSize()) {
+            // Cabecera fija (no desplazable); la lista ocupa el resto con weight.
+            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+                Text(
+                    text = "Gastos",
+                    modifier = Modifier.padding(top = 12.dp),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                PeriodoSelector(
+                    seleccionado = ui.tipo,
+                    onSeleccionar = onSeleccionarPeriodo,
+                    modifier = Modifier.padding(vertical = 12.dp),
+                )
+                ui.periodo?.let {
+                    Text(
+                        text = etiquetaPeriodo(it),
+                        modifier = Modifier.testTag("gastos_rango"),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            val grupos = ui.grupos
+            when {
+                // Cargando: cabecera y selector sin filas, sin spinner.
+                grupos == null -> Unit
+                grupos.isEmpty() -> EstadoVacio(onEscanear)
+                else -> LazyColumn(
+                    state = estado.lista,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .testTag("lista_gastos"),
+                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                ) {
+                    for (grupo in grupos) {
+                        item(key = "d_${grupo.fecha}", contentType = "dia") {
+                            CabeceraDia(
+                                fecha = grupo.fecha,
+                                hoy = ui.hoy,
+                                totalCentimos = grupo.totalCentimos,
+                                tag = "grupo_dia_${grupo.fecha}",
+                            )
+                        }
+                        itemsIndexed(
+                            items = grupo.tickets,
+                            key = { _, ticket -> "t_${ticket.id}" },
+                            contentType = { _, _ -> "ticket" },
+                        ) { indice, ticket ->
+                            FilaTicket(
+                                ticket = ticket,
+                                tag = "ticket_${ticket.id}",
+                                onClick = onTicketClick,
+                                forma = formaFilaTicket(indice == 0, indice == grupo.tickets.lastIndex),
+                                conSeparador = indice > 0,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EstadoVacio(onEscanear: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp)
+            .testTag("listado_vacio"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ReceiptLong,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(
-            text = "Gastos",
+            text = "Aún no hay tickets en este periodo",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
         )
+        Text(
+            text = "Escanea un ticket y aparecerá aquí con su comercio, fecha y categoría.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onEscanear, modifier = Modifier.testTag("boton_escanear_vacio")) {
+            Text("Escanear ticket")
+        }
     }
 }

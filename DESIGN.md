@@ -170,6 +170,12 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
   scan beam, progreso circular, pasos Encuadre → OCR → Categorización,
   botón Cancelar. El toggle "Cambiar a Nube/Dispositivo" del mockup es el
   reintento con el otro motor.
+- **Listado de gastos** (pantalla 03, spec listado-gastos): secciones por día
+  con cabecera "Hoy, 18 de octubre" y "Total: X €"; filas de 56 dp con icono
+  de categoría, comercio ("Sin comercio" si está vacío), hora (oculta a las
+  00:00), chip de categoría e importe tabular a la derecha. Del mockup se
+  omiten buscador, chips de filtro, insignias y avatar. El texto del chip usa
+  `onSurfaceVariant`: el color de categoría no llega a 4,5:1 sobre su fondo.
 
 ## Core Screens
 

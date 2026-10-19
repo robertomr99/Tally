@@ -426,14 +426,19 @@
     "title": "Listado de tickets del período",
     "user_visible_behavior": "Debajo de la gráfica (y en la pestaña Gastos) se listan los tickets del período con comercio, fecha, total y categoría; al tocar se abre el detalle.",
     "depends_on": ["periodo-selector"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "El listado refleja exactamente los tickets del rango (contraste con semilla de prueba)",
       "Navegación a detalle sin crash",
       "Estado vacío coherente"
     ],
-    "evidence": [],
-    "notes": "Mockup 03. DAO Flow → la UI se actualiza sola al guardar."
+    "evidence": [
+      "2026-10-18 sesión 047 JVM: gradlew.bat assembleDebug testDebugUnitTest :test:unit:test :domain:expenses:test --rerun-tasks BUILD SUCCESSFUL (una pasada previa falló en EscanearViewModelTest.cameraFailureShowsErrorStateWithoutSaving, módulo no tocado; repetición verde). AgruparTicketsPorDiaTest 7, ObservarListadoDelPeriodoTest 3, GastosViewModelTest 4, ResumenViewModelTest 11, EtiquetaDiaTest 6, EtiquetaPeriodoTest 5.",
+      "2026-10-18 E2E emulator-5556: am instrument (sin *RealTest) OK (34 tests), 2 saltados por assumeTrue: CapturaFlujoTest.denegado (preexistente) y ListadoGastosFlujoTest.periodoSinTicketsMuestraElVacio... (la base del emulador tiene 18 tickets hoy con total 0). ListadoGastosFlujoTest 6/6 + ListadoGastosVacioTest 2/2 (vacío de Gastos con estado fijo). Regresión verde (ResumenTotal, PeriodoSelector, GraficaDonut, Navigation, RevisionDatos). Vacío de Resumen sin E2E.",
+      "Capturas y detalle en docs/evidence/listado-gastos/README.md",
+      "2026-10-18 sesion 048: validator independiente -> accept (tests de dominio, common, gastos y resumen + assembleDebug re-ejecutados; agrupacion, refactor D3, scroll, navegacion y capturas revisados; E2E apoyado en evidencia de emulator-5556, OK 34 tests con 2 saltados por assumeTrue). Deuda no bloqueante: capturas de vacio y varios dias, E2E de vacio de Resumen (emulador con 18 tickets residuales), revision visual humana."
+    ],
+    "notes": "Mockup 03. DAO Flow → la UI se actualiza sola al guardar. Sesión 047: D1-D6 con defaults (listado en Gastos con selector propio y vista previa de 5 en Resumen con Ver todos; ruta ticket/{id} con placeholder TicketPendienteScreen en :app; PeriodoSelector/formatoImporte/EstiloTabular/etiquetaPeriodo movidos a :feature:common; total <= 0 aparece sin sumar; hora 00:00 oculta)."
   },
   {
     "id": "detalle-ticket",

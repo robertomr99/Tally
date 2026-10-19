@@ -1,4 +1,4 @@
-package com.robertomr.tally.feature.resumen
+package com.robertomr.tally.feature.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +32,7 @@ import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
  * `surface-container-low`, segmento activo en `secondary-container` con check.
  */
 @Composable
-internal fun PeriodoSelector(
+fun PeriodoSelector(
     seleccionado: PeriodoTipo,
     onSeleccionar: (PeriodoTipo) -> Unit,
     modifier: Modifier = Modifier,

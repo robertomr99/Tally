@@ -15,7 +15,7 @@ import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.feature.resumen.TEXTO_SIN_REFERENCIA
-import com.robertomr.tally.feature.resumen.formatoImporte
+import com.robertomr.tally.feature.common.formatoImporte
 import com.robertomr.tally.feature.resumen.formatoPromedio
 import com.robertomr.tally.feature.resumen.formatoVariacion
 import com.robertomr.tally.feature.resumen.textoTickets

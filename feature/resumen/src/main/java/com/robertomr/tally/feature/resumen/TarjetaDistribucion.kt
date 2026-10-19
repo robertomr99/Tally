@@ -30,6 +30,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.PorcionCategoria
+import com.robertomr.tally.feature.common.EstiloTabular
+import com.robertomr.tally.feature.common.formatoImporte
 import com.robertomr.tally.feature.common.colorCategoria
 import com.robertomr.tally.feature.common.etiquetaCategoria
 import com.robertomr.tally.feature.common.iconoCategoria

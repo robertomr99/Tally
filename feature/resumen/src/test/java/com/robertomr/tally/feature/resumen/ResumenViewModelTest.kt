@@ -7,9 +7,11 @@ import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
+import com.robertomr.tally.domain.expenses.usecases.AgruparTicketsPorDia
 import com.robertomr.tally.domain.expenses.usecases.CalcularDistribucionCategorias
 import com.robertomr.tally.domain.expenses.usecases.CalcularResumenPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarDistribucionDelPeriodo
+import com.robertomr.tally.domain.expenses.usecases.ObservarListadoDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarResumenDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObservarTicketsDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
@@ -52,6 +54,10 @@ class ResumenViewModelTest {
         observarDistribucionDelPeriodo = ObservarDistribucionDelPeriodo(
             ObservarTicketsDelPeriodo(repository),
             CalcularDistribucionCategorias(),
+        ),
+        observarListadoDelPeriodo = ObservarListadoDelPeriodo(
+            ObservarTicketsDelPeriodo(repository),
+            AgruparTicketsPorDia(),
         ),
     )
 
@@ -214,6 +220,35 @@ class ResumenViewModelTest {
             repository.save(ticket(hoy.atTime(10, 0), 12.5, categoria = Categoria.SALUD))
             while (s.distribucion?.porciones?.map { it.categoria } != listOf(Categoria.SALUD)) s = awaitItem()
             assertEquals(listOf(Categoria.SALUD), s.distribucion?.porciones?.map { it.categoria })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun recientesLimitaACincoEnOrdenDescendenteYCuentaElTotal() = runTest {
+        repeat(8) { i -> repository.save(ticket(hoy.minusDays(i.toLong()).atTime(9, 0), 1.0 + i)) }
+        val vm = viewModel()
+        vm.onSeleccionarPeriodo(PeriodoTipo.MES)
+        vm.uiState.test {
+            val s = esperar(PeriodoTipo.MES)
+            assertEquals(MAX_RECIENTES, s.recientes?.size)
+            assertEquals(8, s.totalTickets)
+            assertEquals(listOf(1.0, 2.0, 3.0, 4.0, 5.0), s.recientes?.map { it.total })
+            assertEquals(hoy, s.hoy)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun sinTicketsRecientesEsVaciaNoNulaYSeActualizaSolaAlGuardar() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            var s = esperar(PeriodoTipo.MES)
+            assertEquals(emptyList<Ticket>(), s.recientes)
+            assertEquals(0, s.totalTickets)
+            repository.save(ticket(hoy.atTime(10, 0), 12.5))
+            while (s.totalTickets != 1) s = awaitItem()
+            assertEquals(1, s.recientes?.size)
             cancelAndIgnoreRemainingEvents()
         }
     }

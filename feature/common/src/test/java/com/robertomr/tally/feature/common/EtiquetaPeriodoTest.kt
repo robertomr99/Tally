@@ -1,4 +1,4 @@
-package com.robertomr.tally.feature.resumen
+package com.robertomr.tally.feature.common
 
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo

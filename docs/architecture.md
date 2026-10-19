@@ -11,10 +11,10 @@ dependencias. Las reglas operativas completas están en `AGENTS.md`.
  ├─ :domain:expenses      (Kotlin puro, sin Android)
  ├─ :framework:database   (android library internal; implementa interfaces de domain)
  ├─ :framework:ai         (android library internal; implementa interfaces de domain; OCR, motores y modelo/ = descarga con WorkManager)
- ├─ :feature:common       (compose; tema, tipografía y utilidades de UI)
+ ├─ :feature:common       (compose; tema, tipografía y UI compartida: PeriodoSelector, FilaTicket/CabeceraDia, formato de importe y etiquetas de día/período)
  ├─ :feature:resumen      (compose; panel: selector Día/Semana/Mes, total y donut; usa :domain:expenses y :feature:common)
  ├─ :feature:ajustes      (compose; Ajustes: sección "Modelo local", descarga y token)
- ├─ :feature:gastos       (compose; pantallas)
+ ├─ :feature:gastos       (compose; listado de tickets del período agrupado por día; usa :domain:expenses y :feature:common)
  └─ :feature:escanear     (compose; pantallas)
 
 :test:unit                (librería Kotlin; dobles de prueba compartidos)
@@ -278,6 +278,21 @@ app ──────────► feature:* ──────────�
   sin librerías de gráficas; geometría pura en `segmentosDonut`). Etiqueta, icono y color de
   categoría viven en `:feature:common` (`CategoriaUi.kt`); `:feature:resumen` depende de
   `:feature:common` y `:feature:common` de `:domain:expenses` (no son módulos nuevos).
+
+### Listado de tickets (`listado-gastos`)
+
+- Dominio: `AgruparTicketsPorDia` (orden `fechaEmision` desc, empate `id` desc; total del día en céntimos con
+  la misma conversión HALF_UP que la distribución; un total <= 0 o no finito aparece pero no suma) y
+  `ObservarListadoDelPeriodo` (reutiliza `ObservarTicketsDelPeriodo`; sin repositorio ni DAO nuevos).
+- `:feature:gastos` (pestaña Gastos): `GastosViewModel` (`MutableStateFlow<PeriodoTipo>` -> `flatMapLatest`
+  -> `stateIn`; `grupos == null` = cargando, vacío = lista vacía) y una única `LazyColumn` con claves
+  `d_<fecha>`/`t_<id>`. `:feature:resumen` añade `SeccionRecientes` (máx. 5 filas, "Ver todos (N)") dentro de
+  su `Column` con scroll, sin lista perezosa anidada.
+- `PeriodoSelector`, `formatoImporte`, `EstiloTabular`, `etiquetaPeriodo`, `etiquetaDia`, `FilaTicket` y
+  `CabeceraDia` viven en `:feature:common` para que gastos y resumen no se conozcan entre sí.
+- Navegación: `:app` añade la ruta `ticket/{ticketId}` (`TallyRoute.Ticket`) con `TicketPendienteScreen`
+  como destino mínimo hasta `detalle-ticket`; las pantallas solo reciben callbacks (`onTicketClick`, `onVerTodos`,
+  `onEscanear`).
 
 ## Convenciones de build
 

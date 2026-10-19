@@ -13,4 +13,7 @@ dependencies {
 
     // Iconos de la bottom bar (TallyBottomBar); los gestiona el Compose BOM.
     implementation(libs.androidx.compose.material.icons.extended)
+
+    // Tests JVM de las etiquetas puras (EtiquetaDia).
+    testImplementation(libs.junit)
 }

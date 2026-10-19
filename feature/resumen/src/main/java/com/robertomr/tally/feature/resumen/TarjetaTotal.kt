@@ -29,6 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.ResumenPeriodo
+import com.robertomr.tally.feature.common.etiquetaPeriodo
+import com.robertomr.tally.feature.common.EstiloTabular
+import com.robertomr.tally.feature.common.formatoImporte
 
 /**
  * Tarjeta de total del mockup 02: etiqueta + rango, total en display con cifras

@@ -58,10 +58,14 @@ class CalcularDistribucionCategorias @Inject constructor() {
         }
         return DistribucionCategorias(porciones = porciones, totalCentimos = total)
     }
+}
 
-    /** Céntimos del importe, o `null` si no es finito. */
-    private fun aCentimos(total: Double): Long? {
-        if (!total.isFinite()) return null
-        return BigDecimal.valueOf(total).movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
-    }
+/**
+ * Céntimos del importe, o `null` si no es finito. Conversión compartida por la
+ * distribución por categoría y el total diario del listado (HALF_UP sobre la
+ * representación decimal, para que 1,005 sea 101).
+ */
+internal fun aCentimos(total: Double): Long? {
+    if (!total.isFinite()) return null
+    return BigDecimal.valueOf(total).movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
 }

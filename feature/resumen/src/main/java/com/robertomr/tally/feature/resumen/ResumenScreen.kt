@@ -25,13 +25,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
+import com.robertomr.tally.feature.common.PeriodoSelector
 
 /**
- * Pestaña Resumen: selector de período, tarjeta de total y distribución por categoría.
+ * Pestaña Resumen: selector de período, tarjeta de total, distribución por categoría
+ * y vista previa de los últimos tickets (con "Ver todos" hacia la pestaña Gastos).
  */
 @Composable
 fun ResumenScreen(
     onAbrirAjustes: () -> Unit = {},
+    onTicketClick: (Long) -> Unit = {},
+    onVerTodos: () -> Unit = {},
     viewModel: ResumenViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
@@ -39,6 +43,8 @@ fun ResumenScreen(
         ui = ui,
         onSeleccionarPeriodo = viewModel::onSeleccionarPeriodo,
         onAbrirAjustes = onAbrirAjustes,
+        onTicketClick = onTicketClick,
+        onVerTodos = onVerTodos,
     )
 }
 
@@ -47,6 +53,8 @@ private fun ResumenContenido(
     ui: ResumenUiState,
     onSeleccionarPeriodo: (PeriodoTipo) -> Unit,
     onAbrirAjustes: () -> Unit,
+    onTicketClick: (Long) -> Unit,
+    onVerTodos: () -> Unit,
 ) {
     val estado = rememberResumenState()
     Column(
@@ -87,11 +95,18 @@ private fun ResumenContenido(
         )
 
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen)
             TarjetaDistribucion(distribucion = ui.distribucion)
+            SeccionRecientes(
+                recientes = ui.recientes,
+                totalTickets = ui.totalTickets,
+                hoy = ui.hoy,
+                onTicketClick = onTicketClick,
+                onVerTodos = onVerTodos,
+            )
         }
     }
 }

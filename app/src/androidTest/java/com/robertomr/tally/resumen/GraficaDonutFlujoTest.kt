@@ -17,7 +17,7 @@ import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
-import com.robertomr.tally.feature.resumen.formatoImporte
+import com.robertomr.tally.feature.common.formatoImporte
 import dagger.hilt.android.EntryPointAccessors
 import java.time.LocalDate
 import java.time.LocalDateTime

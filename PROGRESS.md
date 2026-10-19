@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `listado-gastos`, `rango-personalizado` (dependen de `periodo-selector`; `grafica-donut` `accepted` sesión 046).
+- Current next ready feature: `rango-personalizado` (depende de `periodo-selector`; `listado-gastos` `accepted` sesión 048), `detalle-ticket`, `log-extracciones`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2484,3 +2484,33 @@
   distribucion, `segmentosDonut`, contraste y capturas revisados; E2E apoyado en la evidencia de emulator-5556).
 - Pendiente humano no bloqueante: revision visual de la paleta y simulacion de daltonismo.
 - Status: `grafica-donut` = **accepted**.
+
+## Session 047 - listado-gastos implementacion (2026-10-18)
+
+- Implementado (spec `docs/specs/listado-gastos.md`, D1-D6 con defaults): dominio `GrupoDiaTickets`,
+  `AgruparTicketsPorDia` y `ObservarListadoDelPeriodo` (conversion a centimos extraida a `aCentimos` interna
+  compartida con la distribucion). D3: `PeriodoSelector`, `formatoImporte`, `EstiloTabular` y `etiquetaPeriodo` pasan a
+  `:feature:common` (tags `periodo_*` y comportamiento sin cambios) junto con `FilaTicket`/`CabeceraDia`/`etiquetaDia`.
+  `:feature:gastos` pasa a feature completa (VM, State, `LazyColumn` con claves; ahora usa `tally.hilt`);
+  `:feature:resumen` gana `SeccionRecientes` (5 filas + "Ver todos (N)"); `:app` gana la ruta `ticket/{ticketId}` con
+  `TicketPendienteScreen` (TODO `detalle-ticket`). Se conserva el tag `pantalla_gastos` en la raiz.
+- Desviaciones: `GastosContenido` es publico (estado fijo en E2E del vacio); chip de categoria con texto
+  `onSurfaceVariant` (el ambar no llega a 4,5:1); sin `Clock` en el VM (`hoy` = `ObtenerPeriodo(DIA).desde`).
+- Verificacion y resultados reales en `docs/evidence/listado-gastos/README.md`: JVM verde, E2E emulator-5556
+  `OK (34 tests)` con 2 saltados (assumeTrue): `denegado` (preexistente) y el vacio de Resumen/Gastos con datos reales
+  (la base del emulador tiene 18 tickets hoy, total 0); vacio de Gastos cubierto por `ListadoGastosVacioTest`.
+- Hallazgos: `EscanearViewModelTest.cameraFailureShowsErrorStateWithoutSaving` fallo una vez de forma intermitente
+  (modulo no tocado). Los 18 tickets de total 0 de la base vienen de E2E previos que guardan sin limpiar.
+- Pendiente: captura del vacio y de varios dias; revision visual humana.
+- Status: `listado-gastos` = **passing** (listo para validator).
+
+## Session 048 - listado-gastos validacion (2026-10-18)
+
+- Validator independiente: **accept** (tests de dominio, common, gastos y resumen + assembleDebug
+  re-ejecutados; E2E apoyado en la evidencia de emulator-5556, OK 34 tests, 2 saltados por `assumeTrue`).
+- Orquestador tras el accept: nota del patron de fila/grupo en `DESIGN.md` y arreglo cosmetico de
+  indentacion/KDoc en `ResumenViewModel.kt` (tests de resumen y gastos en verde).
+- Deuda no bloqueante: capturas de vacio y de varios dias; E2E de vacio de Resumen (el emulador tiene 18
+  tickets de 0,00 EUR residuales de otros E2E); test intermitente
+  `EscanearViewModelTest.cameraFailureShowsErrorStateWithoutSaving`; revision visual humana.
+- Status: `listado-gastos` = **accepted**.
