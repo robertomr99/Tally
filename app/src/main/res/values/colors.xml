@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Espejo de ForestPrimary (feature/common/.../theme/Color.kt). XML no puede
+         leer Compose; la duplicacion esta aceptada y documentada en DESIGN.md. -->
+    <color name="splash_fondo">#FF002718</color>
+    <!-- Espejo de ForestPrimaryFixed (Color.kt). -->
+    <color name="splash_emblema">#FFBFEDD2</color>
+</resources>

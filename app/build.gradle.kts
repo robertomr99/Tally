@@ -55,6 +55,7 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.navigation.compose)
 
     // E2E de navegación (NavigationTest, spec navegacion-base). El platform del
@@ -92,5 +93,6 @@ dependencies {
     debugImplementation(platform(libs.firebase.bom))
     debugImplementation(libs.firebase.appcheck.debug)
     androidTestImplementation(libs.junit)
+    testImplementation(libs.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -259,7 +259,28 @@ design system NO es MVP.
   revisión y el detalle; Resumen, Gastos y Ajustes no. Tag `papel_ticket`.
 - NO usar fuentes ni recursos por red (offline-first): Inter incluida en el APK.
 - NO inventar animaciones más allá de las del mockup 06 (scan beam, radar,
-  progreso circular).
+  progreso circular) y la del splash de arranque (feature `splash-animado`,
+  petición del usuario 2026-10-19, ver "Splash de arranque").
+
+## Splash de arranque
+
+Feature `splash-animado`. Splash del sistema (`androidx.core:core-splashscreen`;
+en Android 12+ delega en la API nativa), sin pantalla Compose ni ruta propia.
+
+- Diseño normativo: solo el emblema del mockup 01 (4 barras + diagonal a -28°,
+  extremos redondeados). No se copian reloj, wifi ni píldora de la captura. Sin
+  texto ni eslogan.
+- Tokens: fondo `primary` #002718 (`@color/splash_fondo`, espejo de `ForestPrimary`)
+  y emblema `primary-fixed` #BFEDD2 (`@color/splash_emblema`, espejo de
+  `ForestPrimaryFixed`) en `app/src/main/res/values/colors.xml`. Fondo fijo: no
+  hay tema oscuro.
+- Animación: una sola pasada (`trimPathEnd` 0 a 1): 4 barras escalonadas
+  (180 ms cada una, 80 ms de desfase) y luego la diagonal (300 ms), ~680 ms en total,
+  `fast_out_slow_in`. Sin bucle. Estado final sin animar = emblema completo (es lo
+  que ve API 26-30, donde la compat no anima).
+- Hold artificial máximo 700 ms solo en arranque en frío; 0 con
+  `animator_duration_scale` = 0, en rotación y en arranque en caliente.
+- Accesibilidad: decorativo, sin información exclusiva de la animación.
 
 ## Open Design Questions
 

@@ -10,6 +10,7 @@ turbine = "1.1.0"
 junit = "4.13.2"
 activityCompose = "1.13.0"
 coreKtx = "1.18.0"
+coreSplashscreen = "1.2.0"
 lifecycle = "2.10.0"
 minSdk = "26"
 compileSdk = "36"
@@ -128,6 +129,7 @@ mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition"
 
 # AndroidX y Compose
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 # LocalLifecycleOwner para el binding de CameraX (captura-foto); misma linea
 # de version lifecycle.

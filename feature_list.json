@@ -500,6 +500,27 @@
     "notes": "Tabla extracciones_log en TallyDatabase v2 (MIGRATION_1_2), decorador EngineConRegistro, consulta solo debug en Ajustes. Éxito y cancelación solo cubiertos en JVM (E2E sin red)."
   },
   {
+    "id": "splash-animado",
+    "area": "arranque",
+    "title": "Splash screen con animación al inicio",
+    "user_visible_behavior": "Al abrir la app se muestra un splash con animación de marca (sin parpadeos ni pantalla en blanco) que da paso a la pantalla principal; en Android 12+ usa la API nativa de SplashScreen y en versiones anteriores se comporta igual.",
+    "depends_on": ["navegacion-base"],
+    "status": "accepted",
+    "verification": [
+      "Arranque en frío en emulator-5556 muestra el splash animado y llega a Resumen sin parpadeo ni doble splash",
+      "La animación no bloquea el arranque ni retrasa más de lo acordado (duración máxima) y respeta la preferencia de reducir animaciones del sistema",
+      "Navegación y E2E existentes siguen en verde; capturas/grabación del arranque en evidencia"
+    ],
+    "evidence": [
+      "2026-10-19 sesión 057: gradlew assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest en verde (SplashPoliticaTest 6/6)",
+      "emulator-5556 (API 37): :app E2E OK (45 tests, notClass de los reales) sin tocar tests; arranque en frío con screenrecord: barras + diagonal se dibujan y pasan a Resumen sin blanco ni doble splash; escala 0: emblema completo; animator_duration_scale restaurado a 1.0",
+      "am start -W frío: base 2106/2088/2090 ms; con splash 2319/2411/2519 ms (dentro de 800 ms)",
+      "Camino API 26-30 NO ejecutado en dispositivo (solo emulador API 37); docs/evidence/splash-animado/README.md y capturas 01-02",
+      "2026-10-19 sesion 058: validator independiente -> accept (:app:testDebugUnitTest re-ejecutado; manifest, recursos, AVD, geometria fiel al mockup 01, MainActivity, SplashPolitica y DESIGN.md revisados; capturas vistas; instrumentados apoyados en evidencia de emulator-5556 API 37: SplashPoliticaTest 6 OK, suite app 45 OK, arranque en frio +0,2-0,4 s). Limitaciones declaradas y aceptadas: camino API 26-30 no ejecutado en dispositivo (icono estatico completo, hold 0), puntito breve al inicio de cada trazo, fluidez solo por cadencia de fotogramas. Pendiente humano: ver la animacion en la tablet."
+    ],
+    "notes": "Petición del usuario (2026-10-19): splash screen con animación al inicio; seed-demo se deja para el final. Sin módulos Gradle nuevos; la dependencia androidx.core:core-splashscreen, si hace falta, solo en libs.versions.toml (decisión del planner con justificación). Coherente con DESIGN.md (identidad de marca verde, sin decoración ficticia)."
+  },
+  {
     "id": "seed-demo",
     "area": "demo",
     "title": "Datos de demo sembrados (build debug)",

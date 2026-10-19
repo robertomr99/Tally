@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `seed-demo` (`log-extracciones` `accepted`, sesión 056).
+- Current next ready feature: `seed-demo` (`splash-animado` `accepted`, sesión 058; seed-demo se deja para el final por decisión del usuario).
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2633,3 +2633,29 @@
 - Notas menores: orden de imports en `AjustesScreen.kt`. Hallazgo ajeno: los E2E existentes dejan 2 tickets
   vacios en el emulador (tarea aparte).
 - Status: `log-extracciones` = **accepted**.
+
+## Session 057 - splash-animado (2026-10-19)
+
+- Implementado: splash del sistema con `core-splashscreen` 1.2.0 (solo en `libs.versions.toml` y `:app`), tema
+  `Theme.Tally.Starting` (fondo #002718) y `Theme.Tally`, emblema vectorial `ic_splash_tally` + AVD
+  `avd_splash_tally` (trimPathEnd escalonado, ~680 ms, una pasada), `SplashPolitica` pura (hold max 700 ms, solo
+  arranque en frio y primera creacion por proceso, 0 con animator_duration_scale 0 o SDK < 31) y
+  `SplashPoliticaTest` 6/6. `MainActivity` llama a `installSplashScreen()` antes de `super.onCreate`; sin pantalla
+  Compose ni ruta nueva. `DESIGN.md` enmendado (seccion "Splash de arranque").
+- Verificacion en `emulator-5556` (API 37): gradlew build+tests+install en verde; `am instrument` con `notClass`
+  de los reales `OK (45 tests)` sin tocar tests; screenrecord del arranque en frio (animacion fluida, sin blanco ni
+  doble splash), escala 0 sin dibujo animado, escala restaurada a 1.0. Iteracion: 800 -> 700 ms para que el hold no
+  corte la diagonal. Evidencia en `docs/evidence/splash-animado/`.
+- No cubierto: camino API 26-30 (compat sin animar) no ejecutado en dispositivo; icono de launcher fuera de alcance.
+- Status: `splash-animado` = **passing** (listo para validator). Siguiente: `seed-demo`.
+
+## Session 058 - splash-animado validacion (2026-10-19)
+
+- Validator independiente: **accept** (`:app:testDebugUnitTest` re-ejecutado; manifest, recursos, AVD, geometria
+  fiel al mockup 01, `MainActivity`, `SplashPolitica` y `DESIGN.md` revisados; capturas vistas; instrumentados
+  apoyados en la evidencia de emulator-5556 API 37: `SplashPoliticaTest` 6 OK, suite `:app` 45 OK).
+- Limitaciones aceptadas: camino API 26-30 no ejecutado en dispositivo (icono estatico completo, hold 0); puntito
+  breve al inicio de cada trazo (cabeza redonda); fluidez juzgada solo por cadencia de fotogramas; arranque en
+  frio +0,2-0,4 s medido.
+- Pendiente humano: ver la animacion en la tablet.
+- Status: `splash-animado` = **accepted**.

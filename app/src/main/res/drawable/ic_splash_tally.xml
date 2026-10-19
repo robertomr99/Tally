@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Emblema "tally marks" del mockup 01: 4 barras + diagonal a -28 grados.
+     Estado final completo (es lo que ve API 26-30, sin animar). Lienzo 288 dp con
+     el emblema dentro del circulo central de 192 dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="288dp"
+    android:height="288dp"
+    android:viewportWidth="288"
+    android:viewportHeight="288">
+    <path
+        android:name="barra1"
+        android:pathData="M84.6,97.5 L84.6,190.5"
+        android:strokeColor="@color/splash_emblema"
+        android:strokeWidth="13.2"
+        android:strokeLineCap="round" />
+    <path
+        android:name="barra2"
+        android:pathData="M124.2,97.5 L124.2,190.5"
+        android:strokeColor="@color/splash_emblema"
+        android:strokeWidth="13.2"
+        android:strokeLineCap="round" />
+    <path
+        android:name="barra3"
+        android:pathData="M163.8,97.5 L163.8,190.5"
+        android:strokeColor="@color/splash_emblema"
+        android:strokeWidth="13.2"
+        android:strokeLineCap="round" />
+    <path
+        android:name="barra4"
+        android:pathData="M203.4,97.5 L203.4,190.5"
+        android:strokeColor="@color/splash_emblema"
+        android:strokeWidth="13.2"
+        android:strokeLineCap="round" />
+    <path
+        android:name="diagonal"
+        android:pathData="M80,178 L208,110"
+        android:strokeColor="@color/splash_emblema"
+        android:strokeWidth="13.2"
+        android:strokeLineCap="round" />
+</vector>

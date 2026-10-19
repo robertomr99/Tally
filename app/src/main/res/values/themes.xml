@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema de la app tras el splash: el mismo que se usaba antes de esta feature. -->
+    <style name="Theme.Tally" parent="@android:style/Theme.Material.Light.NoActionBar" />
+
+    <!-- Tema de arranque (core-splashscreen). Fondo fijo primary; el emblema es un
+         AnimatedVectorDrawable que se dibuja una sola vez (spec splash-animado D2/D6). -->
+    <style name="Theme.Tally.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_fondo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/avd_splash_tally</item>
+        <item name="windowSplashScreenAnimationDuration">700</item>
+        <item name="postSplashScreenTheme">@style/Theme.Tally</item>
+    </style>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Animacion de una sola pasada: las 4 barras se dibujan escalonadas y despues
+     la diagonal. Sin bucle. El estado sin animar es el emblema completo. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash_tally">
+    <target
+        android:name="barra1"
+        android:animation="@animator/splash_barra_1" />
+    <target
+        android:name="barra2"
+        android:animation="@animator/splash_barra_2" />
+    <target
+        android:name="barra3"
+        android:animation="@animator/splash_barra_3" />
+    <target
+        android:name="barra4"
+        android:animation="@animator/splash_barra_4" />
+    <target
+        android:name="diagonal"
+        android:animation="@animator/splash_diagonal" />
+</animated-vector>
