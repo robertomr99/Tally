@@ -13,5 +13,17 @@ import javax.inject.Inject
 class ObtenerPeriodo @Inject constructor(
     private val clock: Clock,
 ) {
-    operator fun invoke(tipo: PeriodoTipo): Periodo = Periodo.de(tipo, LocalDate.now(clock))
+    /**
+     * Para [PeriodoTipo.PERSONALIZADO] devuelve [personalizado], que debe venir
+     * informado y ser de ese tipo; para el resto se ignora.
+     */
+    operator fun invoke(tipo: PeriodoTipo, personalizado: Periodo? = null): Periodo =
+        if (tipo == PeriodoTipo.PERSONALIZADO) {
+            require(personalizado != null && personalizado.tipo == PeriodoTipo.PERSONALIZADO) {
+                "un período personalizado necesita desde y hasta"
+            }
+            personalizado
+        } else {
+            Periodo.de(tipo, LocalDate.now(clock))
+        }
 }

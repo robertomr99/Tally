@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `rango-personalizado` (depende de `periodo-selector`; `listado-gastos` `accepted` sesión 048), `detalle-ticket`, `log-extracciones`.
+- Current next ready feature: `detalle-ticket`, `log-extracciones` (`rango-personalizado` `accepted`, sesión 050); luego `seed-demo`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2514,3 +2514,31 @@
   tickets de 0,00 EUR residuales de otros E2E); test intermitente
   `EscanearViewModelTest.cameraFailureShowsErrorStateWithoutSaving`; revision visual humana.
 - Status: `listado-gastos` = **accepted**.
+
+## Session 049 - rango-personalizado implementacion (2026-10-19)
+
+- Implementado (spec `docs/specs/rango-personalizado.md`, D1-D8 con los defaults): `PeriodoTipo.PERSONALIZADO`,
+  `Periodo.personalizado` (anterior = N dias previos; `de(PERSONALIZADO)` lanza), `ObtenerPeriodo(tipo, personalizado)`;
+  `:feature:common`: `FechasPicker.kt` (conversion UTC), `RangoFechasDialog.kt` (`DatePickerDialog` + `DateRangePicker`,
+  sin futuros), `PeriodoSelector` de 4 segmentos con picker interno, `etiquetaPeriodo(periodo, hoy)` con anio cuando
+  cruza anio o no es el actual; ViewModels de Resumen y Gastos con `Seleccion(tipo, rango)` y `onSeleccionarRango`
+  (invertido ignorado), `rango` en los UiState; `TarjetaTotal` recibe `hoy`.
+- Decisiones: Material3 del BOM 2026.02.01 no exige `@OptIn` para el date range picker (BOM sin tocar). La forma
+  `extraLarge` del tema es una pildora de 9999 dp y deformaba el dialogo: se fija `RoundedCornerShape(28.dp)`.
+  `PeriodoTipo.entries` adaptado en `PeriodoTest` y `PeriodoSelectorFlujoTest`.
+- Verificacion (detalle en `docs/evidence/rango-personalizado/README.md`): `assembleDebug testDebugUnitTest` verde;
+  dominio, common (9+3), resumen (16) y gastos (7) en verde; E2E en emulator-5556 `RangoPersonalizadoFlujoTest`
+  OK (2 tests) y suite completa `OK (37 tests)`; selector cabe a 360 dp. emulator-5556 no estaba arrancado: se lanzo
+  desde el AVD `Pixel_10_Pro` con `-port 5556` (tardo varios minutos en aparecer en adb).
+- Pendiente: no se verifico cuales tests se saltan por `assumeTrue`; los tickets residuales de 0,00 EUR siguen en el
+  emulador (no tocados); revision visual humana del picker.
+- Status: `rango-personalizado` = **passing** (listo para validator).
+
+## Session 050 - rango-personalizado validacion (2026-10-19)
+
+- Validator independiente: **accept** (`assembleDebug` re-ejecutado; revision estatica de reglas, zona
+  horaria del picker, periodo anterior, rango invertido, cabida a 360 dp y capturas; E2E apoyado en la
+  evidencia de emulator-5556: `RangoPersonalizadoFlujoTest` 2 OK sin `assumeTrue`, suite `:app` 37 OK).
+- Notas menores no bloqueantes: matcher de celdas del E2E dependiente del idioma (en-US), E2E sin probar en
+  dia 1 del mes, imports cosmeticos en `GastosScreen.kt`, capturas 03-05 con 0,00 EUR por tickets residuales.
+- Status: `rango-personalizado` = **accepted**.

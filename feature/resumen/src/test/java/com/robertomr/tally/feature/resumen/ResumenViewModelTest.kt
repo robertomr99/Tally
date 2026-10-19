@@ -5,6 +5,7 @@ import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.Motor
+import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.usecases.AgruparTicketsPorDia
@@ -260,5 +261,85 @@ class ResumenViewModelTest {
         var s = awaitItem()
         while (s.cargando || s.tipo != tipo) s = awaitItem()
         return s
+    }
+
+    // --- Rango personalizado (spec rango-personalizado, T7) ---
+
+    @Test
+    fun elRangoAlimentaResumenDistribucionYRecientesALaVezConLimitesInclusivos() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 12))
+            val s = esperar(PeriodoTipo.PERSONALIZADO)
+            assertEquals(Periodo.personalizado(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 12)), s.periodo)
+            assertEquals(s.periodo, s.rango)
+            assertEquals(2, s.resumen?.numTickets) // 1 y 12 oct: extremos incluidos; hoy (15) fuera
+            assertEquals(60.0, s.resumen?.total ?: -1.0, 0.001)
+            assertEquals(6000L, s.distribucion?.totalCentimos)
+            assertEquals(2, s.totalTickets)
+            assertEquals(2, s.recientes?.size)
+            // Anterior = 12 días previos (19-30 sep): vacío, sin variación.
+            assertEquals(null, s.resumen?.variacion)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun rangoDeUnSoloDiaEsValido() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(hoy, hoy)
+            val s = esperar(PeriodoTipo.PERSONALIZADO)
+            assertEquals(1, s.resumen?.numTickets)
+            assertEquals(10.0, s.resumen?.total ?: -1.0, 0.001)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun rangoInvertidoSeIgnoraSinCambiarElEstadoNiFallar() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            val antes = esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 1))
+            expectNoEvents()
+            assertEquals(antes, vm.uiState.value)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun pedirPersonalizadoSinRangoPrevioSeIgnora() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarPeriodo(PeriodoTipo.PERSONALIZADO)
+            expectNoEvents()
+            assertEquals(PeriodoTipo.MES, vm.uiState.value.tipo)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun personalizadoDiaPersonalizadoConservaYReaplicaElRango() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 12))
+            esperar(PeriodoTipo.PERSONALIZADO)
+            vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
+            val dia = esperar(PeriodoTipo.DIA)
+            assertEquals(LocalDate.of(2026, 10, 1), dia.rango?.desde) // el picker se precarga con el último rango
+            vm.onSeleccionarPeriodo(PeriodoTipo.PERSONALIZADO)
+            val s = esperar(PeriodoTipo.PERSONALIZADO)
+            assertEquals(60.0, s.resumen?.total ?: -1.0, 0.001)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 }

@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.feature.common.PeriodoSelector
+import java.time.LocalDate
 
 /**
  * Pestaña Resumen: selector de período, tarjeta de total, distribución por categoría
@@ -42,6 +43,7 @@ fun ResumenScreen(
     ResumenContenido(
         ui = ui,
         onSeleccionarPeriodo = viewModel::onSeleccionarPeriodo,
+        onSeleccionarRango = viewModel::onSeleccionarRango,
         onAbrirAjustes = onAbrirAjustes,
         onTicketClick = onTicketClick,
         onVerTodos = onVerTodos,
@@ -52,6 +54,7 @@ fun ResumenScreen(
 private fun ResumenContenido(
     ui: ResumenUiState,
     onSeleccionarPeriodo: (PeriodoTipo) -> Unit,
+    onSeleccionarRango: (LocalDate, LocalDate) -> Unit,
     onAbrirAjustes: () -> Unit,
     onTicketClick: (Long) -> Unit,
     onVerTodos: () -> Unit,
@@ -90,7 +93,10 @@ private fun ResumenContenido(
 
         PeriodoSelector(
             seleccionado = ui.tipo,
-            onSeleccionar = onSeleccionarPeriodo,
+            rango = ui.rango,
+            hoy = ui.hoy,
+            onSeleccionarTipo = onSeleccionarPeriodo,
+            onSeleccionarRango = onSeleccionarRango,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         )
 
@@ -98,7 +104,7 @@ private fun ResumenContenido(
             modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen)
+            TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen, hoy = ui.hoy)
             TarjetaDistribucion(distribucion = ui.distribucion)
             SeccionRecientes(
                 recientes = ui.recientes,

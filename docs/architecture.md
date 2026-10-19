@@ -248,13 +248,21 @@ app ──────────► feature:* ──────────�
 
 ## Seguimiento: período del panel
 
-- Dominio (`:domain:expenses`, Kotlin puro): `PeriodoTipo` (DIA, SEMANA, MES) y
+- Dominio (`:domain:expenses`, Kotlin puro): `PeriodoTipo` (DIA, SEMANA, MES, PERSONALIZADO) y
   `Periodo(tipo, desde, hasta)` con rangos **inclusivos** por fecha de **emisión**;
   la semana es siempre lunes-domingo (no depende del `Locale`).
   `ObtenerPeriodo(Clock)` calcula "hoy" con el `Clock` inyectado (correcto en los
   cambios de hora de Europe/Madrid) y `ObservarTicketsDelPeriodo` delega en
   `TicketRepository.observeByDateRange`. Es el punto de entrada que reutilizarán
   `resumen-total`, `grafica-donut`, `listado-gastos` y `rango-personalizado`.
+- Rango personalizado (`rango-personalizado`): `Periodo.personalizado(desde, hasta)` (`desde <= hasta` o
+  `IllegalArgumentException`); `Periodo.de(PERSONALIZADO, _)` lanza; el período anterior son los N días
+  inmediatamente previos. `ObtenerPeriodo(tipo, personalizado)` devuelve el rango dado. Los ViewModels de Resumen y
+  Gastos guardan una `Seleccion(tipo, rango)` privada (selección independiente por pantalla, solo en memoria);
+  `onSeleccionarRango` ignora un rango invertido. `PeriodoSelector` (`:feature:common`) tiene 4 segmentos y abre
+  `RangoFechasDialog` (`DatePickerDialog` + `DateRangePicker`, sin días futuros); el picker devuelve millis a
+  medianoche UTC y se convierte con `ZoneOffset.UTC` (`FechasPicker.kt`). La etiqueta añade el año si el rango cruza
+  año o no es el actual.
 - `Clock` se provee en el `di.kt` de `:app` (`Clock.systemDefaultZone()`); los tests
   pasan `Clock.fixed(...)`.
 - `ResumenViewModel` (`:feature:resumen`): `MutableStateFlow<PeriodoTipo>` (Mes por

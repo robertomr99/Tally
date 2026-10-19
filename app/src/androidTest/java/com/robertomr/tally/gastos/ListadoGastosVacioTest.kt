@@ -32,6 +32,7 @@ class ListadoGastosVacioTest {
                 GastosContenido(
                     ui = GastosUiState(cargando = false, tipo = PeriodoTipo.DIA, grupos = emptyList()),
                     onSeleccionarPeriodo = {},
+                    onSeleccionarRango = { _, _ -> },
                     onTicketClick = {},
                     onEscanear = { escanear++ },
                 )
@@ -51,6 +52,7 @@ class ListadoGastosVacioTest {
                 GastosContenido(
                     ui = GastosUiState(),
                     onSeleccionarPeriodo = {},
+                    onSeleccionarRango = { _, _ -> },
                     onTicketClick = {},
                     onEscanear = {},
                 )

@@ -125,7 +125,7 @@ class PeriodoTest {
 
     @Test
     fun anteriorConservaTipoYEncadenaSinHuecos() {
-        PeriodoTipo.entries.forEach { tipo ->
+        PeriodoTipo.entries.filter { it != PeriodoTipo.PERSONALIZADO }.forEach { tipo ->
             val p = Periodo.de(tipo, LocalDate.of(2026, 3, 18))
             val a = p.anterior()
             assertEquals(tipo, a.tipo)
@@ -138,6 +138,66 @@ class PeriodoTest {
     fun rechazaDesdePosteriorAHasta() {
         assertThrows(IllegalArgumentException::class.java) {
             Periodo(PeriodoTipo.DIA, LocalDate.of(2026, 1, 2), LocalDate.of(2026, 1, 1))
+        }
+    }
+
+    // --- Rango personalizado (spec rango-personalizado) ---
+
+    private fun personalizadoAnterior(desde: LocalDate, hasta: LocalDate) = Periodo.personalizado(desde, hasta).anterior()
+
+    @Test
+    fun anteriorPersonalizadoDeUnDiaEsAyer() {
+        val a = personalizadoAnterior(LocalDate.of(2026, 10, 18), LocalDate.of(2026, 10, 18))
+        assertEquals(LocalDate.of(2026, 10, 17), a.desde)
+        assertEquals(LocalDate.of(2026, 10, 17), a.hasta)
+        assertEquals(PeriodoTipo.PERSONALIZADO, a.tipo)
+    }
+
+    @Test
+    fun anteriorPersonalizadoSonLosNDiasInmediatosPrevios() {
+        val a = personalizadoAnterior(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 18))
+        assertEquals(LocalDate.of(2026, 10, 5), a.desde)
+        assertEquals(LocalDate.of(2026, 10, 11), a.hasta)
+    }
+
+    @Test
+    fun anteriorPersonalizadoCruzaMesYAnio() {
+        val mes = personalizadoAnterior(LocalDate.of(2026, 3, 3), LocalDate.of(2026, 3, 9)) // 7 días
+        assertEquals(LocalDate.of(2026, 2, 24), mes.desde)
+        assertEquals(LocalDate.of(2026, 3, 2), mes.hasta)
+        val anio = personalizadoAnterior(LocalDate.of(2026, 1, 2), LocalDate.of(2026, 1, 5)) // 4 días
+        assertEquals(LocalDate.of(2025, 12, 29), anio.desde)
+        assertEquals(LocalDate.of(2026, 1, 1), anio.hasta)
+    }
+
+    @Test
+    fun anteriorPersonalizadoCruzaElDia29DeFebreroBisiesto() {
+        val a = personalizadoAnterior(LocalDate.of(2028, 3, 2), LocalDate.of(2028, 3, 4)) // 3 días
+        assertEquals(LocalDate.of(2028, 2, 28), a.desde)
+        assertEquals(LocalDate.of(2028, 3, 1), a.hasta)
+        val b = personalizadoAnterior(LocalDate.of(2028, 3, 1), LocalDate.of(2028, 3, 1))
+        assertEquals(LocalDate.of(2028, 2, 29), b.desde)
+    }
+
+    @Test
+    fun personalizadoDeUnDiaEsValidoYEncadenaSinHuecos() {
+        val p = Periodo.personalizado(LocalDate.of(2026, 10, 18), LocalDate.of(2026, 10, 18))
+        assertEquals(p.desde, p.hasta)
+        assertEquals(p.desde.minusDays(1), p.anterior().hasta)
+        assertEquals(p.anterior().desde.minusDays(1), p.anterior().anterior().hasta)
+    }
+
+    @Test
+    fun personalizadoInvertidoLanza() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Periodo.personalizado(LocalDate.of(2026, 10, 20), LocalDate.of(2026, 10, 12))
+        }
+    }
+
+    @Test
+    fun deConPersonalizadoLanza() {
+        assertThrows(IllegalArgumentException::class.java) {
+            Periodo.de(PeriodoTipo.PERSONALIZADO, LocalDate.of(2026, 10, 18))
         }
     }
 }

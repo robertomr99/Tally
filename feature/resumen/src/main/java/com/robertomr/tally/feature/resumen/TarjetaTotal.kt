@@ -42,6 +42,7 @@ import com.robertomr.tally.feature.common.formatoImporte
 internal fun TarjetaTotal(
     periodo: Periodo?,
     resumen: ResumenPeriodo?,
+    hoy: java.time.LocalDate? = null,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -69,7 +70,7 @@ internal fun TarjetaTotal(
                         color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
                         Text(
-                            text = etiquetaPeriodo(periodo),
+                            text = etiquetaPeriodo(periodo, hoy),
                             modifier = Modifier
                                 .padding(horizontal = 12.dp, vertical = 4.dp)
                                 .testTag("periodo_rango"),

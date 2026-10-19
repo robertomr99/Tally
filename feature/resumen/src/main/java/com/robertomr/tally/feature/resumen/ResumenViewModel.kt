@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 
 /** Filas de la vista previa de tickets en Resumen (spec listado-gastos, D6). */
 const val MAX_RECIENTES = 5
@@ -41,6 +42,8 @@ data class ResumenUiState(
     val recientes: List<Ticket>? = null,
     val totalTickets: Int = 0,
     val hoy: LocalDate = LocalDate.now(),
+    /** Último rango personalizado elegido (precarga el picker); `null` si nunca hubo. */
+    val rango: Periodo? = null,
 )
 
 /**
@@ -60,11 +63,11 @@ class ResumenViewModel @Inject constructor(
     private val observarListadoDelPeriodo: ObservarListadoDelPeriodo,
 ) : ViewModel() {
 
-    private val tipoSeleccionado = MutableStateFlow(PeriodoTipo.MES)
+    private val seleccion = MutableStateFlow(Seleccion())
 
-    val uiState: StateFlow<ResumenUiState> = tipoSeleccionado
-        .flatMapLatest { tipo ->
-            val periodo = obtenerPeriodo(tipo)
+    val uiState: StateFlow<ResumenUiState> = seleccion
+        .flatMapLatest { (tipo, rango) ->
+            val periodo = obtenerPeriodo(tipo, rango)
             val hoy = obtenerPeriodo(PeriodoTipo.DIA).desde
             combine(
                 observarResumenDelPeriodo(periodo),
@@ -82,12 +85,28 @@ class ResumenViewModel @Inject constructor(
                     recientes = tickets.take(MAX_RECIENTES),
                     totalTickets = tickets.size,
                     hoy = hoy,
+                    rango = rango,
                 )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ResumenUiState())
 
+    /**
+     * Día/Semana/Mes, o PERSONALIZADO reaplicando el último rango (sin rango
+     * previo se ignora: el selector abre antes el picker).
+     */
     fun onSeleccionarPeriodo(tipo: PeriodoTipo) {
-        tipoSeleccionado.value = tipo
+        seleccion.update { actual ->
+            if (tipo == PeriodoTipo.PERSONALIZADO && actual.rango == null) actual else actual.copy(tipo = tipo)
+        }
+    }
+
+    /** Rango inclusivo elegido en el picker; un rango invertido (desde > hasta) se ignora. */
+    fun onSeleccionarRango(desde: LocalDate, hasta: LocalDate) {
+        if (desde.isAfter(hasta)) return
+        seleccion.value = Seleccion(PeriodoTipo.PERSONALIZADO, Periodo.personalizado(desde, hasta))
     }
 }
+
+/** Entrada del estado: tipo activo y último rango personalizado elegido (se conserva al cambiar a Día/Semana/Mes). */
+private data class Seleccion(val tipo: PeriodoTipo = PeriodoTipo.MES, val rango: Periodo? = null)

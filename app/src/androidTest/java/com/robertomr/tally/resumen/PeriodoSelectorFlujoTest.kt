@@ -67,7 +67,7 @@ class PeriodoSelectorFlujoTest {
     @Test
     fun alternarDiaSemanaMesCambiaRangoRecuentoYSuma() {
         // Lineas base ANTES de sembrar (puede haber tickets de otros E2E).
-        val base = PeriodoTipo.entries.associateWith { tipo ->
+        val base = PeriodoTipo.entries.filter { it != PeriodoTipo.PERSONALIZADO }.associateWith { tipo ->
             val p = Periodo.de(tipo, hoy)
             runBlocking { repositorio.observeByDateRange(p.desde, p.hasta).first() }
         }

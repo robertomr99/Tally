@@ -461,12 +461,17 @@
     "title": "Rango de fechas personalizado",
     "user_visible_behavior": "La opción Personalizado del selector abre el selector de rango (mockup 09) y total, gráfica y listado se filtran por el rango marcado.",
     "depends_on": ["periodo-selector"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Rango marcado a mano se refleja en total, gráfica y listado",
       "Validación de rango invertido (inicio > fin)"
     ],
-    "evidence": [],
+    "evidence": [
+      "Sesión 049: assembleDebug + testDebugUnitTest verdes; dominio, common, resumen (16) y gastos (7) en verde",
+      "E2E emulator-5556: RangoPersonalizadoFlujoTest OK (2 tests), suite completa OK (37 tests); selector cabe a 360 dp",
+      "docs/evidence/rango-personalizado/README.md (capturas 02-05)",
+      "2026-10-19 sesion 050: validator independiente -> accept (assembleDebug re-ejecutado; revision estatica de reglas, zona horaria del picker, periodo anterior, rango invertido, cabida a 360 dp y capturas; E2E apoyado en evidencia de emulator-5556, RangoPersonalizadoFlujoTest 2 OK sin assumeTrue y suite :app 37 OK). Notas menores no bloqueantes: matcher de celdas dependiente del idioma en-US, E2E no probado en dia 1 del mes, imports cosmeticos en GastosScreen. Capturas 03-05 con 0,00 EUR por tickets residuales del emulador."
+    ],
     "notes": "Requisito explícito del usuario; Material 3 date range picker."
   },
   {

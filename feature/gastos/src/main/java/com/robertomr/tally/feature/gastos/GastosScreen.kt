@@ -32,6 +32,7 @@ import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.feature.common.CabeceraDia
 import com.robertomr.tally.feature.common.FilaTicket
 import com.robertomr.tally.feature.common.PeriodoSelector
+import java.time.LocalDate
 import com.robertomr.tally.feature.common.etiquetaPeriodo
 import com.robertomr.tally.feature.common.formaFilaTicket
 
@@ -52,6 +53,7 @@ fun GastosScreen(
     GastosContenido(
         ui = ui,
         onSeleccionarPeriodo = viewModel::onSeleccionarPeriodo,
+        onSeleccionarRango = viewModel::onSeleccionarRango,
         onTicketClick = onTicketClick,
         onEscanear = onEscanear,
     )
@@ -65,6 +67,7 @@ fun GastosScreen(
 fun GastosContenido(
     ui: GastosUiState,
     onSeleccionarPeriodo: (PeriodoTipo) -> Unit,
+    onSeleccionarRango: (LocalDate, LocalDate) -> Unit,
     onTicketClick: (Long) -> Unit,
     onEscanear: () -> Unit,
 ) {
@@ -89,12 +92,15 @@ fun GastosContenido(
                 )
                 PeriodoSelector(
                     seleccionado = ui.tipo,
-                    onSeleccionar = onSeleccionarPeriodo,
+                    rango = ui.rango,
+                    hoy = ui.hoy,
+                    onSeleccionarTipo = onSeleccionarPeriodo,
+                    onSeleccionarRango = onSeleccionarRango,
                     modifier = Modifier.padding(vertical = 12.dp),
                 )
                 ui.periodo?.let {
                     Text(
-                        text = etiquetaPeriodo(it),
+                        text = etiquetaPeriodo(it, ui.hoy),
                         modifier = Modifier.testTag("gastos_rango"),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

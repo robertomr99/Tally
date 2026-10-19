@@ -148,7 +148,9 @@ contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
 - **TopAppBar** plana sobre `surface`, título "Tally" o título de pantalla,
   acciones a la derecha. Sin bordes duros.
 - **Selector de período** (pantalla 02): segmented control en píldora con
-  Día / Semana / Mes / Personalizado; activo en `secondary-container`.
+  Día / Semana / Mes / Personalizado; activo en `secondary-container`. Personalizado abre un
+  `DatePickerDialog` con `DateRangePicker` M3 (mockup 09 reducido: sin chips de atajos, tarjetas ni "Restablecer";
+  forma del diálogo 28 dp, no la píldora del tema; sin días futuros). Cabe a 360 dp con los 4 segmentos.
 - **Tarjeta de total**: etiqueta uppercase, cifra display con `tnum`, badge
   comparativo "vs período anterior", micro-métricas (promedio diario, nº tickets).
 - **Donut de categorías** + leyenda + desglose con barras tonales (pantalla 02).

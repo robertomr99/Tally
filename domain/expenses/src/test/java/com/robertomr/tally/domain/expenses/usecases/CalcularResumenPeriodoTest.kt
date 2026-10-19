@@ -111,4 +111,45 @@ class CalcularResumenPeriodoTest {
         assertEquals(42.0, calcular(dia, LocalDate.of(2026, 10, 18), tickets(42.0), emptyList()).promedioDiario, eps)
         assertEquals(42.0, calcular(dia, LocalDate.of(2026, 10, 25), tickets(42.0), emptyList()).promedioDiario, eps)
     }
+
+    // --- Rango personalizado (spec rango-personalizado, escenario 5) ---
+
+    private fun rango(desde: LocalDate, hasta: LocalDate) = Periodo.personalizado(desde, hasta)
+
+    @Test
+    fun personalizadoPasadoDivideEntreSusDiasTotales() {
+        val p = rango(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 20)) // 9 días
+        assertEquals(10.0, calcular(p, LocalDate.of(2026, 10, 30), tickets(90.0), emptyList()).promedioDiario, eps)
+    }
+
+    @Test
+    fun personalizadoEnCursoDivideEntreDiasHastaHoy() {
+        val p = rango(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 20))
+        assertEquals(20.0, calcular(p, LocalDate.of(2026, 10, 14), tickets(60.0), emptyList()).promedioDiario, eps)
+    }
+
+    @Test
+    fun personalizadoTotalmenteFuturoEsUnDiaSinDividirEntreCero() {
+        val p = rango(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 5))
+        val r = calcular(p, LocalDate.of(2026, 10, 18), tickets(50.0), emptyList())
+        assertEquals(50.0, r.promedioDiario, eps)
+        assertEquals(false, r.promedioDiario.isNaN() || r.promedioDiario.isInfinite())
+    }
+
+    @Test
+    fun personalizadoDeUnDiaHoyEsElTotal() {
+        val p = rango(LocalDate.of(2026, 10, 18), LocalDate.of(2026, 10, 18))
+        assertEquals(42.0, calcular(p, LocalDate.of(2026, 10, 18), tickets(42.0), emptyList()).promedioDiario, eps)
+    }
+
+    @Test
+    fun personalizadoCompararContraAnteriorDeNDiasYVariacionNulaSiVacio() {
+        val p = rango(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 20))
+        val anterior = p.anterior()
+        assertEquals(LocalDate.of(2026, 10, 3), anterior.desde)
+        assertEquals(LocalDate.of(2026, 10, 11), anterior.hasta)
+        val r = calcular(p, LocalDate.of(2026, 10, 30), tickets(30.0), tickets(20.0))
+        assertEquals(0.5, r.variacion!!, eps)
+        assertNull(calcular(p, LocalDate.of(2026, 10, 30), tickets(30.0), emptyList()).variacion)
+    }
 }

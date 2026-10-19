@@ -124,4 +124,61 @@ class GastosViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    // --- Rango personalizado (spec rango-personalizado, T7) ---
+
+    private suspend fun sembrar() {
+        repository.save(ticket(hoy.atTime(9, 0), 10.0))
+        repository.save(ticket(hoy.minusDays(3).atTime(9, 0), 20.0)) // 12 oct
+        repository.save(ticket(hoy.minusDays(14).atTime(23, 59), 40.0)) // 1 oct
+        repository.save(ticket(hoy.minusDays(40).atTime(9, 0), 80.0)) // septiembre
+    }
+
+    @Test
+    fun elRangoFiltraElListadoConLimitesInclusivos() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 12))
+            val s = esperar(PeriodoTipo.PERSONALIZADO)
+            assertEquals(listOf(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 1)), s.grupos?.map { it.fecha })
+            assertEquals(s.periodo, s.rango)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun rangoDeUnDiaEsValidoEInvertidoSeIgnora() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarRango(hoy, hoy)
+            val s = esperar(PeriodoTipo.PERSONALIZADO)
+            assertEquals(1, s.grupos?.size)
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 1))
+            expectNoEvents()
+            assertEquals(s, vm.uiState.value)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun personalizadoSinRangoSeIgnoraYConPrevioSeReaplica() = runTest {
+        sembrar()
+        val vm = viewModel()
+        vm.uiState.test {
+            esperar(PeriodoTipo.MES)
+            vm.onSeleccionarPeriodo(PeriodoTipo.PERSONALIZADO)
+            expectNoEvents()
+            vm.onSeleccionarRango(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 12))
+            esperar(PeriodoTipo.PERSONALIZADO)
+            vm.onSeleccionarPeriodo(PeriodoTipo.DIA)
+            assertEquals(LocalDate.of(2026, 10, 1), esperar(PeriodoTipo.DIA).rango?.desde)
+            vm.onSeleccionarPeriodo(PeriodoTipo.PERSONALIZADO)
+            assertEquals(2, esperar(PeriodoTipo.PERSONALIZADO).grupos?.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.robertomr.tally.domain.expenses.usecases
 
+import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import java.time.Clock
 import java.time.LocalDate
@@ -7,6 +8,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 /**
@@ -73,5 +75,26 @@ class ObtenerPeriodoTest {
         assertEquals(LocalDate.of(2025, 12, 29), semana.desde)
         assertEquals(LocalDate.of(2026, 1, 4), semana.hasta)
         assertEquals(LocalDate.of(2025, 12, 1), obtener(PeriodoTipo.MES).desde)
+    }
+
+    @Test
+    fun personalizadoDevuelveElRangoDado() {
+        val rango = Periodo.personalizado(LocalDate.of(2026, 10, 12), LocalDate.of(2026, 10, 20))
+        assertEquals(rango, casoDe("2026-10-25T10:00")(PeriodoTipo.PERSONALIZADO, rango))
+    }
+
+    @Test
+    fun personalizadoSinRangoOConRangoDeOtroTipoLanza() {
+        val obtener = casoDe("2026-10-25T10:00")
+        assertThrows(IllegalArgumentException::class.java) { obtener(PeriodoTipo.PERSONALIZADO) }
+        assertThrows(IllegalArgumentException::class.java) {
+            obtener(PeriodoTipo.PERSONALIZADO, Periodo.de(PeriodoTipo.MES, LocalDate.of(2026, 10, 1)))
+        }
+    }
+
+    @Test
+    fun losDemasTiposIgnoranElRangoPersonalizado() {
+        val rango = Periodo.personalizado(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 3))
+        assertEquals(LocalDate.of(2026, 10, 25), casoDe("2026-10-25T10:00")(PeriodoTipo.DIA, rango).desde)
     }
 }

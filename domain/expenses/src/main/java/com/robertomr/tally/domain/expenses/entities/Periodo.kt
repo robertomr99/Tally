@@ -3,6 +3,7 @@ package com.robertomr.tally.domain.expenses.entities
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 
 /**
@@ -22,16 +23,24 @@ data class Periodo(
     /**
      * Período inmediatamente anterior del mismo [tipo], siempre COMPLETO aunque
      * el actual esté en curso: día = ayer, semana = lunes-domingo previo y mes =
-     * mes natural previo (nunca `minusDays(longitud)`, los meses difieren).
+     * mes natural previo (nunca `minusDays(longitud)`, los meses difieren). El
+     * personalizado de N días tiene como anterior los N días inmediatamente previos.
      */
     fun anterior(): Periodo = when (tipo) {
         PeriodoTipo.DIA -> desde.minusDays(1).let { Periodo(tipo, it, it) }
         PeriodoTipo.SEMANA -> Periodo(tipo, desde.minusDays(7), hasta.minusDays(7))
         PeriodoTipo.MES -> YearMonth.from(desde).minusMonths(1).let { Periodo(tipo, it.atDay(1), it.atEndOfMonth()) }
+        PeriodoTipo.PERSONALIZADO -> (ChronoUnit.DAYS.between(desde, hasta) + 1).let { dias ->
+            Periodo(tipo, desde.minusDays(dias), desde.minusDays(1))
+        }
     }
 
     companion object {
-        /** Período de [tipo] que contiene la fecha [referencia]. */
+        /** Rango elegido a mano; ambos extremos inclusivos y `desde <= hasta`. */
+        fun personalizado(desde: LocalDate, hasta: LocalDate): Periodo =
+            Periodo(PeriodoTipo.PERSONALIZADO, desde, hasta)
+
+        /** Período de [tipo] que contiene la fecha [referencia] (no admite PERSONALIZADO). */
         fun de(tipo: PeriodoTipo, referencia: LocalDate): Periodo = when (tipo) {
             PeriodoTipo.DIA -> Periodo(tipo, referencia, referencia)
             PeriodoTipo.SEMANA -> {
@@ -42,6 +51,8 @@ data class Periodo(
                 val mes = YearMonth.from(referencia)
                 Periodo(tipo, mes.atDay(1), mes.atEndOfMonth())
             }
+            PeriodoTipo.PERSONALIZADO ->
+                throw IllegalArgumentException("un período personalizado necesita desde y hasta")
         }
     }
 }
