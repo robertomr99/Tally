@@ -158,6 +158,7 @@ class DetalleTicketFlujoTest {
         irAGastosDia()
         abrirDesdeGastos(t.id)
         composeRule.onNodeWithTag("pantalla_detalle_ticket").assertIsDisplayed()
+        composeRule.onNodeWithTag("papel_ticket").assertIsDisplayed()
         assertEquals(t.comercio, texto("revision_comercio"))
         assertEquals(hoy.format(formatoFecha), texto("revision_fecha"))
         assertEquals("10,00", texto("revision_total"))

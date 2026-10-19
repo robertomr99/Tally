@@ -316,6 +316,15 @@ app ──────────► feature:* ──────────�
   `Cargando | NoExiste | Datos` por cadena de operadores; guardar/borrar con guarda anti doble toque y `hecho`
   que dispara `onBack` una vez. Sin migración Room ni dependencias nuevas.
 
+### Papel de ticket (`papel-ticket`)
+
+- `:feature:common` aloja `PapelTicket.kt`: `PapelTicket` (hoja con borde serrado `TicketSerradoShape`,
+  sombra 2 dp y hairline, ancho máx. 480 dp), `SeparadorPunteado`, `FilaRecibo`, `reciboTexto` (monoespaciada del
+  sistema, solo dentro del papel) e `importeDeLinea` (cantidad por precio). Lo envuelven `FormularioTicketEditable`
+  (revisión y detalle: cabecera, desglose y total al final en un solo papel) y el resultado de solo lectura de
+  `ProcesadoContent.kt`. Sin módulos, dependencias, ficheros de fuente, dominio ni ViewModels tocados. El papel es
+  siempre claro (la app no tiene tema oscuro); excepciones documentadas en `DESIGN.md`.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

@@ -111,6 +111,15 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
   chip de período activo): `secondary-container` + `on-secondary-container`.
 - Elevación TONAL, no sombras: superficies de la escala
   `surface-container-*`; sombras solo en FAB y docks inferiores.
+  **Excepción (spec `papel-ticket`)**: el `PapelTicket` lleva una sombra de
+  2 dp más hairline `outline-variant` al 40 %, porque blanco sobre `surface`
+  (#F5FBF6) apenas se distingue y el borde serrado necesita separarse. No se
+  extiende a ningún otro componente.
+- **Papel siempre claro**: la app no tiene tema oscuro (solo `lightColorScheme`).
+  El papel usa `surface-container-lowest` (blanco) con `on-surface` /
+  `on-surface-variant` (> 9:1) y se declara claro por decisión de producto. Si
+  se añade `darkColorScheme`, el papel deberá fijar colores propios (papel/tinta)
+  y los componentes M3 internos recibir un esquema claro local.
 - Categorías: paleta semántica apagada del design system
   (`stitch-design-system.md`, sección "Semantic Financial Categories").
   DECIDIDO en `grafica-donut`: un color fijo por categoría (no por posición): ALIMENTACION ámbar `#B86A22` (oscurecido desde `#C87D32` para llegar a 3:1), TRANSPORTE azul acero `#4A6B82`, OCIO ciruela `#7A587A`, HOGAR musgo `#5D6E3F`, SALUD verde azulado `#2E776E`, OTROS pizarra `#5F6561`. Contraste WCAG medido (`CategoriaUiContrasteTest`) sobre `surface-container-low` 3,71-5,42:1 y sobre la pista `surface-container-highest` 3,18-4,64:1; icono blanco 4,10-5,99:1. El color nunca es el único canal (nombre, %, icono, hueco de 2° entre arcos). Revisión visual y de daltonismo pendiente de humano.
@@ -119,6 +128,11 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
 
 - **Inter** en todos los roles, empaquetada en la app (no descargable en
   runtime: la app funciona sin red).
+- **Excepción (spec `papel-ticket`)**: dentro del `PapelTicket` (comercio, fecha,
+  líneas, importes y total, también el texto escrito en los campos editables) se
+  usa `FontFamily.Monospace` del sistema con `tnum` (`reciboTexto(base)`). Sin
+  ficheros de fuente ni dependencias. Etiquetas flotantes, chips, botones,
+  contadores y todo lo que está fuera del papel siguen en Inter.
 - Importes SIEMPRE con cifras tabulares (`tnum`); en Compose:
   `TextStyle(fontFeatureSettings = "tnum")`.
 - Símbolo de euro alineado a la altura de los dígitos (title-lg junto al
@@ -237,6 +251,12 @@ design system NO es MVP.
   esos datos.
 - NO implementar desglose de base imponible/IVA: las líneas llevan precio
   final y el total es un campo propio.
+- `PapelTicket` (`:feature:common`, spec `papel-ticket`): hoja blanca con bordes
+  superior e inferior serrados dibujados con un `Shape`/`Path` (`TicketSerradoShape`,
+  dientes de 12x6 dp ajustados al ancho), ancho máximo 480 dp centrado,
+  `SeparadorPunteado` y `FilaRecibo` (`n× CONCEPTO ..... importe`; con fontScale
+  > 1,4 el importe baja a su línea). Lo usan el resultado del procesado, la
+  revisión y el detalle; Resumen, Gastos y Ajustes no. Tag `papel_ticket`.
 - NO usar fuentes ni recursos por red (offline-first): Inter incluida en el APK.
 - NO inventar animaciones más allá de las del mockup 06 (scan beam, radar,
   progreso circular).

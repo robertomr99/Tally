@@ -507,5 +507,25 @@
     ],
     "evidence": [],
     "notes": "Preparación de la demo según plan de validación (docs/build-brief.md)."
+  },
+  {
+    "id": "papel-ticket",
+    "area": "revision",
+    "title": "Estética de recibo en el ticket digitalizado",
+    "user_visible_behavior": "El resultado tras escanear, la revisión editable y el detalle del ticket guardado se muestran como un recibo de papel (papel blanco, borde serrado, tipografía de recibo y línea punteada antes del total) sin perder legibilidad ni edición.",
+    "depends_on": ["detalle-ticket"],
+    "status": "accepted",
+    "verification": [
+      "Componente compartido 'papel de ticket' usado en procesado (resultado), revisión y detalle sin cambiar tags ni comportamiento",
+      "Capturas en emulator-5556 de las tres pantallas, también en tema oscuro y a 360 dp",
+      "Contraste y accesibilidad (TalkBack/tamaño de fuente) sin regresión; edición y E2E existentes en verde"
+    ],
+    "evidence": [
+      "2026-10-19 sesión 053: gradlew.bat cleanTestDebugUnitTest assembleDebug testDebugUnitTest :test:unit:test BUILD SUCCESSFUL (PapelTicketTest 2/2)",
+      "2026-10-19 sesión 053: am instrument en emulator-5556 (notClass ExtraccionLocalRealTest,ExtraccionNubeRealTest) OK (43 tests) con aserciones papel_ticket en Procesado/Revision/Detalle",
+      "docs/evidence/papel-ticket/: capturas antes/después (claro, uimode night idéntico por no existir tema oscuro, 360 dp, fontScale 1,3 y 2,0) y README con lectura honesta; revisión visual humana pendiente",
+      "2026-10-19 sesion 054: validator independiente -> accept (diff y codigo revisados; ningun tag revision_*, procesado_* ni detalle_* perdido, tests no debilitados; accesibilidad, rendimiento y DESIGN.md revisados; capturas antes/despues revisadas; JVM y E2E apoyados en evidencia de emulator-5556, OK 43 tests sin desglose de assumeTrue). Deuda no bloqueante: fontScale 2,0 (dock y chip Categorizacion, previos a esta feature), revision editable aun con aspecto de formulario, semantica agrupada de FilaRecibo. Pendiente humano: revision visual."
+    ],
+    "notes": "Petición del usuario (2026-10-19): que el resumen tras escanear dé sensación de ticket real. Alcance elegido por el usuario: resultado, revisión y detalle; el panel Resumen y las listas NO cambian (DESIGN.md: la estética de recibo se reserva al ticket digitalizado; no copiar la decoración ficticia de los mockups). Sin módulos Gradle ni dependencias nuevas; componente en :feature:common."
   }
 ]

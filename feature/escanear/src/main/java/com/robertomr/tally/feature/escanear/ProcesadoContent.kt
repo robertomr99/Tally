@@ -11,6 +11,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -48,7 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
@@ -57,6 +59,11 @@ import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.feature.common.FilaRecibo
+import com.robertomr.tally.feature.common.PapelTicket
+import com.robertomr.tally.feature.common.SeparadorPunteado
+import com.robertomr.tally.feature.common.importeDeLinea
+import com.robertomr.tally.feature.common.reciboTexto
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -172,7 +179,7 @@ fun ExtraccionListaContent(
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = 16.dp),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             ResumenDeTicket(extraido = extraido)
@@ -840,122 +847,88 @@ private fun BotonCancelar(
 // ---------------------------------------------------------------------------
 
 /**
- * Resumen del [TicketExtraido] tal cual (sin editar ni completar): los campos
- * sin dato muestran "\u2014" (nunca se inventa informacion).
+ * Resumen del [TicketExtraido] tal cual (sin editar ni completar) como recibo
+ * de papel (spec papel-ticket, D6): cabecera de comercio y fecha, categoria,
+ * filas `n× CONCEPTO ..... importe` y total al final. Los campos sin dato
+ * muestran "—" (nunca se inventa informacion). El importe de cada fila es
+ * cantidad por precio unitario, un dato derivado.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ResumenDeTicket(
     extraido: TicketExtraido,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(12.dp),
-            )
-            .padding(16.dp),
-    ) {
-        FilaDeResumen(
-            etiqueta = "Comercio",
-            valor = extraido.comercio.ifBlank { "\u2014" },
-        )
-        FilaDeResumen(
-            etiqueta = "Fecha",
-            valor = extraido.fechaEmision?.let(::formatoFecha) ?: "\u2014",
-        )
-        FilaDeResumen(
-            etiqueta = "Total (con IVA)",
-            valor = extraido.total?.let(::formatoImporte) ?: "\u2014",
-            cifrasTabulares = true,
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+    PapelTicket(modifier = modifier) {
         Text(
-            text = "L\u00edneas",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = extraido.comercio.ifBlank { "—" },
+            style = reciboTexto(MaterialTheme.typography.titleLarge)
+                .copy(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = extraido.fechaEmision?.let(::formatoFecha) ?: "—",
+            style = reciboTexto(MaterialTheme.typography.bodyMedium)
+                .copy(textAlign = TextAlign.Center),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            text = "Categoría: ${etiquetaCategoria(extraido.categoria)}",
+            style = reciboTexto(MaterialTheme.typography.labelMedium)
+                .copy(textAlign = TextAlign.Center),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
+
         if (extraido.lineas.isEmpty()) {
-            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "\u2014",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "—",
+                style = reciboTexto(MaterialTheme.typography.bodyMedium),
                 color = MaterialTheme.colorScheme.onSurface,
             )
         } else {
-            Spacer(modifier = Modifier.height(4.dp))
-            extraido.lineas.forEach { linea ->
-                FilaDeLinea(linea = linea)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                extraido.lineas.forEach { linea ->
+                    FilaRecibo(
+                        cantidad = linea.cantidad,
+                        concepto = linea.concepto,
+                        importe = formatoImporte(importeDeLinea(linea.cantidad, linea.precioUnitario)),
+                        detalle = if (linea.cantidad > 1) {
+                            "${linea.cantidad} × ${formatoImporte(linea.precioUnitario)}"
+                        } else {
+                            null
+                        },
+                    )
+                }
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        FilaDeResumen(
-            etiqueta = "Categor\u00eda",
-            valor = etiquetaCategoria(extraido.categoria),
-        )
-    }
-}
 
-@Composable
-private fun FilaDeResumen(
-    etiqueta: String,
-    valor: String,
-    cifrasTabulares: Boolean = false,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = etiqueta,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.4f),
-        )
-        Text(
-            text = valor,
-            style = if (cifrasTabulares) {
-                MaterialTheme.typography.bodyMedium.cifrasTabulares()
-            } else {
-                MaterialTheme.typography.bodyMedium
-            },
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(0.6f),
-        )
-    }
-}
+        SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
 
-@Composable
-private fun FilaDeLinea(
-    linea: Linea,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = linea.concepto,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = "${linea.cantidad}\u00d7 ${formatoImporte(linea.precioUnitario)}",
-            style = MaterialTheme.typography.bodySmall.cifrasTabulares(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "Total (con IVA)",
+                style = reciboTexto(MaterialTheme.typography.labelLarge)
+                    .copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+            Text(
+                text = extraido.total?.let(::formatoImporte) ?: "—",
+                style = reciboTexto(MaterialTheme.typography.headlineSmall)
+                    .copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -1020,6 +993,3 @@ private val FORMATO_FECHA: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d/M/yyyy HH:mm")
 
 private fun formatoFecha(fecha: LocalDateTime): String = fecha.format(FORMATO_FECHA)
-
-/** Cifras tabulares (DESIGN.md: "tnum" en cualquier cifra). */
-private fun TextStyle.cifrasTabulares(): TextStyle = copy(fontFeatureSettings = "tnum")

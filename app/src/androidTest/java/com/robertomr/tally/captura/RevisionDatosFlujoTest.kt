@@ -59,6 +59,7 @@ class RevisionDatosFlujoTest {
 
         // Mockup 07: revision editable con las 6 categorias de la enum fija.
         esperarTag("revision_pantalla")
+        composeRule.onNodeWithTag("papel_ticket").assertIsDisplayed()
         composeRule.onNodeWithTag("revision_pantalla").assertIsDisplayed()
         composeRule.onNodeWithTag("revision_badge_motor").assertIsDisplayed()
         CATEGORIAS.forEach { categoria ->

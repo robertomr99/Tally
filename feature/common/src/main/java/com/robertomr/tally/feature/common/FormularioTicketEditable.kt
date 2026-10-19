@@ -1,6 +1,5 @@
 package com.robertomr.tally.feature.common
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,9 +27,7 @@ import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Functions
-import androidx.compose.material.icons.outlined.Receipt
 import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -51,14 +48,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
@@ -109,17 +107,33 @@ fun FormularioTicketEditable(
     onLineaEliminada: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ContenedorRecibo(
-            datos = datos,
-            onComercioEditado = onComercioEditado,
-            onFechaEditada = onFechaEditada,
-            onTotalEditado = onTotalEditado,
-            onCategoriaElegida = onCategoriaElegida,
-        )
+    // Un solo papel (spec papel-ticket, D5), en orden de recibo: cabecera,
+    // punteado, desglose de articulos, punteado y total al final.
+    PapelTicket(modifier = modifier.padding(bottom = 16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            CampoEditable(
+                etiqueta = "Comercio",
+                valorInicial = datos.comercio,
+                onValorCambiado = onComercioEditado,
+                testTag = "revision_comercio",
+                estilo = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                alineacion = TextAlign.Center,
+            )
+            CampoEditable(
+                etiqueta = "Fecha de emisión",
+                valorInicial = formatoFechaRevision(datos.fechaEmision),
+                onValorCambiado = onFechaEditada,
+                testTag = "revision_fecha",
+                alineacion = TextAlign.Center,
+            )
+            ChipsCategoria(
+                seleccionada = datos.categoria,
+                onElegida = onCategoriaElegida,
+            )
+        }
+
+        SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
+
         EditorLineas(
             lineas = datos.lineas,
             onLineaAnadida = onLineaAnadida,
@@ -127,109 +141,20 @@ fun FormularioTicketEditable(
             onLineaCantidadEditada = onLineaCantidadEditada,
             onLineaPrecioEditado = onLineaPrecioEditado,
             onLineaEliminada = onLineaEliminada,
-            modifier = Modifier.padding(bottom = 16.dp),
-        )
-    }
-}
-
-/**
- * Contenedor de recibo normativo: superficie `surface-container-lowest`
- * (blanco), acento `primary` arriba, cabecera de comercio con icono
- * `storefront`, chips de categoria (activo `secondary-container` + check),
- * separador discontinuo antes del total y total destacado con `tnum`.
- */
-@Composable
-private fun ContenedorRecibo(
-    datos: DatosRevision,
-    onComercioEditado: (String) -> Unit,
-    onFechaEditada: (String) -> Unit,
-    onTotalEditado: (String) -> Unit,
-    onCategoriaElegida: (Categoria) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceContainerLowest,
-                RoundedCornerShape(16.dp),
-            )
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(16.dp),
-            ),
-    ) {
-        // Acento superior del recibo (mockup 07).
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .background(
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                ),
         )
 
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Cabecera de comercio (icono storefront) + fecha de emision.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer,
-                            RoundedCornerShape(12.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Storefront,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                CampoEditable(
-                    etiqueta = "Comercio",
-                    valorInicial = datos.comercio,
-                    onValorCambiado = onComercioEditado,
-                    testTag = "revision_comercio",
-                    modifier = Modifier.weight(1f),
-                )
-            }
+        SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
 
-            CampoEditable(
-                etiqueta = "Fecha de emisión",
-                valorInicial = formatoFechaRevision(datos.fechaEmision),
-                onValorCambiado = onFechaEditada,
-                testTag = "revision_fecha",
-            )
-
-            ChipsCategoria(
-                seleccionada = datos.categoria,
-                onElegida = onCategoriaElegida,
-            )
-
-            SeparadorDiscontinuo(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-            )
-
-            CampoEditable(
-                etiqueta = "Total (con IVA)",
-                valorInicial = formatoTotalRevision(datos.total),
-                onValorCambiado = onTotalEditado,
-                testTag = "revision_total",
-                keyboardType = KeyboardType.Decimal,
-                cifrasTabulares = true,
-                estilo = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
-            )
-        }
+        // Total autoritativo al final del recibo, destacado y a la derecha.
+        CampoEditable(
+            etiqueta = "Total (con IVA)",
+            valorInicial = formatoTotalRevision(datos.total),
+            onValorCambiado = onTotalEditado,
+            testTag = "revision_total",
+            keyboardType = KeyboardType.Decimal,
+            estilo = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            alineacion = TextAlign.End,
+        )
     }
 }
 
@@ -241,8 +166,8 @@ private fun CampoEditable(
     testTag: String,
     modifier: Modifier = Modifier,
     keyboardType: KeyboardType = KeyboardType.Text,
-    cifrasTabulares: Boolean = false,
     estilo: TextStyle = MaterialTheme.typography.bodyLarge,
+    alineacion: TextAlign = TextAlign.Start,
     esValido: (String) -> Boolean = { true },
 ) {
     // El texto local es la fuente durante la edicion: el ViewModel parsea y
@@ -260,7 +185,8 @@ private fun CampoEditable(
         // valor valido, y asi el usuario ve que lo escrito no es lo que cuenta.
         isError = !esValido(texto),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        textStyle = if (cifrasTabulares) estilo.cifrasTabulares() else estilo,
+        // Tipografia de recibo solo en el texto escrito; la etiqueta sigue en Inter.
+        textStyle = reciboTexto(estilo).copy(textAlign = alineacion),
         shape = RoundedCornerShape(8.dp),
         modifier = modifier
             .fillMaxWidth()
@@ -349,7 +275,8 @@ private fun ChipsCategoria(
 /**
  * Editor de lineas (mockup 08, "Desglose de articulos"): filas keyeadas por
  * [LineaEditable.id] (R-EDI2: borrar/anadir no "migra" el texto tecleado), con
- * concepto, cantidad y precio editables y boton borrar en paleta `error`.
+ * concepto, cantidad y precio editables y boton borrar en paleta `error`. Va
+ * dentro del papel: las filas se separan con punteado, sin tarjetas anidadas.
  */
 @Composable
 private fun EditorLineas(
@@ -364,49 +291,31 @@ private fun EditorLineas(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceContainerLowest,
-                RoundedCornerShape(16.dp),
-            )
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(16.dp),
-            )
-            .padding(16.dp)
             .testTag("revision_lineas"),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.Receipt,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+        Row(
+            modifier = Modifier.padding(bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = "Desglose de artículos",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = contadorArticulos(lineas.size),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                style = reciboTexto(MaterialTheme.typography.labelSmall)
+                    .copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainer,
-                        RoundedCornerShape(4.dp),
-                    )
-                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                    .testTag("revision_lineas_contador"),
+                modifier = Modifier.testTag("revision_lineas_contador"),
             )
         }
 
-        lineas.forEach { linea ->
+        lineas.forEachIndexed { indice, linea ->
             key(linea.id) {
+                if (indice > 0) SeparadorPunteado(modifier = Modifier.padding(vertical = 10.dp))
                 FilaLinea(
                     linea = linea,
                     onConceptoEditado = { onLineaConceptoEditado(linea.id, it) },
@@ -417,6 +326,7 @@ private fun EditorLineas(
             }
         }
 
+        if (lineas.isNotEmpty()) SeparadorPunteado(modifier = Modifier.padding(vertical = 10.dp))
         BotonAnadirLinea(onClick = onLineaAnadida)
     }
 }
@@ -433,16 +343,6 @@ private fun FilaLinea(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceContainerLow,
-                RoundedCornerShape(8.dp),
-            )
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(8.dp),
-            )
-            .padding(8.dp)
             .testTag(prefijo),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -452,29 +352,33 @@ private fun FilaLinea(
             onValorCambiado = onConceptoEditado,
             testTag = "${prefijo}_concepto",
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // Con fuentes muy grandes (>1,4) cantidad y precio no caben en una fila
+        // sin que las etiquetas envuelvan: se apilan (cantidad / precio + borrar).
+        val apilar = LocalDensity.current.fontScale > 1.4f
+        val campoCantidad: @Composable (Modifier) -> Unit = { m ->
             CampoEditable(
                 etiqueta = "Cant.",
                 valorInicial = linea.cantidad.toString(),
                 onValorCambiado = onCantidadEditada,
                 testTag = "${prefijo}_cantidad",
                 keyboardType = KeyboardType.Number,
-                cifrasTabulares = true,
                 esValido = { parsearCantidad(it) != null },
-                modifier = Modifier.width(96.dp),
+                modifier = m,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+        }
+        val campoPrecio: @Composable (Modifier) -> Unit = { m ->
             CampoEditable(
                 etiqueta = "Precio (€)",
                 valorInicial = formatoPrecioLinea(linea.precioUnitario),
                 onValorCambiado = onPrecioEditado,
                 testTag = "${prefijo}_precio",
                 keyboardType = KeyboardType.Decimal,
-                cifrasTabulares = true,
                 esValido = { parsearPrecio(it) != null },
-                modifier = Modifier.weight(1f),
+                alineacion = TextAlign.End,
+                modifier = m,
             )
-            Spacer(modifier = Modifier.width(4.dp))
+        }
+        val botonBorrar: @Composable () -> Unit = {
             IconButton(
                 onClick = onEliminar,
                 modifier = Modifier
@@ -488,6 +392,22 @@ private fun FilaLinea(
                     imageVector = Icons.Outlined.Delete,
                     contentDescription = "Eliminar ${linea.concepto.ifBlank { "línea" }}",
                 )
+            }
+        }
+        if (apilar) {
+            campoCantidad(Modifier)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                campoPrecio(Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(4.dp))
+                botonBorrar()
+            }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                campoCantidad(Modifier.width(96.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                campoPrecio(Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(4.dp))
+                botonBorrar()
             }
         }
     }
@@ -644,21 +564,6 @@ private fun contadorArticulos(n: Int): String =
 /** Precio de linea editable: vacio si es 0 (fila nueva lista para escribir). */
 private fun formatoPrecioLinea(precio: Double): String =
     if (precio == 0.0) "" else formatoTotalRevision(precio)
-
-/** Separador discontinuo antes del total (mockup 07). */
-@Composable
-private fun SeparadorDiscontinuo(modifier: Modifier = Modifier) {
-    val color = MaterialTheme.colorScheme.outlineVariant
-    Canvas(modifier = modifier.height(1.dp)) {
-        drawLine(
-            color = color,
-            start = Offset(0f, size.height / 2f),
-            end = Offset(size.width, size.height / 2f),
-            strokeWidth = size.height,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f)),
-        )
-    }
-}
 
 private val FORMATO_FECHA_REVISION: DateTimeFormatter =
     DateTimeFormatter.ofPattern("d/M/yyyy")

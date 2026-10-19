@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `log-extracciones` (`detalle-ticket` `accepted`, sesión 052); luego `seed-demo`.
+- Current next ready feature: `log-extracciones` (`papel-ticket` `accepted`, sesión 054); luego `seed-demo`.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
   en la sesión 023. Desviación registrada 2026-10-16: 4 fotos reales en vez de 5.
@@ -2571,3 +2571,32 @@
   ilegible; el dialogo de borrado cita el comercio guardado, no el editado sin guardar.
 - Pendiente humano no bloqueante: revision visual de las capturas 02, 03, 05 y 06.
 - Status: `detalle-ticket` = **accepted**.
+
+## Session 053 - papel-ticket implementacion (2026-10-19)
+
+- Feature `papel-ticket`: `PapelTicket.kt` en `:feature:common` (hoja con borde serrado `TicketSerradoShape`,
+  sombra 2 dp + hairline, ancho max. 480 dp, `SeparadorPunteado`, `FilaRecibo`, `reciboTexto`, `importeDeLinea`).
+  `FormularioTicketEditable` es ahora un solo papel (cabecera, desglose y total al final; sin barra verde ni tarjetas
+  anidadas) y el resultado de `ProcesadoContent` (`ResumenDeTicket`) usa filas de recibo. Dominio, ViewModels,
+  tags `revision_*`/`procesado_*`/`detalle_*` y edicion intactos; sin modulos ni dependencias.
+- Decisiones: papel siempre claro (no hay tema oscuro), monoespaciada del sistema solo en el papel, sombra 2 dp,
+  total al final (grep: ningun test depende del orden, usan `performScrollTo`), importe por fila = cantidad x precio.
+  Con fontScale > 1,4 cantidad/precio se apilan y el importe de la fila baja a su linea. Excepciones en `DESIGN.md`.
+- Verificacion: `gradlew.bat cleanTestDebugUnitTest assembleDebug testDebugUnitTest :test:unit:test` en verde
+  (`PapelTicketTest` 2/2); E2E en `emulator-5556` con `am instrument -e notClass ExtraccionLocalRealTest,
+  ExtraccionNubeRealTest`: OK (43 tests, incluye 3 nuevas aserciones `papel_ticket`). Capturas antes/despues
+  (claro, "oscuro", 360 dp, fontScale 1,3 y 2,0) en `docs/evidence/papel-ticket/`.
+- Pendiente: revision visual humana. Hallazgos previos no tocados: dock de edicion con fontScale 2,0 y chip
+  "Categorizacion" del procesado se deforman.
+- Status: `papel-ticket` = **passing** (listo para validator).
+
+## Session 054 - papel-ticket validacion (2026-10-19)
+
+- Validator independiente: **accept** (diff y codigo revisados; ningun tag `revision_*`/`procesado_*`/`detalle_*`
+  perdido; tests no debilitados; accesibilidad, rendimiento y DESIGN.md revisados; capturas revisadas; JVM y E2E
+  apoyados en la evidencia de emulator-5556, OK 43 tests sin desglose de `assumeTrue`).
+- Orquestador: podadas las capturas duplicadas (`antes_*_b`) y las `despues_oscuro_*` (identicas al claro); deuda anotada.
+- Deuda no bloqueante: fontScale 2,0 (dock de edicion y chip "Categorizacion", previos a esta feature); la
+  revision editable aun se ve como formulario (campos con caja); semantica agrupada de `FilaRecibo`.
+- Pendiente humano: revision visual.
+- Status: `papel-ticket` = **accepted**.

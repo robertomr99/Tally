@@ -87,6 +87,7 @@ class ProcesadoFlujoTest {
         // Escenario 1/5: resultado de SOLO lectura con completitud real
         // ("n/5 campos extraidos", nunca % de confianza) y "Revisar ticket"
         // habilitado (spec revision-datos: abre la revision editable).
+        composeRule.onNodeWithTag("papel_ticket").assertIsDisplayed()
         composeRule.onNodeWithTag("procesado_completitud").assertIsDisplayed()
         composeRule.onNodeWithTag("procesado_completitud")
             .assertTextContains("/5", substring = true)
