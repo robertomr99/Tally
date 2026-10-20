@@ -66,6 +66,8 @@ dependencies {
     // Fuerza Espresso 3.7.0: el 3.5.0 transitivo de ui-test-junit4 falla al
     // inyectar eventos en API 35+ (InputManager.getInstance eliminado).
     androidTestImplementation(libs.androidx.test.espresso.core)
+    // Stub del selector de fotos del sistema en GaleriaFlujoTest (spec galeria-escaneo).
+    androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

@@ -129,6 +129,96 @@ class CapturedPhotoProcessorTest {
         assertEquals(1000, maxOf(salida.width, salida.height))
     }
 
+    // --- Spec galeria-escaneo: imagen elegida de la galeria (CropRegion.Completo) ---
+
+    @Test
+    fun completoConservaLaImagenEnteraDeUn12MpConExif6() = runBlocking {
+        // 4000x3000 (12 MP) apaisado con EXIF 6: debe salir vertical 960x1280,
+        // completo (sin recorte) y sin tag de orientacion.
+        val raw = jpegConExif(4000, 3000, ExifInterface.ORIENTATION_ROTATE_90)
+
+        val salidaBytes = processor.process(raw, CropRegion.Completo)
+        val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
+
+        println("CapturedPhotoProcessorTest: galeria 4000x3000 EXIF6 -> ${salida.width}x${salida.height}")
+
+        assertEquals(960, salida.width)
+        assertEquals(1280, salida.height)
+        val exifSalida = ExifInterface(ByteArrayInputStream(salidaBytes))
+        assertEquals(
+            ExifInterface.ORIENTATION_UNDEFINED,
+            exifSalida.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED),
+        )
+    }
+
+    @Test
+    fun completoConExif8TambienQuedaVertical() = runBlocking {
+        val raw = jpegConExif(2000, 1000, ExifInterface.ORIENTATION_ROTATE_270)
+
+        val salidaBytes = processor.process(raw, CropRegion.Completo)
+        val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
+
+        assertEquals(640, salida.width)
+        assertEquals(1280, salida.height)
+    }
+
+    @Test
+    fun completoSinExifNoRecortaNiGira() = runBlocking {
+        val salidaBytes = processor.process(jpegSintetico(2000, 1000), CropRegion.Completo)
+        val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
+
+        assertEquals(1280, salida.width)
+        assertEquals(640, salida.height)
+    }
+
+    @Test
+    fun decodificaPngYWebPDeLaGaleria() = runBlocking {
+        for (formato in listOf(Bitmap.CompressFormat.PNG, Bitmap.CompressFormat.WEBP_LOSSY)) {
+            val raw = bitmapComprimido(1600, 800, formato)
+
+            val salidaBytes = processor.process(raw, CropRegion.Completo)
+            val salida = BitmapFactory.decodeByteArray(salidaBytes, 0, salidaBytes.size)
+
+            assertEquals("formato $formato", 1280, salida.width)
+            assertEquals("formato $formato", 640, salida.height)
+        }
+    }
+
+    @Test
+    fun bytesQueNoSonUnaImagenLanzanUnErrorClaro() {
+        val basura = ByteArray(4096) { (it * 31).toByte() }
+
+        val error = runCatching { runBlocking { processor.process(basura, CropRegion.Completo) } }
+            .exceptionOrNull()
+
+        assertTrue("error=$error", error is IllegalStateException)
+        assertEquals("La imagen no es válida", error?.message)
+    }
+
+    private fun bitmapComprimido(ancho: Int, alto: Int, formato: Bitmap.CompressFormat): ByteArray {
+        val bitmap = Bitmap.createBitmap(ancho, alto, Bitmap.Config.ARGB_8888)
+        Canvas(bitmap).drawColor(Color.rgb(200, 120, 40))
+        val salida = ByteArrayOutputStream()
+        bitmap.compress(formato, 90, salida)
+        bitmap.recycle()
+        return salida.toByteArray()
+    }
+
+    /** JPEG sintetico al que se le escribe el tag EXIF de orientacion. */
+    private fun jpegConExif(ancho: Int, alto: Int, orientacion: Int): ByteArray {
+        val fichero = java.io.File.createTempFile("galeria_", ".jpg", instrumentacion.targetContext.cacheDir)
+        try {
+            fichero.writeBytes(jpegSintetico(ancho, alto))
+            ExifInterface(fichero.absolutePath).apply {
+                setAttribute(ExifInterface.TAG_ORIENTATION, orientacion.toString())
+                saveAttributes()
+            }
+            return fichero.readBytes()
+        } finally {
+            fichero.delete()
+        }
+    }
+
     private fun fotogramaCompleto(ancho: Float, alto: Float) =
         CropRegion(0f, 0f, 1f, 1f, viewAspectRatio = ancho / alto)
 

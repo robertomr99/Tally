@@ -343,6 +343,15 @@ system NO son MVP.
   IRPF", "NIF", "Tarjeta Débito **** 4812", "Operación #8294", "Cifrado de
   extremo a extremo", "Garantía de privacidad criptográfica". La app no genera
   esos datos.
+- Excepción aprobada por el usuario (2026-10-20, feature `galeria-escaneo`): el
+  botón **Galería** del mockup 04 deja de ser decoración ficticia (regla R4) y se
+  implementa porque es funcional. En el encuadre va a la izquierda del
+  obturador, con el estilo del tema de cámara (círculo de 48 dp blanco
+  translúcido al 10 % con borde de 1 dp, icono blanco, etiqueta "Galería" visible
+  en `labelSmall` blanco al 80 %), espejo de "Cerrar". En la pantalla de permiso
+  denegado es un `OutlinedButton` pill de al menos 48 dp con icono y texto
+  ("Elegir de la galería"). El resto de la decoración del mockup 04 (flash,
+  modos Auto/Manual, detector de luz, chips OCR) sigue prohibida.
 - NO implementar desglose de base imponible/IVA: las líneas llevan precio
   final y el total es un campo propio.
 - `PapelTicket` (`:feature:common`, spec `papel-ticket`): hoja blanca con bordes

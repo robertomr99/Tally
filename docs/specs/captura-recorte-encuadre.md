@@ -38,8 +38,9 @@ debe seguir viendo el ticket completo y el encuadre alrededor.
 - Cambiar el pipeline EXIF/compresión (sigue: hornear orientación → ≤1280 px lado
   largo → JPEG ~85, sin tag de orientación).
 - Detección automática de bordes/esquinas del ticket, enderezado (deskew), ajuste
-  manual de esquinas, filtros de luz, flash, linterna, galería (decoración ficticia
-  del mockup 04, prohibida por `DESIGN.md`).
+  manual de esquinas, filtros de luz, flash, linterna (decoración ficticia
+  del mockup 04, prohibida por `DESIGN.md`). La galería ya no es non-goal: ver
+  `galeria-escaneo` (foto completa vía `CropRegion.Completo`, sin recorte).
 - Cambiar el contrato `PhotoFileStore.save` (sigue devolviendo `fotos/captura_<uuid>.jpg`
   relativo bajo `filesDir`).
 - Convertir la preview en un viewfinder recortado/zoomeado: el encuadre sigue

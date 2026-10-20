@@ -33,8 +33,9 @@ Borrador (ruta relativa de la foto) vive solo en memoria hasta `revision-datos`.
 - Listados, detalle ni guardado del ticket (`listado-gastos`, `detalle-ticket`, `revision-datos`).
 - Decoración ficticia del mockup 04/05 prohibida por `DESIGN.md` (R4): chips "OCR 99,4 %",
   "3 conceptos y total identificados", badge "Foto nítida / Recorte automático", modos
-  Auto/Manual, detector de luz, botón Galería, linterna/flash, ajuste de esquinas (crop),
+  Auto/Manual, detector de luz, linterna/flash, ajuste de esquinas (crop),
   zoom/rotar. La retícula guiada (scrim + esquinas + hint) sí es normativa.
+  (El botón Galería dejó de ser non-goal: ahora es funcional, ver `galeria-escaneo`.)
 - Crear módulos Gradle nuevos (`:framework:camera` u otros): prohibido por AGENTS.md sin
   aprobación explícita del usuario.
 - Migraciones de Room ni cambios de esquema.

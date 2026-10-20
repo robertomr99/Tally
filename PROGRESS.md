@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `filtro-forma-pago` (`forma-pago` `accepted`, sesión 066); luego `gasto-manual`, `galeria-escaneo`, `mejoras-visuales-3`; `seed-demo` queda para el final.
+- Current next ready feature: `gasto-manual` (`galeria-escaneo` `accepted`, sesión 068); luego `filtro-forma-pago`, `mejoras-visuales-3`; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2823,6 +2823,42 @@
 - Status: `forma-pago` = **passing**, pendiente de validator independiente.
 - Siguiente paso: validar `forma-pago`; luego `filtro-forma-pago` y `gasto-manual` (dependen de ella).
 
+## Session 067 - galeria-escaneo implementacion (2026-10-20, master)
+
+- Feature: `galeria-escaneo` (spec `docs/specs/galeria-escaneo.md`), defaults de las decisiones abiertas: tope 32 MiB,
+  etiqueta "Galería" visible, `espresso-intents` solo androidTest (misma versión que Espresso), sin encuadre sobre la imagen
+  elegida, sin corregir EXIF espejo.
+- Riesgo 1: `runCatchingLanzandoCancelacion` SÍ captura `Throwable` (incluye OOM), pero el mensaje sería "Failed to
+  allocate"; `CapturedPhotoProcessor` convierte `OutOfMemoryError` en `IllegalStateException("La imagen es demasiado grande
+  para procesarla...")` y `LecturaImagen` mapea OOM/tope a "La imagen es demasiado grande. Elige una de menos de 32 MB.".
+  Riesgo 7: `ErrorContent` usa `EstadoPantalla` (título "No se pudo guardar la foto", mensaje, botón "Volver al encuadre"
+  que sin permiso regresa a la pantalla de permiso); sin cambios.
+- Implementado: `CropRegion.Completo` (dominio, centinela `viewAspectRatio = 0`) resuelto en `CapturedPhotoProcessor` con las
+  dimensiones ya orientadas; `LecturaImagen.kt` (lectura acotada en IO, mensajes); `EscanearScreen` (launcher
+  `PickVisualMedia`, botón en `PermisoCamaraContent`); `CameraEncuadre` (`BotonGaleria`, `onElegirGaleria`);
+  `EscanearViewModel.onImagenElegida`/`onImagenFallida`.
+- Desviación respecto a la spec: en vez de cambiar `estadoDe` para ignorar el permiso con cualquier captura (rompía el test
+  existente `withoutPermissionStateStaysPending`), `EntradaCaptura` lleva `deGaleria`; solo las entradas de galería
+  ignoran el permiso. Así el test existente queda intacto y la cámara sin permiso sigue bloqueada. Por eso se añadió
+  `onImagenFallida` (la spec reutilizaba `onCapturaFallida`).
+- Tests existentes modificados: ninguno (el texto del `check` no lo asertaba ningún test). Tags nuevos aditivos:
+  `captura_galeria`, `permiso_galeria`. Dependencia nueva: `androidx-test-espresso-intents` (solo androidTest de `:app`).
+- Verificación (PowerShell, `ANDROID_SERIAL=emulator-5556`): `gradlew.bat assembleDebug testDebugUnitTest
+  :app:installDebug :app:installDebugAndroidTest :framework:database:installDebugAndroidTest` BUILD SUCCESSFUL;
+  `EscanearViewModelTest` 49 tests OK, `LecturaImagenTest` nuevo; `am instrument` database: OK 36; `am instrument -e notClass
+  ...ExtraccionLocalRealTest,...ExtraccionNubeRealTest` de `com.robertomr.tally.test`: OK 52 (GaleriaFlujoTest 4). Primera
+  pasada cortada por `keyDispatchingTimedOut` en `RangoPersonalizadoFlujoTest` (emulador lento); esa clase pasó sola (2/2) y
+  en la pasada completa. Nunca `connected*` ni `pm clear`.
+- Manual con el Photo Picker real (README en `docs/evidence/galeria-escaneo/`): EXIF 6 -> 720x1280 con OCR; 6000x4000 ->
+  1280x853; PNG basura -> Error. Sin permiso: `force-stop` + `pm revoke` con la app parada (no en caliente); CAMERA vuelta a
+  conceder al terminar. Imágenes y scan limpiados; font_scale 1.0.
+- Docs: `captura-foto.md`, `captura-recorte-encuadre.md`, KDoc de `CameraEncuadre`, `CONTEXT.md`, `DESIGN.md`,
+  `docs/build-brief.md`, `docs/architecture.md`, `docs/technical-discovery.md`. Manifest sin permisos nuevos.
+- NO verificado: Continuar -> extracción -> guardado con una foto de galería (nube sin cuota, sin modelo local; mismo código
+  que la cámara tras Revision); selector real sin permiso de cámara (cubierto por E2E con selector simulado); TalkBack; el
+  tope de 32 MiB solo en JVM. El selector del emulador se comporta como multiselección (toca imagen + "Done").
+- Status: `galeria-escaneo` = **passing**, pendiente de validator independiente.
+
 ## Session 066 - forma-pago validacion (2026-10-20, master)
 
 - Validator independiente: **accept** (tests JVM de dominio, ai y gastos re-ejecutados; SQL de `MIGRATION_2_3`
@@ -2833,3 +2869,15 @@
   mano los tickets 2, 3 y 4 con un ticket real en la Tab; 3 tests de `EscanearViewModel` para los handlers de
   pago; E2E de escaneo con pago; TalkBack.
 - Status: `forma-pago` = **accepted**.
+
+## Session 068 - galeria-escaneo validacion (2026-10-20, master)
+
+- Validator independiente: **accept**, re-ejecutando en emulator-5556: `assembleDebug` y `testDebugUnitTest` OK
+  (`EscanearViewModelTest` 49, `LecturaImagenTest` 5), `am instrument` de `:app` OK 52 y de `framework:database`
+  OK 36. Manifest sin cambios, sin permisos de almacenamiento; diff de tests 100 % aditivo; OOM e imagen ilegible
+  acaban en el estado Error; centinela de recorte resuelto con el aspecto ya rotado por EXIF.
+- Desviacion aceptada: `EntradaCaptura` lleva `deGaleria` en lugar de cambiar `estadoDe`.
+- Seguimiento: el E2E sin permiso se salta con `assumeTrue` si CAMERA ya esta concedida; flujo punta a punta
+  (Continuar, extraccion, guardado) con foto de galeria sin probar (sin cuota ni modelo): probarlo a mano en la
+  Tab; TalkBack; `GaleriaFlujoTest` deja un directorio vacio `Pictures/TallyTest`.
+- Status: `galeria-escaneo` = **accepted**.

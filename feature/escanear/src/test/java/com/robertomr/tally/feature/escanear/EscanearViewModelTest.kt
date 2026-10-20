@@ -206,6 +206,105 @@ class EscanearViewModelTest {
         assertEquals(rutaGuardada, segunda)
     }
 
+    // --- Galeria (spec galeria-escaneo): misma ruta que la captura ---
+
+    @Test
+    fun imagenElegidaRecorreElMismoFlujoConLaImagenCompleta() = runTest {
+        val elegida = byteArrayOf(4, 5, 6)
+        processor.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+
+        viewModel.estado.test {
+            assertEquals(CapturaUiState.Encuadre, awaitItem())
+
+            viewModel.onImagenElegida(elegida)
+            assertEquals(CapturaUiState.Procesando, awaitItem())
+
+            processor.gate?.complete(Unit)
+            val revision = awaitItem() as CapturaUiState.Revision
+            assertEquals("fotos/captura_test.jpg", revision.rutaFoto)
+            assertEquals("MERCADONA\nTOTAL 12,34", revision.textoCrudo)
+        }
+
+        // Sin recorte: el procesador recibe el centinela de imagen completa.
+        assertEquals(listOf(CropRegion.Completo), processor.receivedCrops)
+        assertTrue(processor.received[0].contentEquals(elegida))
+        assertTrue(store.savedPayloads[0].contentEquals(byteArrayOf(9, 9, 9)))
+    }
+
+    @Test
+    fun imagenElegidaSinPermisoDeCamaraLlegaARevisionYRepetirVuelveAlPermiso() = runTest {
+        processor.gate = CompletableDeferred()
+
+        viewModel.estado.test {
+            assertEquals(CapturaUiState.PermisoPendiente, awaitItem())
+
+            viewModel.onImagenElegida(byteArrayOf(1))
+            assertEquals(CapturaUiState.Procesando, awaitItem())
+
+            processor.gate?.complete(Unit)
+            assertTrue(awaitItem() is CapturaUiState.Revision)
+
+            // Repetir foto descarta la imagen y, sin camara, vuelve al permiso.
+            viewModel.onRepetirFoto()
+            assertEquals(CapturaUiState.PermisoPendiente, awaitItem())
+        }
+    }
+
+    @Test
+    fun imagenIlegibleSinPermisoMuestraErrorYVolverRegresaAlPermiso() = runTest {
+        viewModel.estado.test {
+            assertEquals(CapturaUiState.PermisoPendiente, awaitItem())
+
+            viewModel.onImagenFallida("No se pudo leer la imagen. Prueba con otra foto.")
+            assertEquals(
+                CapturaUiState.Error("No se pudo leer la imagen. Prueba con otra foto."),
+                awaitItem(),
+            )
+            assertTrue(processor.received.isEmpty())
+            assertTrue(store.savedPayloads.isEmpty())
+
+            viewModel.onRepetirFoto()
+            assertEquals(CapturaUiState.PermisoPendiente, awaitItem())
+        }
+    }
+
+    @Test
+    fun imagenElegidaConOcrFallidoNoBloqueaLaRevision() = runTest {
+        engine.error = IllegalStateException("motor OCR caido")
+        processor.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+
+        viewModel.estado.test {
+            assertEquals(CapturaUiState.Encuadre, awaitItem())
+
+            viewModel.onImagenElegida(byteArrayOf(1))
+            assertEquals(CapturaUiState.Procesando, awaitItem())
+
+            processor.gate?.complete(Unit)
+            val revision = awaitItem() as CapturaUiState.Revision
+            assertEquals(true, revision.ocrNoDisponible)
+        }
+    }
+
+    @Test
+    fun imagenQueNoSePuedeProcesarMuestraElMensajeDelProcesador() = runTest {
+        processor.error = IllegalStateException("La imagen no es válida")
+        processor.gate = CompletableDeferred()
+        viewModel.onPermisoCambiado(true)
+
+        viewModel.estado.test {
+            assertEquals(CapturaUiState.Encuadre, awaitItem())
+
+            viewModel.onImagenElegida(byteArrayOf(1))
+            assertEquals(CapturaUiState.Procesando, awaitItem())
+
+            processor.gate?.complete(Unit)
+            assertEquals(CapturaUiState.Error("La imagen no es válida"), awaitItem())
+            assertTrue(store.savedPayloads.isEmpty())
+        }
+    }
+
     // --- OCR (spec ocr-mlkit): texto crudo registrado con el Borrador ---
 
     @Test

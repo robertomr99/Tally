@@ -53,7 +53,9 @@ Flujo vertical completo, de punta a punta, en dos dispositivos reales:
 
 1. Resumen: selector de período, total, gráfica de distribución por categoría
    (donut), desglose y listado de tickets del período.
-2. Captura: cámara con encuadre guiado y foto original guardada.
+2. Captura: cámara con encuadre guiado o foto elegida de la galería, y foto
+   original guardada. (Ampliación de alcance decidida por el usuario el
+   2026-10-20, feature `galeria-escaneo`.)
 3. Procesado: OCR (ML Kit) → extracción (motor Local o Nube según router),
    con indicador del motor y cancelación.
 4. Revisión: ticket digitalizado con datos extraídos, categoría corregible

@@ -35,8 +35,11 @@ estructurados extraídos, con apariencia de recibo, junto a la foto original
 como evidencia. No es un renderizado del papel.
 
 ### Foto original
-Imagen capturada por el usuario. Es evidencia inmutable: nunca se reemplaza,
-solo se borra junto con su ticket (borrado en cascada).
+Imagen capturada por el usuario con la cámara o elegida de su galería. Es
+evidencia inmutable: nunca se reemplaza, solo se borra junto con su ticket
+(borrado en cascada). Es la copia procesada guardada en el almacenamiento
+privado de la app; la imagen de la galería no se modifica ni se enlaza, y puede
+no ser una captura reciente.
 
 ### OCR
 Paso que convierte la foto en texto crudo. Se hace con ML Kit Text

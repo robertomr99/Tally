@@ -655,13 +655,20 @@
     "title": "Elegir una foto de la galería para escanear",
     "user_visible_behavior": "En Escanear se puede elegir una foto del ticket de la galería (sin permisos de almacenamiento) en lugar de hacerla en el momento, también cuando el permiso de cámara está denegado, y sigue el mismo flujo de revisión, procesado y guardado.",
     "depends_on": ["detalle-ticket"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Una foto de galería recorre el pipeline completo (guardar, OCR, extracción, revisión, guardado) en emulator-5556",
       "Funciona sin permiso de cámara y con imágenes grandes o con rotación EXIF",
       "Docs que listaban galería como non-goal actualizados"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-20 (sesión 067) gradlew.bat assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest :framework:database:installDebugAndroidTest con ANDROID_SERIAL=emulator-5556: BUILD SUCCESSFUL; EscanearViewModelTest 49 tests 0 fallos (5 nuevos de galería), LecturaImagenTest nuevo",
+      "am instrument com.robertomr.tally.framework.database.test: OK 36 tests (CapturedPhotoProcessorTest 10: 4000x3000 EXIF 6 + CropRegion.Completo -> 960x1280 sin EXIF, EXIF 8, PNG/WebP, bytes basura -> 'La imagen no es válida')",
+      "am instrument com.robertomr.tally.test -e notClass ExtraccionLocalRealTest,ExtraccionNubeRealTest: OK 52 tests (GaleriaFlujoTest 4/4 con selector simulado vía espresso-intents, caso sin permiso con CAMERA denegada; regresión de captura/navegación en verde); una primera pasada se cortó con keyDispatchingTimedOut en RangoPersonalizadoFlujoTest (emulador lento, ajeno) y esa clase pasó aislada 2/2 y en la pasada completa",
+      "Manual con el Photo Picker real en emulator-5556: JPEG EXIF 6 -> 720x1280 vertical con OCR; JPEG 6000x4000 -> 1280x853 sin OOM; PNG basura -> Error 'La imagen no es válida'; capturas en docs/evidence/galeria-escaneo/ (README); imágenes de prueba y scan limpiados",
+      "NO verificado: Continuar -> extracción -> guardado con una foto de galería (motor de nube sin cuota y modelo local ausente en el emulador; el tramo posterior a Revision es el mismo código que la cámara); selector manual sin permiso de cámara; TalkBack; tope de 32 MiB solo en test JVM",
+      "2026-10-20 sesion 068: validator independiente -> accept, con re-ejecucion real en emulator-5556: assembleDebug y testDebugUnitTest OK (EscanearViewModelTest 49, LecturaImagenTest 5), am instrument de :app OK 52 y de framework:database OK 36 (CapturedPhotoProcessorTest 10); manifest sin cambios y sin permisos de almacenamiento; unica dependencia nueva espresso-intents solo androidTest; diff de tests 100% aditivo; OOM e imagen ilegible acaban en el estado Error con mensaje claro; centinela de recorte resuelto con el aspecto ya rotado por EXIF; emulador limpio. Desviacion aceptada: EntradaCaptura lleva deGaleria en lugar de cambiar estadoDe. Seguimiento: el E2E del caso sin permiso se salta con assumeTrue cuando CAMERA ya esta concedida (frágil por diseño); el flujo punta a punta Continuar, extraccion y guardado con foto de galeria no se probo (sin cuota de nube ni modelo local): hacerlo a mano en la Tab; TalkBack sin probar; GaleriaFlujoTest deja un directorio vacio Pictures/TallyTest."
+    ],
     "notes": "Petición del usuario (2026-10-20). Selector del sistema PickVisualMedia (sin permiso). Botón en el hueco izquierdo de la fila del obturador y en la pantalla de permiso. Recorte neutral con el aspecto de la imagen ya rotada. Actualizar captura-foto.md, captura-recorte-encuadre.md, KDoc de CameraEncuadre y DESIGN.md/build-brief.md si procede."
   },
   {

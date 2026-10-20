@@ -28,6 +28,9 @@ interface PhotoProcessor {
  * recuadro y [viewAspectRatio] (ancho/alto) es el aspecto de esa vista,
  * necesario para corregir el FILL_CENTER de la preview al mapear el recorte a
  * la imagen capturada.
+ *
+ * Spec galeria-escaneo: [Completo] es el centinela de "imagen entera" para una
+ * foto elegida de la galería, que no tiene vista de encuadre.
  */
 data class CropRegion(
     val left: Float,
@@ -35,4 +38,13 @@ data class CropRegion(
     val right: Float,
     val bottom: Float,
     val viewAspectRatio: Float,
-)
+) {
+    companion object {
+        /**
+         * Imagen completa, sin recorte. No hay vista de encuadre, así que el
+         * aspecto (`viewAspectRatio = 0`) es un centinela: el procesador lo
+         * resuelve con las dimensiones de la propia imagen ya orientada.
+         */
+        val Completo: CropRegion = CropRegion(0f, 0f, 1f, 1f, viewAspectRatio = 0f)
+    }
+}

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,20 +14,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.EstadoPantalla
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 /**
  * Pantalla Escanear (spec captura-foto): sustituye al placeholder de
@@ -70,6 +78,32 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
     ) { concedido ->
         viewModel.onPermisoCambiado(concedido)
         if (!concedido) uiState.onPermisoDenegado()
+    }
+
+    // Spec galeria-escaneo: selector de fotos del sistema (Photo Picker, sin
+    // permisos de almacenamiento). Cancelar (uri nulo) no cambia nada. La
+    // lectura del Uri es acotada y va fuera del hilo principal; al VM solo
+    // llegan los bytes (como con la camara) o el mensaje de error.
+    val scope = rememberCoroutineScope()
+    val selectorGaleria = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    viewModel.onImagenElegida(leerBytesAcotado(context.contentResolver, uri))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    viewModel.onImagenFallida(mensajeDeLectura(e))
+                }
+            }
+        }
+    }
+    val elegirDeGaleria = {
+        selectorGaleria.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
     }
 
     // El estado del permiso se informa al entrar (sin lanzar dialogos).
@@ -127,12 +161,14 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
                 CapturaUiState.PermisoPendiente -> PermisoCamaraContent(
                     permisoDenegadoAntes = uiState.permisoDenegadoAntes,
                     onPermitir = { launcher.launch(Manifest.permission.CAMERA) },
+                    onElegirGaleria = elegirDeGaleria,
                 )
 
                 CapturaUiState.Encuadre -> CameraEncuadre(
                     onCapturado = viewModel::onImageCapturado,
                     onCapturaFallida = viewModel::onCapturaFallida,
                     onCerrar = { backDispatcher?.onBackPressed() },
+                    onElegirGaleria = elegirDeGaleria,
                 )
 
                 CapturaUiState.Procesando -> ProcesandoContent()
@@ -228,6 +264,7 @@ private fun ContenedorEscanear(enColumna: Boolean, content: @Composable () -> Un
 private fun PermisoCamaraContent(
     permisoDenegadoAntes: Boolean,
     onPermitir: () -> Unit,
+    onElegirGaleria: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     EstadoPantalla(
@@ -237,7 +274,8 @@ private fun PermisoCamaraContent(
             .testTag("captura_permiso"),
         icono = Icons.Outlined.PhotoCamera,
         colorIcono = MaterialTheme.colorScheme.primary,
-        mensaje = "Tally usa la cámara para capturar el ticket de papel y guardar su foto.",
+        mensaje = "Tally usa la cámara para capturar el ticket de papel y guardar su foto. " +
+            "O elige una foto de tu galería.",
     ) {
         if (permisoDenegadoAntes) {
             Text(
@@ -255,6 +293,23 @@ private fun PermisoCamaraContent(
             shape = RoundedCornerShape(9999.dp),
         ) {
             Text(text = "Permitir cámara")
+        }
+        // Alternativa sin permiso (spec galeria-escaneo): el alto es minimo (no
+        // fijo) para que el texto envuelva con letra grande.
+        OutlinedButton(
+            onClick = onElegirGaleria,
+            modifier = Modifier
+                .heightIn(min = 48.dp)
+                .testTag("permiso_galeria"),
+            shape = RoundedCornerShape(9999.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PhotoLibrary,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Elegir de la galería", textAlign = TextAlign.Center)
         }
     }
 }

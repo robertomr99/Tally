@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -65,16 +66,19 @@ import java.io.ByteArrayOutputStream
  * Encuadre guiado de la captura (mockup 04, spec captura-foto): preview de
  * camara en vivo con reticula normativa (scrim ~65% fuera de la zona de
  * captura + marcas de esquina + hint "Alinea los bordes del ticket dentro del
- * recuadro"), obturador circular 80dp y "Cerrar".
+ * recuadro"), obturador circular 80dp, "Galería" y "Cerrar".
  *
- * Decoracion ficticia del mockup NO implementada (DESIGN.md R4 / non-goals):
- * flash, modos Auto/Manual, deteccion de luz, galeria, chips OCR.
+ * Spec galeria-escaneo: "Galería" (a la izquierda del obturador) es funcional
+ * y no depende de la cámara: lanza el selector del sistema mediante
+ * [onElegirGaleria]. Decoracion ficticia del mockup NO implementada (DESIGN.md
+ * R4 / non-goals): flash, modos Auto/Manual, deteccion de luz, chips OCR.
  */
 @Composable
 fun CameraEncuadre(
     onCapturado: (ByteArray, CropRegion) -> Unit,
     onCapturaFallida: (String) -> Unit,
     onCerrar: () -> Unit,
+    onElegirGaleria: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -169,8 +173,8 @@ fun CameraEncuadre(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            // Hueco simetrico del obturador central (sin galeria: non-goal).
-            Spacer(modifier = Modifier.size(56.dp))
+            // Galeria a la izquierda, simetrica a "Cerrar" respecto del obturador.
+            BotonGaleria(onClick = onElegirGaleria)
 
             BotonObturador(
                 enabled = camaraLista,
@@ -341,6 +345,34 @@ private fun BotonObturador(
             contentDescription = "Capturar foto del ticket",
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.graphicsLayer(alpha = if (enabled) 1f else 0.4f),
+        )
+    }
+}
+
+/** Elegir una foto de la galería (spec galeria-escaneo): espejo de [BotonCerrar], siempre habilitado. */
+@Composable
+private fun BotonGaleria(onClick: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                .clickable(role = Role.Button, onClick = onClick)
+                .testTag("captura_galeria"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PhotoLibrary,
+                contentDescription = "Elegir de la galería",
+                tint = Color.White,
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "Galería",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.8f),
         )
     }
 }

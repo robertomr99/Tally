@@ -224,10 +224,13 @@ class EscanearViewModel @Inject constructor(
                 extraccionDe(captura, orden).flatMapLatest { extraccion ->
                     flujoDeRevision(captura, extraccion)
                 }
-            }
+            }.map { flujo -> flujo to entrada.deGaleria }
         },
-    ) { permiso, flujo ->
-        estadoDe(permiso, flujo)
+    ) { permiso, (flujo, deGaleria) ->
+        // Una imagen de la galeria no necesita la camara (spec galeria-escaneo):
+        // su flujo (Procesando/Revision/Error...) ignora el permiso. Al volver a
+        // `Ninguna` (Repetir foto) sin permiso se regresa a PermisoPendiente.
+        estadoDe(permiso || deGaleria, flujo)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
@@ -242,6 +245,23 @@ class EscanearViewModel @Inject constructor(
     /** Bytes JPEG crudos de CameraX (la pantalla solo hace de binding). */
     fun onImageCapturado(rawJpeg: ByteArray, crop: CropRegion) {
         entradaCaptura.value = EntradaCaptura.Cruda(rawJpeg, crop)
+    }
+
+    /**
+     * Imagen elegida de la galeria (spec galeria-escaneo): mismos bytes crudos
+     * que una captura y la imagen entera ([CropRegion.Completo]); sigue el
+     * mismo camino (guardar foto, OCR, revision).
+     */
+    fun onImagenElegida(bytes: ByteArray) {
+        entradaCaptura.value = EntradaCaptura.Cruda(bytes, CropRegion.Completo, deGaleria = true)
+    }
+
+    /**
+     * No se pudo leer la imagen elegida (ilegible, demasiado grande...). Igual
+     * que [onCapturaFallida] pero valido tambien sin permiso de camara.
+     */
+    fun onImagenFallida(mensaje: String) {
+        entradaCaptura.value = EntradaCaptura.Fallida(mensaje, deGaleria = true)
     }
 
     /** La camara no pudo capturar (sin frames, error de dispositivo...). */
@@ -708,11 +728,23 @@ class EscanearViewModel @Inject constructor(
         )
     }
 
-    /** Entradas del flujo: bytes de captura o fallo de la camara. */
+    /**
+     * Entradas del flujo: bytes de captura o fallo de la camara, o una imagen
+     * de la galeria ([deGaleria]) que no depende del permiso de camara.
+     */
     private sealed interface EntradaCaptura {
+        val deGaleria: Boolean get() = false
+
         data object Ninguna : EntradaCaptura
-        class Cruda(val bytes: ByteArray, val crop: CropRegion) : EntradaCaptura
-        data class Fallida(val mensaje: String) : EntradaCaptura
+        class Cruda(
+            val bytes: ByteArray,
+            val crop: CropRegion,
+            override val deGaleria: Boolean = false,
+        ) : EntradaCaptura
+        data class Fallida(
+            val mensaje: String,
+            override val deGaleria: Boolean = false,
+        ) : EntradaCaptura
     }
 
     /**

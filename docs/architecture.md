@@ -103,6 +103,12 @@ app ──────────► feature:* ──────────�
   el original de cámara no se guarda. La MISMA geometría (`EncuadreGeometria` en
   `:feature:escanear`, pura) pinta la retícula y calcula el recorte; el mapeo
   vista→imagen modela el `FILL_CENTER` de la preview (`PhotoPipelineMath.recorteEnImagen`).
+- Dos orígenes de foto convergen en `EntradaCaptura.Cruda(bytes, crop)` del
+  ViewModel (`galeria-escaneo`): la cámara (bytes + recorte del encuadre) y el
+  selector del sistema (`PickVisualMedia`, sin permisos; lectura acotada a 32 MiB
+  en `LecturaImagen.kt` y `CropRegion.Completo`, que el procesador resuelve con el
+  aspecto de la imagen ya orientada). Desde ahí el flujo es idéntico, también sin
+  permiso de cámara (la entrada de galería ignora el permiso).
 - La foto se persiste EN EL MOMENTO DE LA CAPTURA en `filesDir/fotos/` con
   nombre RELATIVO (`fotos/captura_<uuid>.jpg`), contrato de
   `PhotoFileStore.save`: nunca se devuelve ni se escribe una ruta absoluta.
