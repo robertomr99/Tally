@@ -20,6 +20,9 @@ data class DatosRevision(
     val total: Double,
     val categoria: Categoria,
     val lineas: List<LineaEditable>,
+    val formaPago: FormaPago = FormaPago.NO_INDICADA,
+    val entregado: Double? = null,
+    val cambio: Double? = null,
 )
 
 /**
@@ -44,4 +47,7 @@ fun datosRevisionInicial(
     total = extraido.total ?: 0.0,
     categoria = extraido.categoria,
     lineas = lineasEditablesIniciales(extraido.lineas),
+    formaPago = extraido.formaPago,
+    entregado = extraido.entregado,
+    cambio = extraido.cambio,
 )

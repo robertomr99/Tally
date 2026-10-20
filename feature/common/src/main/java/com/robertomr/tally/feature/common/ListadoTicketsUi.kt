@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -93,8 +95,10 @@ fun CabeceraDia(
  * derecha. Toda la fila es clicable (>= 48 dp). Con [mostrarFechaCorta] se
  * antepone la fecha corta (respecto a [hoy]) (vista previa de Resumen, sin cabecera de día).
  *
- * Tags: `<tag>` en la fila y `<tag>_comercio|_total|_categoria` en los hijos.
+ * Tags: `<tag>` en la fila y `<tag>_comercio|_total|_categoria|_forma_pago` en
+ * los hijos. El importe es siempre `ticket.total` (nunca entregado ni cambio).
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FilaTicket(
     ticket: Ticket,
@@ -156,7 +160,13 @@ fun FilaTicket(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Spacer(Modifier.size(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // FlowRow: con la forma de pago el tercer chip baja de linea en 360 dp
+                    // o con fuente grande en vez de cortarse (spec forma-pago).
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) {
                         if (momento.isNotEmpty()) {
                             Text(
                                 text = momento,
@@ -164,9 +174,10 @@ fun FilaTicket(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                             )
-                            Spacer(Modifier.width(8.dp))
                         }
                         ChipCategoria(ticket, color, Modifier.testTag("${tag}_categoria"))
+                        // Efectivo/tarjeta con icono + texto; NO_INDICADA no pinta chip.
+                        ChipFormaPago(ticket.formaPago, Modifier.testTag("${tag}_forma_pago"))
                     }
                 }
                 Spacer(Modifier.width(12.dp))

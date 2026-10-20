@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `mejoras-visuales-3` (`mejoras-visuales-2` `accepted`, sesión 064, rama `correcciones-visuales`); `seed-demo` queda para el final.
+- Current next ready feature: `filtro-forma-pago` (`forma-pago` `accepted`, sesión 066); luego `gasto-manual`, `galeria-escaneo`, `mejoras-visuales-3`; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2775,3 +2775,61 @@
   fallo de Procesado a fontScale 2,0 y "Promedio diario" en tres lineas.
 - Sin verificar visualmente: dialogo "Eliminar modelo", `captura_error`, transiciones y TalkBack.
 - Status: `mejoras-visuales-2` = **accepted**.
+
+## Session 065 - forma-pago implementacion (2026-10-20, rama master)
+
+- Feature: `forma-pago` (spec `docs/specs/forma-pago.md`). Defaults de las decisiones abiertas aplicados: (1) cambio
+  calculado y editable con aviso no bloqueante; (2) efectivo a tarjeta conserva entregado/cambio ocultos y se limpian al
+  guardar; (3) entregado o cambio sin forma indicada infieren EFECTIVO; (4) entregado < total solo avisa; (5) bizum,
+  vale o mixto = NO_INDICADA.
+- Implementado: dominio (`FormaPago`, `Pago.kt` con `normalizarPago`/`normalizada()`/`avisoPago`, campos con valores
+  por defecto en `Ticket`/`TicketExtraido`/`DatosRevision`, reductores `conFormaPago`/`conEntregadoTexto`/
+  `conCambioTexto`); Room v3 (`TicketEntity`, `MIGRATION_2_3`, `di.kt` con `addMigrations(MIGRATION_1_2, MIGRATION_2_3)`,
+  mapper tolerante, `3.json`); extraccion (bloque REGLAS DE PAGO sin tocar la REGLA DEL TOTAL, `responseSchema` con
+  `forma_pago` enum y `entregado`/`cambio` opcionales, DTO y parser con defaults); UI (`FormaPagoUi.kt`, selector,
+  campos y aviso en `FormularioTicketEditable`, `PagoEnPapel` en el resultado, chip en `FilaTicket` y en el detalle);
+  VMs de Escanear y Detalle solo cablean lambdas. Sin modulos ni dependencias nuevas; `build-logic/` intacto.
+- Tipo real de `total` en `DatosRevision`: `Double` (no texto); entregado/cambio son `Double?` con la misma
+  representacion y formato es-ES `%.2f` en los campos.
+- Verificacion (PowerShell, `ANDROID_SERIAL=emulator-5556`): `gradlew.bat assembleDebug testDebugUnitTest
+  :app:installDebug :app:installDebugAndroidTest :framework:database:installDebugAndroidTest` BUILD SUCCESSFUL, 0 fallos
+  JVM; `am instrument` de `com.robertomr.tally.framework.database.test`: OK 31 tests; `am instrument -e notClass
+  ...ExtraccionLocalRealTest,...ExtraccionNubeRealTest` de `com.robertomr.tally.test`: OK 48 tests (incluye
+  `FormaPagoFlujoTest` 3). Nunca `connected*` ni `pm clear`.
+- Migracion REAL: BD v2 del emulador respaldada en el scratchpad (fuera del repo) y comprobada antes (user_version 2, 22
+  tickets, 11 lineas); `install -r` y arranque COLD sin crash; despues user_version 3, 22 tickets, 11 lineas,
+  `forma_pago` = NO_INDICADA en los 22, entregado/cambio NULL, datos antiguos identicos.
+- Tests existentes tocados: solo `MigrationTest.laBdMigradaSeAbreConRoomRealYElLogFunciona` (una linea: el builder pasa
+  de `addMigrations(MIGRATION_1_2)` a `addMigrations(MIGRATION_1_2, MIGRATION_2_3)`, imprescindible porque la BD ya es
+  v3 y esa prueba abre una v1 con la misma construccion que `DatabaseModule`; aserciones intactas). Los constructores
+  de `Ticket`/`TicketExtraido`/`DatosRevision` compilan sin cambios gracias a los valores por defecto. Ningun tag
+  eliminado; nuevos tags aditivos: `revision_forma_pago(_efectivo|_tarjeta|_no_indicada)`, `revision_pago`,
+  `revision_entregado`, `revision_cambio`, `revision_aviso_pago`, `papel_forma_pago`, `papel_entregado`, `papel_cambio`,
+  `detalle_forma_pago`, `ticket_<id>_forma_pago`.
+- Capturas en `docs/evidence/forma-pago/` (12 PNG ligeros + README). Con ellas se corrigieron tres defectos: chips de
+  efectivo y tarjeta del mismo verde oscuro y poco contraste, "Tarjet/a" partido a 360 dp en el selector y chip cortado
+  a letra 2,0 junto al badge del detalle. Emulador restaurado (480 dpi, font_scale 1.0); tests temporales eliminados y
+  APK de instrumentacion reinstalado. Un fallo transitorio de Gradle (`classes.jar` bloqueado por otro proceso) se
+  resolvio reintentando; ademas `FotoOriginal.kt` aparecio con tres imports corrompidos sin que lo editara esta sesion
+  y se restauro con `git checkout` (sin cambios propios en ese fichero).
+- Docs: `docs/domain-model.md`, `CONTEXT.md`, `DESIGN.md`, `docs/architecture.md`, `docs/risks-and-open-questions.md`
+  (R-PAGO1).
+- NO verificado: `ExtraccionNubeRealTest` (cuota Gemini agotada desde 2026-10-17, no se ejecuto) y
+  `ExtraccionLocalRealTest` (sin modelo local en el emulador): la lectura real de la forma de pago por los motores solo
+  esta cubierta por tests JVM del parser con JSON de ejemplo de los 4 textos crudos y por el prompt. Tampoco hay test de
+  `EscanearViewModel` para los tres handlers nuevos (mismos reductores que el detalle, probados en JVM) ni E2E del flujo
+  de escaneo con pago (depende de camara/motor real); el papel de solo lectura de las capturas es `PagoEnPapel` en un
+  `PapelTicket` (el `ResumenDeTicket` real es privado). TalkBack sin probar.
+- Status: `forma-pago` = **passing**, pendiente de validator independiente.
+- Siguiente paso: validar `forma-pago`; luego `filtro-forma-pago` y `gasto-manual` (dependen de ella).
+
+## Session 066 - forma-pago validacion (2026-10-20, master)
+
+- Validator independiente: **accept** (tests JVM de dominio, ai y gastos re-ejecutados; SQL de `MIGRATION_2_3`
+  identico a `3.json` y al `defaultValue` de la entidad; ningun calculo de totales cambiado; regla del total del
+  prompt sin editar; instrumentados apoyados en la evidencia de emulator-5556: database 31 OK, app 48 OK;
+  migracion real v2 a v3 con 22 tickets conservados).
+- Pendiente de seguimiento: motores reales sin ejecutar (nube por cuota de Gemini, local sin modelo): comprobar a
+  mano los tickets 2, 3 y 4 con un ticket real en la Tab; 3 tests de `EscanearViewModel` para los handlers de
+  pago; E2E de escaneo con pago; TalkBack.
+- Status: `forma-pago` = **accepted**.

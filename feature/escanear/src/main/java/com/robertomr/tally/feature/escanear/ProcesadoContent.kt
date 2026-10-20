@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
@@ -67,6 +68,7 @@ import com.robertomr.tally.feature.common.EstadoPantalla
 import com.robertomr.tally.feature.common.FilaRecibo
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PAPEL_ANCHO_MAXIMO
+import com.robertomr.tally.feature.common.PagoEnPapel
 import com.robertomr.tally.feature.common.PapelTicket
 import com.robertomr.tally.feature.common.SeparadorPunteado
 import com.robertomr.tally.feature.common.importeDeLinea
@@ -935,6 +937,17 @@ private fun ResumenDeTicket(
                 style = reciboTexto(MaterialTheme.typography.headlineSmall)
                     .copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        // Forma de pago bajo el total (spec forma-pago): Entregado/Cambio son
+        // informativos, el total de arriba sigue siendo lo que cuesta. Sin dato = nada.
+        if (extraido.formaPago != FormaPago.NO_INDICADA) {
+            Spacer(modifier = Modifier.height(12.dp))
+            PagoEnPapel(
+                formaPago = extraido.formaPago,
+                entregado = extraido.entregado,
+                cambio = extraido.cambio,
             )
         }
     }

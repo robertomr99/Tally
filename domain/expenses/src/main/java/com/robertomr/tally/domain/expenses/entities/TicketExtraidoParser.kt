@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
@@ -55,7 +56,10 @@ object TicketExtraidoParser {
             lineas = dto.lineas.orEmpty().map { parseLinea(it) },
             categoria = parseCategoria(dto.categoria),
             motor = motor,
-        )
+            formaPago = FormaPago.desde(dto.formaPago),
+            entregado = dto.entregado?.let { parseImporteOpcional(it) },
+            cambio = dto.cambio?.let { parseImporteOpcional(it) },
+        ).normalizado()
     }
 
     // --- contenedor tolerante -------------------------------------------------
@@ -129,6 +133,18 @@ object TicketExtraidoParser {
         return valor
     }
 
+    /**
+     * `entregado`/`cambio` (spec forma-pago) son informativos: si llegan
+     * ilegibles, negativos o no finitos se descartan (`null`) en vez de
+     * invalidar la extraccion entera; el total sigue siendo lo importante.
+     */
+    private fun parseImporteOpcional(bruto: JsonElement): Double? {
+        val primitivo = bruto as? JsonPrimitive ?: return null
+        if (primitivo is JsonNull) return null
+        val valor = primitivo.content.aNumero() ?: return null
+        return valor.takeIf { it.isFinite() && it >= 0.0 }
+    }
+
     private fun parseLinea(dto: LineaDto): Linea {
         val concepto = dto.concepto?.trim()?.takeIf { it.isNotEmpty() }
             ?: throw InvalidExtractionException("linea sin concepto (concepto ausente o en blanco)")
@@ -199,6 +215,9 @@ internal data class TicketExtraidoDto(
     val total: JsonElement? = null,
     val categoria: String? = null,
     val lineas: List<LineaDto>? = null,
+    @SerialName("forma_pago") val formaPago: String? = null,
+    val entregado: JsonElement? = null,
+    val cambio: JsonElement? = null,
 )
 
 /** DTO interno de una linea del schema (`concepto`, `cantidad`, `precio_unitario`). */

@@ -5,6 +5,7 @@ import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.domain.expenses.entities.aLineas
+import com.robertomr.tally.domain.expenses.entities.normalizada
 import java.time.LocalDateTime
 import javax.inject.Inject
 
@@ -49,19 +50,27 @@ class GuardarTicket @Inject constructor(
         rutaFoto: String,
         textoCrudo: String,
         datos: DatosRevision,
-    ): Long = ticketRepository.save(
-        Ticket(
-            id = 0L,
-            comercio = datos.comercio,
-            fechaEmision = datos.fechaEmision,
-            total = datos.total,
-            categoria = datos.categoria,
-            fechaCaptura = LocalDateTime.now(),
-            motor = extraido.motor,
-            rutaFoto = rutaFoto,
-            nota = null,
-            textoCrudoOcr = textoCrudo,
-            lineas = datos.lineas.aLineas(),
-        ),
-    )
+    ): Long {
+        // Forma de pago (spec forma-pago): se normaliza al guardar; entregado y
+        // cambio solo viajan con efectivo y nunca alteran el total.
+        val pago = datos.normalizada()
+        return ticketRepository.save(
+            Ticket(
+                id = 0L,
+                comercio = datos.comercio,
+                fechaEmision = datos.fechaEmision,
+                total = datos.total,
+                categoria = datos.categoria,
+                fechaCaptura = LocalDateTime.now(),
+                motor = extraido.motor,
+                rutaFoto = rutaFoto,
+                nota = null,
+                textoCrudoOcr = textoCrudo,
+                lineas = datos.lineas.aLineas(),
+                formaPago = pago.formaPago,
+                entregado = pago.entregado,
+                cambio = pago.cambio,
+            ),
+        )
+    }
 }

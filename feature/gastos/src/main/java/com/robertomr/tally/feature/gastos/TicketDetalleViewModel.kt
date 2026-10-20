@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.conFechaTexto
@@ -11,6 +12,9 @@ import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
 import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
 import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
 import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
+import com.robertomr.tally.domain.expenses.entities.conCambioTexto
+import com.robertomr.tally.domain.expenses.entities.conEntregadoTexto
+import com.robertomr.tally.domain.expenses.entities.conFormaPago
 import com.robertomr.tally.domain.expenses.entities.conTotalTexto
 import com.robertomr.tally.domain.expenses.entities.datosRevisionDe
 import com.robertomr.tally.domain.expenses.entities.sinLinea
@@ -150,6 +154,19 @@ class TicketDetalleViewModel @Inject constructor(
 
     fun onTotalEditado(texto: String) {
         editar { it.conTotalTexto(texto) }
+    }
+
+    /** Forma de pago (spec forma-pago): conserva entregado/cambio ocultos hasta guardar. */
+    fun onFormaPagoElegida(forma: FormaPago) {
+        editar { it.conFormaPago(forma) }
+    }
+
+    fun onEntregadoEditado(texto: String) {
+        editar { it.conEntregadoTexto(texto) }
+    }
+
+    fun onCambioEditado(texto: String) {
+        editar { it.conCambioTexto(texto) }
     }
 
     fun onCategoriaElegida(categoria: Categoria) {

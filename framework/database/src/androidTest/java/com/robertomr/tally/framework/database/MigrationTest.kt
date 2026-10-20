@@ -101,12 +101,12 @@ class MigrationTest {
             close()
         }
 
-        // Misma construcción que DatabaseModule: solo MIGRATION_1_2, sin fallback destructivo.
+        // Misma construcción que DatabaseModule (cadena 1->2->3), sin fallback destructivo.
         val room = Room.databaseBuilder(
             ApplicationProvider.getApplicationContext<Context>(),
             TallyDatabase::class.java,
             NOMBRE_BD_APP,
-        ).addMigrations(MIGRATION_1_2).build()
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
         try {
             val ticket = room.ticketDao().getById(7)
             assertEquals("Zara", ticket?.ticket?.comercio)

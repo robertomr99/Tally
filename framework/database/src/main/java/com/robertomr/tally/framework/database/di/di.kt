@@ -8,6 +8,7 @@ import com.robertomr.tally.domain.expenses.data.RegistroExtracciones
 import com.robertomr.tally.domain.expenses.data.Reloj
 import com.robertomr.tally.domain.expenses.data.TicketDataSource
 import com.robertomr.tally.framework.database.MIGRATION_1_2
+import com.robertomr.tally.framework.database.MIGRATION_2_3
 import com.robertomr.tally.framework.database.TallyDatabase
 import com.robertomr.tally.framework.database.dao.ExtraccionLogDao
 import com.robertomr.tally.framework.database.dao.TicketDao
@@ -32,7 +33,7 @@ internal object DatabaseModule {
     fun provideTallyDatabase(@ApplicationContext context: Context): TallyDatabase =
         Room.databaseBuilder(context, TallyDatabase::class.java, "tally.db")
             // Migración explícita: NUNCA fallbackToDestructiveMigration (borraría tickets).
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
 
     @Provides

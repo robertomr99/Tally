@@ -27,6 +27,9 @@ fun datosRevisionDe(ticket: Ticket): DatosRevision = DatosRevision(
     total = ticket.total,
     categoria = ticket.categoria,
     lineas = lineasEditablesIniciales(ticket.lineas),
+    formaPago = ticket.formaPago,
+    entregado = ticket.entregado,
+    cambio = ticket.cambio,
 )
 
 /**
@@ -50,7 +53,49 @@ fun DatosRevision.conFechaTexto(texto: String, conservarHora: Boolean): DatosRev
 /** Cambia el total desde un texto (coma o punto decimal); `null` si no es parseable. */
 fun DatosRevision.conTotalTexto(texto: String): DatosRevision? {
     val total = texto.trim().replace(',', '.').toDoubleOrNull() ?: return null
-    return copy(total = total)
+    return copy(total = total).conCambioRecalculado()
+}
+
+/**
+ * Cambia la forma de pago (spec forma-pago). CONSERVA entregado y cambio en el
+ * estado de edicion aunque la forma deje de ser efectivo (la UI los oculta y
+ * reaparecen si se vuelve a efectivo); [normalizada] los limpia al guardar.
+ */
+fun DatosRevision.conFormaPago(forma: FormaPago): DatosRevision =
+    copy(formaPago = forma).conCambioRecalculado()
+
+/**
+ * Cambia lo entregado desde un texto (coma o punto). Texto en blanco = sin
+ * entregado (`null` en el campo); texto no numerico o negativo = `null` (se
+ * ignora). Recalcula el cambio (`entregado - total`, editable despues).
+ */
+fun DatosRevision.conEntregadoTexto(texto: String): DatosRevision? {
+    if (texto.isBlank()) return copy(entregado = null)
+    val valor = texto.trim().replace(',', '.').toDoubleOrNull()
+        ?.takeIf { it.isFinite() && it >= 0.0 } ?: return null
+    return copy(entregado = valor).conCambioRecalculado()
+}
+
+/**
+ * Cambia el cambio (lo devuelto) desde un texto. Texto en blanco = sin cambio;
+ * no numerico o negativo = `null` (se ignora). No toca el total ni entregado.
+ */
+fun DatosRevision.conCambioTexto(texto: String): DatosRevision? {
+    if (texto.isBlank()) return copy(cambio = null)
+    val valor = texto.trim().replace(',', '.').toDoubleOrNull()
+        ?.takeIf { it.isFinite() && it >= 0.0 } ?: return null
+    return copy(cambio = valor)
+}
+
+/**
+ * Con efectivo, entregado y total conocidos (> 0) el cambio se calcula
+ * (`entregado - total`, o `null` si lo entregado no cubre el total).
+ */
+private fun DatosRevision.conCambioRecalculado(): DatosRevision {
+    val entregado = entregado
+    if (formaPago != FormaPago.EFECTIVO || entregado == null || total <= 0.0) return this
+    val nuevo = if (entregado >= total) redondearCentimos(entregado - total) else null
+    return copy(cambio = nuevo)
 }
 
 /** Anade una fila vacia con el [id] de cliente dado; nunca toca el total. */

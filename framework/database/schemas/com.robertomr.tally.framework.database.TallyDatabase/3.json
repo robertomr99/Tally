@@ -1,0 +1,241 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "643cbc0a4b08e86397c7434392149b7d",
+    "entities": [
+      {
+        "tableName": "tickets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `comercio` TEXT NOT NULL, `fecha_emision` INTEGER NOT NULL, `total` REAL NOT NULL, `categoria` TEXT NOT NULL, `nota` TEXT, `fecha_captura` INTEGER NOT NULL, `motor` TEXT NOT NULL, `ruta_foto` TEXT NOT NULL, `texto_crudo_ocr` TEXT, `forma_pago` TEXT NOT NULL DEFAULT 'NO_INDICADA', `entregado` REAL, `cambio` REAL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "comercio",
+            "columnName": "comercio",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fechaEmision",
+            "columnName": "fecha_emision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "total",
+            "columnName": "total",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoria",
+            "columnName": "categoria",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nota",
+            "columnName": "nota",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fechaCaptura",
+            "columnName": "fecha_captura",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "motor",
+            "columnName": "motor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rutaFoto",
+            "columnName": "ruta_foto",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "textoCrudoOcr",
+            "columnName": "texto_crudo_ocr",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "formaPago",
+            "columnName": "forma_pago",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'NO_INDICADA'"
+          },
+          {
+            "fieldPath": "entregado",
+            "columnName": "entregado",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "cambio",
+            "columnName": "cambio",
+            "affinity": "REAL"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "lineas",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `ticket_id` INTEGER NOT NULL, `concepto` TEXT NOT NULL, `cantidad` INTEGER NOT NULL, `precio_unitario` REAL NOT NULL, FOREIGN KEY(`ticket_id`) REFERENCES `tickets`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ticketId",
+            "columnName": "ticket_id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "concepto",
+            "columnName": "concepto",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cantidad",
+            "columnName": "cantidad",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "precioUnitario",
+            "columnName": "precio_unitario",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_lineas_ticket_id",
+            "unique": false,
+            "columnNames": [
+              "ticket_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_ticket_id` ON `${TABLE_NAME}` (`ticket_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "tickets",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "ticket_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "extracciones_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `marca_tiempo` INTEGER NOT NULL, `motor` TEXT NOT NULL, `origen` TEXT NOT NULL, `resultado` TEXT NOT NULL, `tipo_fallo` TEXT, `clase_error` TEXT, `duracion_ms` INTEGER NOT NULL, `longitud_texto` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "marcaTiempo",
+            "columnName": "marca_tiempo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "motor",
+            "columnName": "motor",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origen",
+            "columnName": "origen",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultado",
+            "columnName": "resultado",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipoFallo",
+            "columnName": "tipo_fallo",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "claseError",
+            "columnName": "clase_error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "duracionMs",
+            "columnName": "duracion_ms",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitudTexto",
+            "columnName": "longitud_texto",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_extracciones_log_marca_tiempo",
+            "unique": false,
+            "columnNames": [
+              "marca_tiempo"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_extracciones_log_marca_tiempo` ON `${TABLE_NAME}` (`marca_tiempo`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '643cbc0a4b08e86397c7434392149b7d')"
+    ]
+  }
+}

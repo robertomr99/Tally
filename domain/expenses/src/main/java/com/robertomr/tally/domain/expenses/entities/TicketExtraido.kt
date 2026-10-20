@@ -16,6 +16,9 @@ import java.time.LocalDateTime
  *   nunca la base imponible (regla R3).
  * - [lineas]: puede ser vacia (ticket sin detalle extraido).
  * - [categoria]: siempre una de las 6 de [Categoria] (enum fija).
+ * - [formaPago], [entregado], [cambio] (spec forma-pago): forma de pago leida
+ *   del ticket ([FormaPago.NO_INDICADA] si no hay indicios); entregado y cambio
+ *   solo con efectivo. Nunca son el [total].
  * - [motor]: quien extrajo los datos; se registra con la extraccion para el
  *   badge/router futuro (ADR 0001).
  */
@@ -26,4 +29,13 @@ data class TicketExtraido(
     val lineas: List<Linea> = emptyList(),
     val categoria: Categoria = Categoria.OTROS,
     val motor: Motor,
+    val formaPago: FormaPago = FormaPago.NO_INDICADA,
+    val entregado: Double? = null,
+    val cambio: Double? = null,
 )
+
+/** Version con la invariante de pago aplicada (ver [normalizarPago]). */
+fun TicketExtraido.normalizado(): TicketExtraido {
+    val pago = normalizarPago(formaPago, total, entregado, cambio)
+    return copy(formaPago = pago.formaPago, entregado = pago.entregado, cambio = pago.cambio)
+}

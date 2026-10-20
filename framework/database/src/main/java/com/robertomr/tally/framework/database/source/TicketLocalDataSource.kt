@@ -2,6 +2,7 @@ package com.robertomr.tally.framework.database.source
 
 import com.robertomr.tally.domain.expenses.data.TicketDataSource
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.Ticket
@@ -57,6 +58,9 @@ private fun Ticket.toEntity(): TicketEntity = TicketEntity(
     motor = motor.name,
     rutaFoto = rutaFoto,
     textoCrudoOcr = textoCrudoOcr,
+    formaPago = formaPago.name,
+    entregado = entregado,
+    cambio = cambio,
 )
 
 private fun Linea.toEntity(): LineaEntity = LineaEntity(
@@ -76,6 +80,10 @@ private fun TicketWithLineas.toDomain(): Ticket = Ticket(
     rutaFoto = ticket.rutaFoto,
     nota = ticket.nota,
     textoCrudoOcr = ticket.textoCrudoOcr,
+    // Tolerante: un valor desconocido en BD (p. ej. de una version futura) es NO_INDICADA.
+    formaPago = FormaPago.desde(ticket.formaPago),
+    entregado = ticket.entregado,
+    cambio = ticket.cambio,
     lineas = lineas.map { it.toDomain() },
 )
 

@@ -11,8 +11,23 @@ tickets de compra. Android nativo, todo local.
 
 ### Ticket
 Registro de gasto guardado en la app, derivado de un ticket de papel
-fotografiado. Contiene: comercio, fecha/hora, importe total, líneas y categoría.
+fotografiado. Contiene: comercio, fecha/hora, importe total (con IVA, lo que
+cuesta), líneas, categoría y forma de pago (con entregado y cambio en efectivo).
 En la UI se presenta como "ticket digitalizado" con estética de recibo.
+
+### Forma de pago
+Cómo se pagó un ticket: **Efectivo**, **Tarjeta** o **No indicada** (también
+para bizum, vale o pago mixto y para los tickets anteriores a la función). Es
+solo información: no cambia el importe que cuenta el ticket.
+
+### Entregado
+Importe que el cliente dio en efectivo (p. ej. 50,00 €). Solo existe con forma
+de pago Efectivo. **No es el total**: el total es lo que cuesta el ticket.
+
+### Cambio
+Importe que se devolvió al cliente en efectivo (p. ej. 36,10 € = entregado 50,00
+− total 13,90). Solo con Efectivo. **No es el total.** Un "A DEVOLVER 0,00" de un
+pago con tarjeta no es un cambio.
 
 ### Ticket digitalizado
 Nombre en UI del "ticket virtual": pantalla de detalle con los datos

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.PhotoFileStore
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
 import com.robertomr.tally.domain.expenses.entities.MotorNoDisponibleException
@@ -17,6 +18,9 @@ import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
 import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
 import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
 import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
+import com.robertomr.tally.domain.expenses.entities.conCambioTexto
+import com.robertomr.tally.domain.expenses.entities.conEntregadoTexto
+import com.robertomr.tally.domain.expenses.entities.conFormaPago
 import com.robertomr.tally.domain.expenses.entities.conTotalTexto
 import com.robertomr.tally.domain.expenses.entities.sinLinea
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
@@ -353,6 +357,21 @@ class EscanearViewModel @Inject constructor(
     /** Total como texto; coma o punto decimal; un texto no parseable se ignora. */
     fun onTotalEditado(texto: String) {
         actualizarDatosSiValido { it.conTotalTexto(texto) }
+    }
+
+    /** Forma de pago (spec forma-pago): conserva entregado/cambio ocultos hasta guardar. */
+    fun onFormaPagoElegida(forma: FormaPago) {
+        actualizarDatos { it.conFormaPago(forma) }
+    }
+
+    /** Entregado como texto; recalcula el cambio; un texto no valido se ignora. */
+    fun onEntregadoEditado(texto: String) {
+        actualizarDatosSiValido { it.conEntregadoTexto(texto) }
+    }
+
+    /** Cambio como texto (editable tras el calculo); un texto no valido se ignora. */
+    fun onCambioEditado(texto: String) {
+        actualizarDatosSiValido { it.conCambioTexto(texto) }
     }
 
     /** Chips de categoria: solo las 6 de la enum fija (CONTEXT.md). */

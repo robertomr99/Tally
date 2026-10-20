@@ -24,4 +24,11 @@ data class TicketEntity(
     val motor: String,
     @ColumnInfo(name = "ruta_foto") val rutaFoto: String,
     @ColumnInfo(name = "texto_crudo_ocr") val textoCrudoOcr: String?,
+    // Forma de pago (spec forma-pago, v3). El defaultValue DEBE coincidir con el
+    // DEFAULT de MIGRATION_2_3 y con el createSql de schemas/.../3.json: Room
+    // valida el esquema al abrir y un desajuste tumba la app.
+    @ColumnInfo(name = "forma_pago", defaultValue = "NO_INDICADA")
+    val formaPago: String = "NO_INDICADA",
+    @ColumnInfo(name = "entregado") val entregado: Double? = null,
+    @ColumnInfo(name = "cambio") val cambio: Double? = null,
 )

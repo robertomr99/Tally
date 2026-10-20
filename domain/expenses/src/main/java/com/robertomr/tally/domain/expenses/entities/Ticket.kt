@@ -10,6 +10,10 @@ import java.time.LocalDateTime
  * definitivo. El [total] es el dato autoritativo para el seguimiento: puede no
  * coincidir con la suma de [lineas] (OCR imperfecto) y no hay sobrescritura
  * automática.
+ *
+ * [formaPago], [entregado] y [cambio] (spec forma-pago) son solo informativos:
+ * el [total] sigue siendo lo que cuesta. [entregado]/[cambio] solo son no nulos
+ * si [formaPago] es [FormaPago.EFECTIVO] (ver [normalizarPago]).
  */
 data class Ticket(
     val id: Long = 0L,
@@ -23,4 +27,7 @@ data class Ticket(
     val nota: String? = null,
     val textoCrudoOcr: String? = null,
     val lineas: List<Linea> = emptyList(),
+    val formaPago: FormaPago = FormaPago.NO_INDICADA,
+    val entregado: Double? = null,
+    val cambio: Double? = null,
 )

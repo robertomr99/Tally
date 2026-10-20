@@ -599,6 +599,72 @@
     "notes": "Seguimientos del validator de mejoras-visuales-2: (1) selector en dos filas (fontScale > 1,1) sin check del segmento activo: anadir borde de 1,5 dp en onSecondaryContainer en modo apilado; (2) fallo de Procesado a fontScale 2,0: 'Probar con Local', 'Volver a la foto' y 'Reintentar' cortados, texto tapado por los botones, etiqueta de proceso pegada al borde: apilar con UMBRAL_APILAR_BOTONES, scroll o weight y aplicar PADDING_PANTALLA; (3) 'Promedio diario' en tres lineas a 2,0. Candidatos que requieren decision de diseno del usuario y siguen diferidos (V26-V30 de docs/specs/mejoras-visuales.md): campos del papel solo con subrayado, snackbar de confirmacion, transicion interna de Escanear, dock en movil horizontal, aviso al salir de la Revision con la barra inferior. Sin verificar visualmente en F2: dialogo Eliminar modelo, captura_error, transiciones y TalkBack."
   },
   {
+    "id": "forma-pago",
+    "area": "revision",
+    "title": "Forma de pago (efectivo/tarjeta) con entregado y cambio",
+    "user_visible_behavior": "Cada ticket indica si se pagó en efectivo (con importe entregado y cambio) o con tarjeta, se diferencia visualmente en el papel, el detalle y el listado, y se puede editar; la IA intenta leerlo del ticket. El total (con IVA) sigue siendo lo que cuesta y es lo único que cuentan el resumen, el donut y el listado.",
+    "depends_on": ["detalle-ticket", "papel-ticket"],
+    "status": "accepted",
+    "verification": [
+      "Migración de Room 2 a 3 con test que conserva los tickets y comprobada con install -r sobre la BD real del emulador",
+      "Extracción: los textos crudos de ejemplo (tarjeta, efectivo con entregado y cambio, sin indicar) dan la forma de pago correcta sin romper la regla del total",
+      "Capturas del papel, detalle y listado con efectivo, tarjeta y no indicada"
+    ],
+    "evidence": [
+      "Sesion 065 (implementer): gradlew.bat assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest :framework:database:installDebugAndroidTest con ANDROID_SERIAL=emulator-5556 en verde, 0 fallos JVM (FormaPagoTest 3, PagoTest 18, TicketExtraidoParserPagoTest 12 con los 4 textos crudos, PagoUsecasesTest 5, TicketDetalleViewModelPagoTest 4, TicketExtractionPromptPagoTest 4)",
+      "Migracion Room 2->3 REAL: copia de seguridad de la BD v2 del emulator-5556 (user_version 2, 22 tickets, 11 lineas), install -r sin pm clear, arranque COLD sin crash; tras abrir user_version 3, 22 tickets, 11 lineas, forma_pago NO_INDICADA en los 22, entregado y cambio NULL, campos antiguos identicos (0 diferencias); schema de 3.json identico al ALTER y al defaultValue de la entidad",
+      "Instrumentados en emulator-5556: :framework:database 31/31 (MigracionFormaPagoTest 3 + MigrationTest 2) y :app 48/48 con -e notClass ExtraccionLocalRealTest,ExtraccionNubeRealTest (FormaPagoFlujoTest 3: chips del listado, selector/campos del detalle, aviso no bloqueante, persistencia; tarjeta limpia entregado y cambio)",
+      "docs/evidence/forma-pago/ (12 capturas ligeras: listado, detalle, selector a letra 1,3 y 2,0, 360 dp y papel de solo lectura + README)",
+      "NO verificado: ExtraccionNubeRealTest (cuota Gemini agotada desde 2026-10-17, no se ejecuto) ni ExtraccionLocalRealTest (sin modelo local en el emulador); la lectura real de la forma de pago por los motores solo esta cubierta por tests JVM del parser con JSON de ejemplo y por el prompt. El papel de solo lectura de las capturas 11-12 es PagoEnPapel dentro de PapelTicket (ResumenDeTicket es privado)",
+      "2026-10-20 sesion 066: validator independiente -> accept (tests JVM de dominio, ai y gastos re-ejecutados, 0 fallos; SQL de MIGRATION_2_3 identico a 3.json y al defaultValue de la entidad, 1.json y 2.json intactos, sin fallbackToDestructive, MigracionFormaPagoTest significativo; ningun calculo de totales cambiado (diff vacio de CalcularResumenPeriodo, AgruparTicketsPorDia, CalcularDistribucionCategorias); regla del total del prompt sin editar, solo bloque REGLAS DE PAGO evaluado contra los 4 textos crudos; normalizacion de pago y reductores revisados; UI accesible sin depender solo del color; tags solo aditivos; instrumentados apoyados en evidencia de emulator-5556: database 31 OK, app 48 OK; migracion real v2 a v3 con 22 tickets conservados). PENDIENTE de seguimiento: motores reales no ejecutados (ExtraccionNubeRealTest por cuota de Gemini y ExtraccionLocalRealTest sin modelo): comprobar a mano los tickets 2, 3 y 4 con un ticket real en la Tab; 3 tests de EscanearViewModel para onFormaPagoElegida/onEntregadoEditado/onCambioEditado; E2E de escaneo con pago; TalkBack sin probar."
+    ],
+    "notes": "Petición del usuario (2026-10-20). El total con IVA es lo que cuesta (ej. 13,90); en efectivo se guardan además Entregado (50,00) y Cambio (36,10) como información; las gráficas nunca suman el entregado. Tickets antiguos: forma de pago 'No indicada'. Fuera de alcance: desglose de IVA por tipos. Incluye migración Room 2→3 (sin fallbackToDestructive)."
+  },
+  {
+    "id": "filtro-forma-pago",
+    "area": "seguimiento",
+    "title": "Filtrar el listado de gastos por forma de pago",
+    "user_visible_behavior": "En Gastos se puede filtrar por Todos, Efectivo o Tarjeta, combinado con el selector de periodo y el rango, con estado vacío coherente.",
+    "depends_on": ["forma-pago"],
+    "status": "not_started",
+    "verification": [
+      "El filtro y el periodo se combinan y el listado refleja exactamente los tickets esperados (con semilla de prueba)",
+      "Estado vacío coherente y filtro conservado al volver del detalle"
+    ],
+    "evidence": [],
+    "notes": "Petición del usuario (2026-10-20). Decisión del planner con default: si el filtro afecta también a Resumen (por defecto solo al listado)."
+  },
+  {
+    "id": "gasto-manual",
+    "area": "revision",
+    "title": "Añadir un gasto sin ticket",
+    "user_visible_behavior": "Desde Gastos, un botón Añadir gasto abre el formulario de papel vacío (fecha de hoy, comercio, categoría, forma de pago, total y líneas opcionales) y guarda un gasto sin foto, sin badge de IA y editable y borrable como cualquier otro.",
+    "depends_on": ["forma-pago"],
+    "status": "not_started",
+    "verification": [
+      "Un gasto manual se guarda, aparece en listado, donut y resumen del periodo y se edita y borra desde el detalle",
+      "El detalle muestra Sin foto (distinto de Foto no disponible) y ningún badge de motor",
+      "CONTEXT.md y docs/domain-model.md actualizados: un Ticket ya no deriva siempre de una foto"
+    ],
+    "evidence": [],
+    "notes": "Petición del usuario (2026-10-20). Decisión del usuario: botón Añadir gasto en Gastos. Sin foto: rutaFoto vacía y origen MANUAL (revisar los when exhaustivos de Motor). Validación mínima a decidir por el planner."
+  },
+  {
+    "id": "galeria-escaneo",
+    "area": "captura",
+    "title": "Elegir una foto de la galería para escanear",
+    "user_visible_behavior": "En Escanear se puede elegir una foto del ticket de la galería (sin permisos de almacenamiento) en lugar de hacerla en el momento, también cuando el permiso de cámara está denegado, y sigue el mismo flujo de revisión, procesado y guardado.",
+    "depends_on": ["detalle-ticket"],
+    "status": "not_started",
+    "verification": [
+      "Una foto de galería recorre el pipeline completo (guardar, OCR, extracción, revisión, guardado) en emulator-5556",
+      "Funciona sin permiso de cámara y con imágenes grandes o con rotación EXIF",
+      "Docs que listaban galería como non-goal actualizados"
+    ],
+    "evidence": [],
+    "notes": "Petición del usuario (2026-10-20). Selector del sistema PickVisualMedia (sin permiso). Botón en el hueco izquierdo de la fila del obturador y en la pantalla de permiso. Recorte neutral con el aspecto de la imagen ya rotada. Actualizar captura-foto.md, captura-recorte-encuadre.md, KDoc de CameraEncuadre y DESIGN.md/build-brief.md si procede."
+  },
+  {
     "id": "seed-demo",
     "area": "demo",
     "title": "Datos de demo sembrados (build debug)",

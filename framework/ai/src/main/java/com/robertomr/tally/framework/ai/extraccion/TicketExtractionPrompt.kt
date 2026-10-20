@@ -36,7 +36,11 @@ internal object TicketExtractionPrompt {
     private val CLAVES_SCHEMA = listOf(
         "comercio", "fecha_emision", "total", "categoria", "lineas",
         "concepto", "cantidad", "precio_unitario",
+        "forma_pago", "entregado", "cambio",
     )
+
+    /** Valores de `forma_pago` (spec forma-pago); misma lista que [FormaPago] del dominio. */
+    private val FORMAS_PAGO = listOf("EFECTIVO", "TARJETA", "NO_INDICADA")
 
     /** Enum fija de 6 categorias (CONTEXT.md); misma lista que [Categoria]. */
     private val CATEGORIAS = listOf(
@@ -57,13 +61,31 @@ internal object TicketExtractionPrompt {
           "fecha_emision": string,   // emision ISO: "yyyy-MM-dd" o "yyyy-MM-dd'T'HH:mm[:ss]"; omite el campo si no es legible
           "total": number,           // TOTAL CON IVA en euros; omite el campo si no aparece
           "categoria": string,       // uno de: ${CATEGORIAS.joinToString(", ")}
-          "lineas": [ {"concepto": string, "cantidad": integer, "precio_unitario": number} ]
+          "lineas": [ {"concepto": string, "cantidad": integer, "precio_unitario": number} ],
+          "forma_pago": string,      // uno de: ${FORMAS_PAGO.joinToString(", ")}
+          "entregado": number|null,  // importe entregado en efectivo; null si el ticket no lo dice
+          "cambio": number|null      // importe devuelto al cliente; null si el ticket no lo dice
         }
 
         REGLA DEL TOTAL (muy importante): "total" es SIEMPRE el total CON IVA, el importe
         final que se paga ("Total (impuestos incl.)", "TOTAL A PAGAR", "TOTAL COMPRA" o
         "TOTAL"). NUNCA uses la base imponible ni la cuota de IVA. Ejemplo: si el ticket
         muestra "3,36 IVA: 0,14" y "TOTAL COMPRA 3,50", el total es 3.50 (nunca 3.36).
+
+        REGLAS DE PAGO (no cambian la regla del total): "forma_pago", "entregado" y "cambio"
+        son solo informativos y NUNCA son el "total".
+        - "total" sigue siendo lo que cuesta el ticket con IVA; ni "entregado" ni "cambio"
+          son nunca el total.
+        - "entregado" solo si el ticket lo dice ("entregado", "recibido", importe pagado en
+          efectivo); si no, null. Ejemplo: "Entregado: 50,00" con total 13,90 -> entregado 50.00.
+        - "cambio" ("cambio", "a devolver", "vuelta", "devuelto") es el importe devuelto, no el
+          total. Con pago con tarjeta, "A DEVOLVER 0,00" no es un cambio: cambio null.
+        - Tarjeta, visa, mastercard, contactless, datáfono, crédito o débito -> "TARJETA".
+          Efectivo o metálico -> "EFECTIVO". Sin indicios de como se pago -> "NO_INDICADA".
+          Bizum, vale o pago mixto -> "NO_INDICADA".
+        - Un importe suelto como "12,64 € Total (impuestos incl.)" no cambia el total elegido
+          por la regla del total.
+        - "entregado" y "cambio" solo se rellenan con "EFECTIVO"; con otra forma son null.
 
         Reglas adicionales:
         - "categoria" es OBLIGATORIA y debe ser exactamente uno de estos 6 valores:
@@ -118,7 +140,21 @@ internal object TicketExtractionPrompt {
                 ),
                 description = "Lineas del ticket (puede ser vacia)",
             ),
+            "forma_pago" to Schema.enumeration(
+                values = FORMAS_PAGO,
+                description = "Forma de pago; NO_INDICADA si el ticket no lo dice (bizum, vale o mixto tambien)",
+            ),
+            "entregado" to Schema.double(
+                description = "Importe entregado en efectivo; nunca es el total; omitido si no aparece",
+                nullable = true,
+            ),
+            "cambio" to Schema.double(
+                description = "Importe devuelto; nunca es el total; omitido si no aparece",
+                nullable = true,
+            ),
         ),
-        optionalProperties = listOf("comercio", "fecha_emision", "total", "lineas"),
+        optionalProperties = listOf(
+            "comercio", "fecha_emision", "total", "lineas", "forma_pago", "entregado", "cambio",
+        ),
     )
 }

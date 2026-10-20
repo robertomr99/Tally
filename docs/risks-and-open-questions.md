@@ -91,6 +91,15 @@
   privacidad: el log nunca guarda texto crudo, datos del ticket, mensajes de
   excepción ni token; solo metadatos. Toda migración futura exige su test y
   `schemas/N.json`.
+- **R-PAGO1 — Segunda migración de Room y confusión entregado/cambio con el total** (`forma-pago`):
+  la BD pasa de v2 a v3 con `MIGRATION_2_3` (tres columnas; el `DEFAULT 'NO_INDICADA'` debe ser idéntico al
+  `defaultValue` de la entidad y al `createSql` de `3.json`, o Room tumba la app al abrir). Mitigado:
+  `MigracionFormaPagoTest`, `MigrationTest` y `install -r` en `emulator-5556` (22 tickets y 11 líneas de la BD v2 real
+  conservados, todos `NO_INDICADA`). Riesgo de producto: un modelo puede tomar el entregado (50,00) o el cambio
+  (36,10) por el total en tickets en efectivo; se mitiga con un bloque REGLAS DE PAGO que no toca la REGLA DEL TOTAL,
+  con el total siempre editable y con tests JVM del parser sobre los 4 textos crudos. Sin verificación nube real
+  en esta feature: la cuota de Gemini sigue agotada desde 2026-10-17 y `ExtraccionLocalRealTest` necesita el modelo
+  local, que no está en el emulador; `ExtraccionNubeRealTest` no se ejecutó.
 - **R1 — Integración MediaPipe**: **resuelta el 2026-10-12** con el spike
   `spike-gemma-mediapipe` (decisión GO arriba, en "Blocking Next Phase" #1):
   Gemma 3n E2B-it int4 carga y responde en la Tab S9+ con

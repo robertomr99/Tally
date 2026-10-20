@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.feature.common.BadgeMotor
@@ -57,6 +58,9 @@ fun RevisionDatosContent(
     onLineaCantidadEditada: (Long, String) -> Unit,
     onLineaPrecioEditado: (Long, String) -> Unit,
     onLineaEliminada: (Long) -> Unit,
+    onFormaPagoElegida: (FormaPago) -> Unit,
+    onEntregadoEditado: (String) -> Unit,
+    onCambioEditado: (String) -> Unit,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     modifier: Modifier = Modifier,
@@ -102,6 +106,9 @@ fun RevisionDatosContent(
                         onLineaCantidadEditada = onLineaCantidadEditada,
                         onLineaPrecioEditado = onLineaPrecioEditado,
                         onLineaEliminada = onLineaEliminada,
+                        onFormaPagoElegida = onFormaPagoElegida,
+                        onEntregadoEditado = onEntregadoEditado,
+                        onCambioEditado = onCambioEditado,
                     )
                 }
             }

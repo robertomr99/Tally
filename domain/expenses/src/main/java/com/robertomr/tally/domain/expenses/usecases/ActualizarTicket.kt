@@ -4,6 +4,7 @@ import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.domain.expenses.entities.aLineas
+import com.robertomr.tally.domain.expenses.entities.normalizada
 import javax.inject.Inject
 
 /**
@@ -21,14 +22,20 @@ class ActualizarTicket @Inject constructor(
 ) {
 
     /** @return id del ticket actualizado (el mismo que [original]). */
-    suspend operator fun invoke(original: Ticket, datos: DatosRevision): Long =
-        ticketRepository.save(
+    suspend operator fun invoke(original: Ticket, datos: DatosRevision): Long {
+        // Forma de pago (spec forma-pago): normalizada al guardar; no altera el total.
+        val pago = datos.normalizada()
+        return ticketRepository.save(
             original.copy(
                 comercio = datos.comercio,
                 fechaEmision = datos.fechaEmision,
                 total = datos.total,
                 categoria = datos.categoria,
                 lineas = datos.lineas.aLineas(),
+                formaPago = pago.formaPago,
+                entregado = pago.entregado,
+                cambio = pago.cambio,
             ),
         )
+    }
 }

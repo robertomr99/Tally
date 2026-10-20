@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Functions
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -39,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +57,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,14 +65,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.AvisoPago
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
+import com.robertomr.tally.domain.expenses.entities.avisoPago
 import com.robertomr.tally.domain.expenses.entities.parsearCantidad
 import com.robertomr.tally.domain.expenses.entities.parsearPrecio
 import com.robertomr.tally.domain.expenses.entities.totalRecalculado
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
 
 /*
  * Formulario editable de un ticket (spec revision-datos, mockup 07; spec
@@ -106,6 +114,9 @@ fun FormularioTicketEditable(
     onLineaCantidadEditada: (Long, String) -> Unit,
     onLineaPrecioEditado: (Long, String) -> Unit,
     onLineaEliminada: (Long) -> Unit,
+    onFormaPagoElegida: (FormaPago) -> Unit,
+    onEntregadoEditado: (String) -> Unit,
+    onCambioEditado: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Un solo papel (spec papel-ticket, D5), en orden de recibo: cabecera,
@@ -155,6 +166,15 @@ fun FormularioTicketEditable(
             keyboardType = KeyboardType.Decimal,
             estilo = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
             alineacion = TextAlign.End,
+        )
+
+        // Forma de pago bajo el total, como en un recibo (spec forma-pago).
+        SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
+        SeccionPago(
+            datos = datos,
+            onFormaPagoElegida = onFormaPagoElegida,
+            onEntregadoEditado = onEntregadoEditado,
+            onCambioEditado = onCambioEditado,
         )
     }
 }
@@ -610,3 +630,264 @@ private fun formatoTotalRevision(total: Double): String =
 
 /** Cifras tabulares (DESIGN.md: "tnum" en cualquier cifra). */
 private fun TextStyle.cifrasTabulares(): TextStyle = copy(fontFeatureSettings = "tnum")
+
+// ---------------------------------------------------------------------------
+// Forma de pago (spec forma-pago)
+// ---------------------------------------------------------------------------
+
+/**
+ * Seccion de pago bajo el total, como en un recibo: selector Efectivo / Tarjeta /
+ * No indicada y, solo con efectivo, "Entregado" y "Cambio" (informativos: el
+ * total sigue siendo lo que cuesta) con un aviso NO bloqueante si no cuadran.
+ * Al pasar a Tarjeta los campos se ocultan pero sus valores se conservan hasta
+ * guardar (se limpian al guardar, `DatosRevision.normalizada()`).
+ */
+@Composable
+private fun SeccionPago(
+    datos: DatosRevision,
+    onFormaPagoElegida: (FormaPago) -> Unit,
+    onEntregadoEditado: (String) -> Unit,
+    onCambioEditado: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("revision_pago"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        TituloSeccion("Forma de pago")
+        SelectorFormaPago(seleccionada = datos.formaPago, onElegida = onFormaPagoElegida)
+        if (datos.formaPago == FormaPago.EFECTIVO) {
+            CampoImporteOpcional(
+                etiqueta = "Entregado (€)",
+                valor = datos.entregado,
+                onValorCambiado = onEntregadoEditado,
+                testTag = "revision_entregado",
+            )
+            CampoImporteOpcional(
+                etiqueta = "Cambio (€)",
+                valor = datos.cambio,
+                onValorCambiado = onCambioEditado,
+                testTag = "revision_cambio",
+            )
+            AvisoDePago(avisoPago(datos))
+        }
+    }
+}
+
+/**
+ * Selector segmentado accesible (radio-group): cada opcion mide >= 48 dp, lleva
+ * icono + texto + marca de seleccionada (no solo color) y expone `selected` y
+ * `Role.RadioButton`. Con fuente grande (> [UMBRAL_APILAR_BOTONES]) las opciones
+ * se apilan a ancho completo.
+ */
+@Composable
+private fun SelectorFormaPago(
+    seleccionada: FormaPago,
+    onElegida: (FormaPago) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
+    val opcion: @Composable (FormaPago, Modifier) -> Unit = { forma, m ->
+        OpcionFormaPago(
+            forma = forma,
+            activa = forma == seleccionada,
+            enColumna = !apilar,
+            onClick = { onElegida(forma) },
+            modifier = m,
+        )
+    }
+    if (apilar) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .selectableGroup()
+                .testTag("revision_forma_pago"),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FormaPago.entries.forEach { opcion(it, Modifier.fillMaxWidth()) }
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .selectableGroup()
+                .testTag("revision_forma_pago"),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FormaPago.entries.forEach { opcion(it, Modifier.weight(1f)) }
+        }
+    }
+}
+
+@Composable
+private fun OpcionFormaPago(
+    forma: FormaPago,
+    activa: Boolean,
+    enColumna: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val contenedor = if (activa) {
+        contenedorFormaPago(forma)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainer
+    }
+    val contenido = if (activa) {
+        contenidoFormaPago(forma)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val forma12 = RoundedCornerShape(12.dp)
+    val icono: @Composable () -> Unit = {
+        Icon(
+            imageVector = iconoFormaPago(forma),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = contenido,
+        )
+    }
+    val marca: @Composable () -> Unit = {
+        if (activa) {
+            Icon(
+                imageVector = Icons.Outlined.Check,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = contenido,
+            )
+        }
+    }
+    val etiqueta: @Composable (Modifier) -> Unit = { m ->
+        Text(
+            text = etiquetaFormaPago(forma),
+            style = MaterialTheme.typography.labelMedium,
+            color = contenido,
+            textAlign = TextAlign.Center,
+            modifier = m,
+        )
+    }
+    val marco = modifier
+        .heightIn(min = 48.dp)
+        .clip(forma12)
+        .background(contenedor)
+        .border(
+            width = if (activa) 2.dp else 1.dp,
+            color = if (activa) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            },
+            shape = forma12,
+        )
+        .selectable(selected = activa, role = Role.RadioButton, onClick = onClick)
+        .padding(horizontal = 8.dp, vertical = 8.dp)
+        .testTag("revision_forma_pago_${forma.name.lowercase()}")
+    if (enColumna) {
+        // Tres opciones en fila (360 dp): icono (+ marca) encima y texto debajo, para
+        // que ninguna etiqueta se parta a mitad de palabra.
+        Column(
+            modifier = marco,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                icono()
+                if (activa) Spacer(modifier = Modifier.width(2.dp))
+                marca()
+            }
+            etiqueta(Modifier)
+        }
+    } else {
+        // Opciones apiladas a ancho completo (fuente grande): icono + texto + marca en una fila.
+        Row(
+            modifier = marco,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            icono()
+            Spacer(modifier = Modifier.width(6.dp))
+            etiqueta(Modifier.weight(1f, fill = false))
+            if (activa) Spacer(modifier = Modifier.width(4.dp))
+            marca()
+        }
+    }
+}
+
+/**
+ * Campo de importe opcional (entregado / cambio): vacio = sin dato. El texto
+ * local manda mientras se escribe, pero si el dato cambia por otra via (el cambio
+ * se recalcula al editar entregado o total) el campo se actualiza.
+ */
+@Composable
+private fun CampoImporteOpcional(
+    etiqueta: String,
+    valor: Double?,
+    onValorCambiado: (String) -> Unit,
+    testTag: String,
+) {
+    var texto by rememberSaveable { mutableStateOf(formatoImporteOpcional(valor)) }
+    LaunchedEffect(valor) {
+        if (!coincideImporte(texto, valor)) texto = formatoImporteOpcional(valor)
+    }
+    OutlinedTextField(
+        value = texto,
+        onValueChange = {
+            texto = it
+            onValorCambiado(it)
+        },
+        label = { Text(etiqueta) },
+        singleLine = true,
+        isError = texto.isNotBlank() && parsearImporteOpcional(texto) == null,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        textStyle = reciboTexto(MaterialTheme.typography.bodyLarge).copy(textAlign = TextAlign.End),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(testTag),
+    )
+}
+
+/** Aviso no bloqueante (texto + icono, no solo color) de coherencia entregado/cambio. */
+@Composable
+private fun AvisoDePago(aviso: AvisoPago?) {
+    if (aviso == null) return
+    val texto = when (aviso) {
+        AvisoPago.ENTREGADO_MENOR_QUE_TOTAL ->
+            "Aviso: lo entregado es menor que el total. Puedes guardar igualmente."
+        AvisoPago.CAMBIO_NO_CUADRA ->
+            "Aviso: el cambio no coincide con entregado menos total. Puedes guardar igualmente."
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .testTag("revision_aviso_pago"),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.WarningAmber,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = texto,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun parsearImporteOpcional(texto: String): Double? =
+    texto.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }
+
+private fun formatoImporteOpcional(valor: Double?): String =
+    valor?.let(::formatoTotalRevision).orEmpty()
+
+/** `true` si el texto escrito ya representa [valor] (vacio = sin dato). */
+private fun coincideImporte(texto: String, valor: Double?): Boolean {
+    if (texto.isBlank()) return valor == null
+    val actual = parsearImporteOpcional(texto)
+    return actual != null && valor != null && abs(actual - valor) < 0.005
+}

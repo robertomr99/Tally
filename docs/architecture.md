@@ -60,6 +60,21 @@ app ──────────► feature:* ──────────�
   `MigrationTestHelper`. Retención de 500 filas (insertar + recortar en una
   `@Transaction`).
 
+- **Versión 3 (`forma-pago`)**: `tickets` gana `forma_pago TEXT NOT NULL DEFAULT 'NO_INDICADA'`,
+  `entregado REAL` y `cambio REAL` (nulables). `MIGRATION_2_3` son tres `ALTER TABLE ... ADD COLUMN`
+  y su `DEFAULT` replica exactamente el `defaultValue` de `TicketEntity` y el `createSql` de
+  `schemas/.../3.json` (Room valida el esquema al abrir: un desajuste tumbaría la app). Registrada con
+  `addMigrations(MIGRATION_1_2, MIGRATION_2_3)`, sin `fallbackToDestructiveMigration`; el mapper
+  usa `FormaPago.desde(...)` y no falla ante valores desconocidos. `MigrationTest`/`MigracionFormaPagoTest`
+  y verificación con `install -r` sobre la BD real.
+- **Forma de pago en dominio**: `FormaPago` (enum) y `Pago.kt` (`normalizarPago`, `DatosRevision.normalizada()`,
+  `avisoPago`) son Kotlin puro en `:domain:expenses`; `Ticket`, `TicketExtraido` y `DatosRevision` llevan
+  `formaPago/entregado/cambio` con valores por defecto al final. `GuardarTicket` y `ActualizarTicket` normalizan
+  al guardar. Los totales de Resumen, donut y listado siguen usando solo `ticket.total`.
+- **Extracción**: el prompt añade un bloque REGLAS DE PAGO separado de la REGLA DEL TOTAL;
+  `responseSchema()` declara `forma_pago` (enum) y `entregado`/`cambio` opcionales; el DTO del parser
+  los lee con valores por defecto y los importes ilegibles se descartan sin invalidar la extracción.
+
 ### Registro de extracciones (`log-extracciones`)
 
 - `EngineConRegistro` (dominio, Kotlin puro) decora al `EngineRouter` e
@@ -368,6 +383,14 @@ app ──────────► feature:* ──────────�
   `PAPEL_ANCHO_MAXIMO` pública y la forma `extraLarge` = 28 dp en el tema; Procesado (`:feature:escanear`) usa la
   `CabeceraPantalla` común. Sin módulos, dependencias, dominio ni framework tocados; el tag `periodo_rango` desaparece
   (el rango vive solo en `resumen_rango`).
+
+### Forma de pago (`forma-pago`)
+
+- `:feature:common/FormaPagoUi.kt` (etiqueta, icono, colores, `ChipFormaPago`, `PagoEnPapel`) lo comparten el
+  formulario editable (selector, campos Entregado/Cambio y aviso), el resultado del procesado, `FilaTicket` y el
+  detalle sin que los features se conozcan. Los ViewModels de Escanear y del Detalle solo cablean
+  `onFormaPagoElegida/onEntregadoEditado/onCambioEditado` hacia los reductores puros de `EdicionDatos.kt`.
+  Sin módulos ni dependencias nuevos.
 
 ## Convenciones de build
 

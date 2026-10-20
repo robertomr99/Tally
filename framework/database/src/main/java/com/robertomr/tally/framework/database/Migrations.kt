@@ -31,3 +31,20 @@ internal val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+/**
+ * Migración 2 -> 3 (spec forma-pago): AÑADE tres columnas a `tickets`; los
+ * tickets existentes quedan con `forma_pago = 'NO_INDICADA'` y
+ * `entregado`/`cambio` NULL. No toca `lineas` ni `extracciones_log`. El SQL y el
+ * DEFAULT replican exactamente el `createSql` de `schemas/.../3.json` y el
+ * `defaultValue` de `TicketEntity` (Room valida el esquema al abrir la BD).
+ *
+ * Prohibido `fallbackToDestructiveMigration`: borraría los tickets.
+ */
+internal val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `tickets` ADD COLUMN `forma_pago` TEXT NOT NULL DEFAULT 'NO_INDICADA'")
+        db.execSQL("ALTER TABLE `tickets` ADD COLUMN `entregado` REAL")
+        db.execSQL("ALTER TABLE `tickets` ADD COLUMN `cambio` REAL")
+    }
+}

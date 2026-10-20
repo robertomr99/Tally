@@ -185,6 +185,9 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
                     onLineaCantidadEditada = viewModel::onLineaCantidadEditada,
                     onLineaPrecioEditado = viewModel::onLineaPrecioEditado,
                     onLineaEliminada = viewModel::onLineaEliminada,
+                    onFormaPagoElegida = viewModel::onFormaPagoElegida,
+                    onEntregadoEditado = viewModel::onEntregadoEditado,
+                    onCambioEditado = viewModel::onCambioEditado,
                     onDescartar = viewModel::onVolverAlResultado,
                     onGuardar = viewModel::onGuardar,
                 )

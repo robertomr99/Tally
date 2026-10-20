@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -47,7 +49,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.feature.common.BadgeMotor
+import com.robertomr.tally.feature.common.ChipFormaPago
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
@@ -91,6 +95,9 @@ fun TicketDetalleScreen(
         onLineaCantidadEditada = viewModel::onLineaCantidadEditada,
         onLineaPrecioEditado = viewModel::onLineaPrecioEditado,
         onLineaEliminada = viewModel::onLineaEliminada,
+        onFormaPagoElegida = viewModel::onFormaPagoElegida,
+        onEntregadoEditado = viewModel::onEntregadoEditado,
+        onCambioEditado = viewModel::onCambioEditado,
         onDescartar = {
             viewModel.onDescartar()
             estado.recrearFormulario()
@@ -104,6 +111,7 @@ fun TicketDetalleScreen(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 internal fun TicketDetalleContenido(
     ui: TicketDetalleUiState,
     estado: TicketDetalleState,
@@ -117,6 +125,9 @@ internal fun TicketDetalleContenido(
     onLineaCantidadEditada: (Long, String) -> Unit,
     onLineaPrecioEditado: (Long, String) -> Unit,
     onLineaEliminada: (Long) -> Unit,
+    onFormaPagoElegida: (FormaPago) -> Unit,
+    onEntregadoEditado: (String) -> Unit,
+    onCambioEditado: (String) -> Unit,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     onConfirmarBorrado: () -> Unit,
@@ -171,12 +182,26 @@ internal fun TicketDetalleContenido(
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) {
                                 // El badge se desplaza con el contenido: no gasta altura fija (V21).
-                                BadgeMotor(
-                                    motor = ui.ticket.motor,
+                                // FlowRow: con fuente grande el chip baja de linea en vez de cortarse.
+                                FlowRow(
                                     modifier = Modifier
-                                        .align(Alignment.CenterHorizontally)
+                                        .fillMaxWidth()
                                         .padding(top = 4.dp),
-                                )
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        8.dp,
+                                        Alignment.CenterHorizontally,
+                                    ),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    itemVerticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    BadgeMotor(motor = ui.ticket.motor)
+                                    // Forma de pago vigente en la edicion (spec forma-pago);
+                                    // NO_INDICADA no pinta chip.
+                                    ChipFormaPago(
+                                        forma = ui.datos.formaPago,
+                                        modifier = Modifier.testTag("detalle_forma_pago"),
+                                    )
+                                }
                                 SeccionFoto(
                                     rutaFoto = ui.ticket.rutaFoto,
                                     onVerFoto = estado::abrirFoto,
@@ -193,6 +218,9 @@ internal fun TicketDetalleContenido(
                                         onLineaCantidadEditada = onLineaCantidadEditada,
                                         onLineaPrecioEditado = onLineaPrecioEditado,
                                         onLineaEliminada = onLineaEliminada,
+                                        onFormaPagoElegida = onFormaPagoElegida,
+                                        onEntregadoEditado = onEntregadoEditado,
+                                        onCambioEditado = onCambioEditado,
                                     )
                                 }
                             }

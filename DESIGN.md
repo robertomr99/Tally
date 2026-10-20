@@ -228,6 +228,27 @@ de sombras.
   "Tally" solo aparece en el splash y como nombre de la app. Procesado
   mantiene su propio título ("Analizando ticket de compra") y la cámara no
   lleva cabecera para no tapar el encuadre.
+- **Forma de pago** (`forma-pago`, `FormaPagoUi.kt`): efectivo y tarjeta se distinguen
+  siempre por **icono + texto + color**, nunca solo por color. Iconos: billete
+  (`Payments`) para Efectivo, tarjeta (`CreditCard`) para Tarjeta y `RemoveCircleOutline`
+  para No indicada. Colores con tokens existentes: Efectivo = `tertiary-fixed` /
+  `on-tertiary-fixed` (menta claro), Tarjeta = `primary` / `on-primary` (verde bosque
+  oscuro), contraste AA en ambos (luminosidad opuesta); No indicada = `surface-container-high`.
+  - Selector (revisión y detalle, bajo el total y un punteado): radio-group de tres
+    opciones, cada una ≥ 48 dp con `Role.RadioButton` + `selected`, borde de 2 dp
+    en `primary` y marca de check en la activa. En fila (hasta `UMBRAL_APILAR_BOTONES`
+    = 1,15) cada opción pone icono encima y texto debajo para que a 360 dp ninguna
+    etiqueta se parta a mitad de palabra; con fuente mayor se apilan a ancho completo
+    con icono + texto + check en una línea. Con Efectivo aparecen los campos
+    "Entregado (€)" y "Cambio (€)" (teclado decimal, formato es-ES como el total) y,
+    si no cuadran, un aviso de texto con icono, no bloqueante.
+  - Papel de solo lectura (resultado del procesado): bajo el total, filas
+    "Entregado" y "Cambio" en tipografía de recibo y una línea con icono
+    "Pagado en efectivo" / "Pagado con tarjeta". Con No indicada no se pinta nada.
+  - Listado y detalle: chip pequeño con icono + texto ("Efectivo" / "Tarjeta") junto
+    al chip de categoría (en el listado dentro de un `FlowRow`: baja de línea a 360 dp
+    o con fuente grande en vez de cortarse; en el detalle junto al badge de motor, también
+    en `FlowRow`). No indicada no lleva chip. El importe de la fila sigue siendo el total.
 - **Selector de período** (pantalla 02): segmented control en píldora con
   Día / Semana / Mes / Personalizado; activo en `secondary-container`. Personalizado abre un
   `DatePickerDialog` con `DateRangePicker` M3 (mockup 09 reducido: sin chips de atajos, tarjetas ni "Restablecer";
