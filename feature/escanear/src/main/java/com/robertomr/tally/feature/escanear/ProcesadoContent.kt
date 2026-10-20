@@ -63,6 +63,7 @@ import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
 import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.EstadoPantalla
 import com.robertomr.tally.feature.common.FilaRecibo
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PAPEL_ANCHO_MAXIMO
@@ -253,36 +254,17 @@ fun ExtraccionFallidaContent(
         CabeceraDeProceso(motor = motor, estado = EstadoBadge.FALLIDO)
         PasosDeProceso(categorizacion = EstadoPaso.FALLIDO)
 
-        Column(
+        EstadoPantalla(
+            titulo = "No se pudieron extraer los datos",
             modifier = Modifier
                 .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = PADDING_PANTALLA),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .fillMaxWidth(),
+            icono = Icons.Outlined.ErrorOutline,
+            colorIcono = MaterialTheme.colorScheme.error,
+            mensaje = mensaje,
+            colorMensaje = MaterialTheme.colorScheme.error,
+            mensajeModifier = Modifier.testTag("procesado_error"),
         ) {
-            Icon(
-                imageVector = Icons.Outlined.ErrorOutline,
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.error,
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "No se pudieron extraer los datos",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = mensaje,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag("procesado_error"),
-            )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "La foto y el texto del ticket siguen guardados.",
                 style = MaterialTheme.typography.bodySmall,
@@ -462,7 +444,8 @@ private fun CabeceraDeProceso(
         Text(
             text = etiquetaProceso(motor, estado),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
+            // onSurfaceVariant (no outline): el texto de 11 sp necesita contraste AA (V23).
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.testTag("procesado_proceso"),
         )
     }

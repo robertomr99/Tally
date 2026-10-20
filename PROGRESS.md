@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `mejoras-visuales-2` (`mejoras-visuales` `accepted`, sesión 062, rama `correcciones-visuales`); `seed-demo` queda para el final.
+- Current next ready feature: `mejoras-visuales-3` (`mejoras-visuales-2` `accepted`, sesión 064, rama `correcciones-visuales`); `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2732,3 +2732,46 @@
 - Pendiente humano: revision visual de las capturas en la Tab.
 - Candidato nuevo para `mejoras-visuales-2`: "Repetir foto" se corta a fontScale 2,0.
 - Status: `mejoras-visuales` = **accepted**.
+
+## Session 063 - mejoras-visuales-2 (F2) implementacion (2026-10-20, rama correcciones-visuales)
+
+- Alcance: hallazgos V12-V25 de `docs/specs/mejoras-visuales.md` mas el candidato "Repetir foto" (Revisar foto a
+  fontScale 2,0). No se tocaron V26-V30 (diferidos) ni V31-V39 (descartados). Se usaron los defaults de la spec; no
+  quedo ninguna decision de diseno abierta.
+- Hecho: V12 (selector con segmentos de 48 dp, dos filas con fontScale > 1,1, sin check en ese modo, elipsis en vez de
+  recorte), V13 (`TarjetaSeccion` en `:feature:common`, usada por Resumen y las 4 tarjetas de Ajustes), V14
+  (`TituloSeccion` con `heading` y mismo peso en Resumen, Ajustes y "Desglose de articulos"), V15 (`EstadoPantalla` y
+  `CargandoPantalla`: vacio de Gastos, "Este ticket ya no existe", permiso y error de captura, fallo de Procesado;
+  Gastos ya muestra indicador al cargar; tags conservados), V16 (area tactil de 48 dp en chips de categoria con
+  `minimumInteractiveComponentSize`), V17 (`FilaRecibo` fusionada semanticamente), V18 (`selectableGroup` en la barra
+  inferior), V21 (badge de motor dentro del scroll en Detalle y Revision), V22 (titulo de cabecera hasta 2 lineas), V23
+  (`outline` -> `onSurfaceVariant` en los dos textos de 11 sp), V24 (icono Ajustes `Outlined`), V25 (`Role.Button` en
+  obturador y "Cerrar"). "Repetir foto": dock de Revisar foto apilado con el mismo umbral que el dock de edicion
+  (`UMBRAL_APILAR_BOTONES` = 1,15, ahora publico en `LayoutAncho.kt`) y pesos 1:1 en fila (con 1:1,4 ya salia
+  "Repetir f..." a 360 dp).
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest` en verde
+  (197 tests JVM, 0 fallos); `am instrument -e notClass ...ExtraccionLocalRealTest,...ExtraccionNubeRealTest` en
+  `emulator-5556`: OK (45 tests), tambien tras eliminar los tests temporales de captura y reinstalar el APK.
+  `emulator-5556` se relanzo (estaba apagado) con el AVD Pixel_10_Pro sin wipe.
+- Tests tocados: ninguno (ni textos ni tags ni estructura lo exigieron). No se elimino ningun tag; solo se anade
+  `listado_cargando` (indicador de carga de Gastos).
+- Capturas en `docs/evidence/mejoras-visuales-2/` (24 PNG ligeros + README); incluyen por primera vez Procesado en curso,
+  fallo de Procesado, Gastos vacio y cargando. Emulador restaurado (1280x2856 @480, font_scale 1.0, rotacion 0/auto).
+- No hecho / pendiente: dialogo "Eliminar modelo" sin captura (exige modelo descargado y `AjustesContent` es internal);
+  `captura_error` sin captura (composable privado). Detectado y fuera de alcance: a fontScale 2,0 el fallo de Procesado
+  recorta sus botones ("Probar con Local", "Volver a la foto", "Reintentar") y la etiqueta de proceso queda pegada al
+  borde; "Promedio diario" se parte en 3 lineas en la tarjeta de Resumen.
+- Docs: `DESIGN.md` (fuentes grandes, estados de pantalla, tarjetas/secciones, contraste, accesibilidad tactil, radio de
+  tarjeta) y `docs/architecture.md`.
+- Estado: `mejoras-visuales-2` = **passing**, pendiente de validator independiente.
+
+## Session 064 - mejoras-visuales-2 (F2) validacion (2026-10-20, rama correcciones-visuales)
+
+- Validator independiente: **accept** (`assembleDebug` y `testDebugUnitTest` en cache, sin re-ejecutar los
+  tests; V12-V25 y "Repetir foto" verificados en diff y capturas; ningun test modificado ni tag eliminado, solo
+  anadido `listado_cargando`; APK de instrumentacion revisado sin tests temporales; accesibilidad y contraste
+  `outline` a `onSurfaceVariant` revisados; instrumentados apoyados en la evidencia de emulator-5556, OK 45).
+- Deuda pasada a `mejoras-visuales-3`: selector en dos filas sin check del segmento activo (casi solo color),
+  fallo de Procesado a fontScale 2,0 y "Promedio diario" en tres lineas.
+- Sin verificar visualmente: dialogo "Eliminar modelo", `captura_error`, transiciones y TalkBack.
+- Status: `mejoras-visuales-2` = **accepted**.

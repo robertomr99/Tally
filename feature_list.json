@@ -567,14 +567,36 @@
     "title": "Mejoras visuales (2): accesibilidad y consistencia de componentes",
     "user_visible_behavior": "Segunda pasada visual: selector de periodo con tamaño táctil y fuentes grandes correctos, tarjetas de Ajustes coherentes con las de Resumen, estados vacío/error/carga unificados, semántica de accesibilidad agrupada y contraste corregido.",
     "depends_on": ["mejoras-visuales"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Hallazgos V12-V25 de docs/specs/mejoras-visuales.md implementados o descartados con motivo",
       "Capturas antes/después en móvil, 360 dp, fontScale alto y tablet horizontal en emulator-5556",
       "Suite :app y JVM en verde sin debilitar tests"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-20 sesión 063 (F2: V12-V25 + 'Repetir foto'): gradlew assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest en verde (197 tests JVM, 0 fallos); emulator-5556: am instrument con notClass de los reales OK (45 tests, 0 fallos), también tras eliminar los tests temporales de captura y reinstalar el APK",
+      "Hechos: V12 selector 48 dp y dos filas con fontScale > 1,1; V13 TarjetaSeccion (Resumen y Ajustes); V14 TituloSeccion con heading; V15 EstadoPantalla/CargandoPantalla (vacío, no existe, permiso, error de captura, fallo de Procesado, carga de Gastos); V16 chips con área táctil de 48 dp; V17 FilaRecibo fusionada; V18 selectableGroup en la barra inferior; V21 badge dentro del scroll; V22 título de cabecera a 2 líneas; V23 contraste de textos de 11 sp; V24 icono Ajustes Outlined; V25 Role.Button en cámara; 'Repetir foto' apilado con UMBRAL_APILAR_BOTONES (1,15) y pesos 1:1. No tocados: V26-V30 (diferidos) ni V31-V39 (descartados)",
+      "Capturas antes/después en docs/evidence/mejoras-visuales-2/ (móvil, 360 dp, fontScale 1,3 y 2,0, tablet horizontal; incluye por primera vez Procesado en curso, fallo de Procesado, Gastos vacío y cargando); README.md de esa carpeta con la lectura honesta. wm size/density, font_scale y rotación restaurados",
+      "Tests tocados: ninguno; no se eliminó ningún tag y se añade listado_cargando (indicador de carga de Gastos)",
+      "NO cubierto: diálogo 'Eliminar modelo' (exige modelo descargado, AjustesContent es internal) y captura_error (composable privado) sin captura; transiciones y TalkBack sin comprobar en imagen. Visto y fuera de alcance: a fontScale 2,0 el fallo de Procesado recorta sus botones y la etiqueta de proceso queda pegada al borde; 'Promedio diario' se parte en 3 líneas en la tarjeta de Resumen",
+      "2026-10-20 sesion 064: validator independiente -> accept (assembleDebug y testDebugUnitTest en cache, sin re-ejecutar los tests; hallazgos V12-V25 y Repetir foto verificados en diff y capturas; ningun test modificado ni tag eliminado, solo anadido listado_cargando; APK de instrumentacion revisado sin ZzCapturaTemporalTest ni ZzEstadosTemporalTest; accesibilidad (mergeDescendants solo agrupa textos, selected/Role.Tab/RadioButton conservados) y contraste outline a onSurfaceVariant (de 4,4 a 9:1) revisados; instrumentados apoyados en evidencia de emulator-5556, OK 45 tests). Deuda no bloqueante pasada a mejoras-visuales-3: selector en dos filas sin check del segmento activo (casi solo color), fallo de Procesado a fontScale 2,0 y Promedio diario en tres lineas. Sin verificar visualmente: dialogo Eliminar modelo, captura_error, transiciones y TalkBack."
+    ],
     "notes": "Dividida de mejoras-visuales por el planner (auditoria de 39 hallazgos): F1 = V01-V11, V19, V20; F2 = V12-V25; F3 diferidos (V26-V30: campos del papel solo con subrayado, snackbar de confirmacion, transicion interna de Escanear, dock en movil horizontal, aviso al salir de la Revision con la barra inferior). Spec en docs/specs/mejoras-visuales.md. Candidato nuevo detectado en F1: el boton 'Repetir foto' de Revisar foto se corta ('Rep') con fontScale 2,0."
+  },
+  {
+    "id": "mejoras-visuales-3",
+    "area": "diseno",
+    "title": "Mejoras visuales (3): fuentes grandes y deuda de accesibilidad",
+    "user_visible_behavior": "Las pantallas siguen siendo legibles y utilizables con fuente al doble de tamaño: fallo de Procesado sin botones cortados, tarjeta de Resumen sin textos partidos y selector de periodo con indicador de estado no solo por color.",
+    "depends_on": ["mejoras-visuales-2"],
+    "status": "not_started",
+    "verification": [
+      "Capturas antes/después en fontScale 1,3 y 2,0 en móvil, 360 dp y tablet horizontal en emulator-5556",
+      "Selector de periodo en modo dos filas: segmento activo identificable sin depender solo del color (borde u otro indicador) con contraste no textual suficiente",
+      "Suite :app y JVM en verde sin debilitar tests; tags conservados"
+    ],
+    "evidence": [],
+    "notes": "Seguimientos del validator de mejoras-visuales-2: (1) selector en dos filas (fontScale > 1,1) sin check del segmento activo: anadir borde de 1,5 dp en onSecondaryContainer en modo apilado; (2) fallo de Procesado a fontScale 2,0: 'Probar con Local', 'Volver a la foto' y 'Reintentar' cortados, texto tapado por los botones, etiqueta de proceso pegada al borde: apilar con UMBRAL_APILAR_BOTONES, scroll o weight y aplicar PADDING_PANTALLA; (3) 'Promedio diario' en tres lineas a 2,0. Candidatos que requieren decision de diseno del usuario y siguen diferidos (V26-V30 de docs/specs/mejoras-visuales.md): campos del papel solo con subrayado, snackbar de confirmacion, transicion interna de Escanear, dock en movil horizontal, aviso al salir de la Revision con la barra inferior. Sin verificar visualmente en F2: dialogo Eliminar modelo, captura_error, transiciones y TalkBack."
   },
   {
     "id": "seed-demo",

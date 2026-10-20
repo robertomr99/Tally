@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +37,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.feature.common.ColumnaCentrada
+import com.robertomr.tally.feature.common.EstadoPantalla
 
 /**
  * Pantalla Escanear (spec captura-foto): sustituye al placeholder de
@@ -225,36 +227,16 @@ private fun PermisoCamaraContent(
     onPermitir: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    EstadoPantalla(
+        titulo = "Necesitamos la cámara",
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp)
             .testTag("captura_permiso"),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        icono = Icons.Outlined.PhotoCamera,
+        colorIcono = MaterialTheme.colorScheme.primary,
+        mensaje = "Tally usa la cámara para capturar el ticket de papel y guardar su foto.",
     ) {
-        Icon(
-            imageVector = Icons.Outlined.PhotoCamera,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Necesitamos la cámara",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Tally usa la cámara para capturar el ticket de papel y guardar su foto.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
         if (permisoDenegadoAntes) {
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Permiso denegado. Puedes activarlo en Ajustes > Aplicaciones > Tally > Permisos > Cámara.",
                 style = MaterialTheme.typography.bodySmall,
@@ -262,7 +244,6 @@ private fun PermisoCamaraContent(
                 textAlign = TextAlign.Center,
             )
         }
-        Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = onPermitir,
             modifier = Modifier
@@ -323,28 +304,15 @@ private fun ErrorContent(
     onVolverAlEncuadre: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    EstadoPantalla(
+        titulo = "No se pudo guardar la foto",
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp)
             .testTag("captura_error"),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        icono = Icons.Outlined.ErrorOutline,
+        colorIcono = MaterialTheme.colorScheme.error,
+        mensaje = mensaje,
     ) {
-        Text(
-            text = "No se pudo guardar la foto",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = mensaje,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = onVolverAlEncuadre,
             modifier = Modifier

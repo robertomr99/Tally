@@ -19,10 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -51,6 +51,8 @@ import com.robertomr.tally.feature.common.BadgeMotor
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
+import com.robertomr.tally.feature.common.CargandoPantalla
+import com.robertomr.tally.feature.common.EstadoPantalla
 import com.robertomr.tally.feature.common.FormularioTicketEditable
 import com.robertomr.tally.feature.common.FotoOriginal
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
@@ -142,12 +144,9 @@ internal fun TicketDetalleContenido(
         )
 
         when (ui) {
-            TicketDetalleUiState.Cargando -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(modifier = Modifier.testTag("detalle_cargando"))
-            }
+            TicketDetalleUiState.Cargando -> CargandoPantalla(
+                indicadorModifier = Modifier.testTag("detalle_cargando"),
+            )
 
             TicketDetalleUiState.NoExiste -> NoExiste(onBack = onBack)
 
@@ -159,11 +158,6 @@ internal fun TicketDetalleContenido(
                         .testTag("detalle_ticket_${ui.ticket.id}"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    BadgeMotor(
-                        motor = ui.ticket.motor,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-                    )
-
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -176,6 +170,13 @@ internal fun TicketDetalleContenido(
                                 modifier = Modifier.padding(horizontal = PADDING_PANTALLA),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) {
+                                // El badge se desplaza con el contenido: no gasta altura fija (V21).
+                                BadgeMotor(
+                                    motor = ui.ticket.motor,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterHorizontally)
+                                        .padding(top = 4.dp),
+                                )
                                 SeccionFoto(
                                     rutaFoto = ui.ticket.rutaFoto,
                                     onVerFoto = estado::abrirFoto,
@@ -279,20 +280,13 @@ private fun BarraSuperior(
 
 @Composable
 private fun NoExiste(onBack: () -> Unit) {
-    Column(
+    EstadoPantalla(
+        titulo = "Este ticket ya no existe",
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
             .testTag("detalle_no_existe"),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        icono = Icons.Outlined.ReceiptLong,
     ) {
-        Text(
-            text = "Este ticket ya no existe",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
         Button(
             onClick = onBack,
             modifier = Modifier

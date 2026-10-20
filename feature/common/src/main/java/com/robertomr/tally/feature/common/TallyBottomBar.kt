@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DocumentScanner
@@ -78,6 +79,8 @@ fun TallyBottomBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
+                    // Los 3 destinos forman un grupo de selección único para TalkBack (V18).
+                    .selectableGroup()
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically,

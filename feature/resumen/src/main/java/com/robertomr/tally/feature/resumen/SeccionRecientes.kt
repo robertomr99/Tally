@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Ticket
 import com.robertomr.tally.feature.common.FilaTicket
+import com.robertomr.tally.feature.common.TituloSeccion
 import com.robertomr.tally.feature.common.formaFilaTicket
 import java.time.LocalDate
 
@@ -38,13 +39,7 @@ internal fun SeccionRecientes(
             .testTag("resumen_recientes"),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = "Gastos del periodo",
-            modifier = Modifier.padding(top = 4.dp),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        TituloSeccion("Gastos del periodo", modifier = Modifier.padding(top = 4.dp))
         when {
             recientes == null -> Unit
             recientes.isEmpty() -> Text(

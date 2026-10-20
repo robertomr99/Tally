@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.ResumenPeriodo
 import com.robertomr.tally.feature.common.EstiloTabular
+import com.robertomr.tally.feature.common.TarjetaSeccion
 import com.robertomr.tally.feature.common.formatoImporte
 
 /**
@@ -41,43 +42,36 @@ internal fun TarjetaTotal(
     resumen: ResumenPeriodo?,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // El rango del periodo ya está en el subtítulo de la cabecera (una sola vez).
-            Text(
-                text = "GASTO TOTAL DEL PERIODO",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    TarjetaSeccion(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // El rango del periodo ya está en el subtítulo de la cabecera (una sola vez).
+        Text(
+            text = "GASTO TOTAL DEL PERIODO",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
-            Text(
-                text = resumen?.let { formatoImporte(it.total) } ?: "—",
-                modifier = Modifier.testTag("resumen_suma"),
-                style = MaterialTheme.typography.displaySmall.merge(EstiloTabular),
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            if (resumen != null) BadgeComparativa(resumen.variacion)
+        Text(
+            text = resumen?.let { formatoImporte(it.total) } ?: "—",
+            modifier = Modifier.testTag("resumen_suma"),
+            style = MaterialTheme.typography.displaySmall.merge(EstiloTabular),
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        if (resumen != null) BadgeComparativa(resumen.variacion)
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MicroMetrica(
-                    etiqueta = "Promedio diario",
-                    valor = resumen?.let { formatoPromedio(it.promedioDiario) } ?: "—",
-                    tag = "resumen_promedio",
-                    modifier = Modifier.weight(1f),
-                )
-                MicroMetrica(
-                    etiqueta = "Tickets",
-                    valor = resumen?.let { textoTickets(it.numTickets) } ?: "—",
-                    tag = "resumen_num_tickets",
-                    modifier = Modifier.weight(1f),
-                )
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MicroMetrica(
+                etiqueta = "Promedio diario",
+                valor = resumen?.let { formatoPromedio(it.promedioDiario) } ?: "—",
+                tag = "resumen_promedio",
+                modifier = Modifier.weight(1f),
+            )
+            MicroMetrica(
+                etiqueta = "Tickets",
+                valor = resumen?.let { textoTickets(it.numTickets) } ?: "—",
+                tag = "resumen_num_tickets",
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }

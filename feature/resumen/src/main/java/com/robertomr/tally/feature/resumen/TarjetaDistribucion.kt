@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.DistribucionCategorias
 import com.robertomr.tally.domain.expenses.entities.PorcionCategoria
 import com.robertomr.tally.feature.common.EstiloTabular
+import com.robertomr.tally.feature.common.TarjetaSeccion
+import com.robertomr.tally.feature.common.TituloSeccion
 import com.robertomr.tally.feature.common.formatoImporte
 import com.robertomr.tally.feature.common.colorCategoria
 import com.robertomr.tally.feature.common.etiquetaCategoria
@@ -58,71 +60,59 @@ internal fun TarjetaDistribucion(
     distribucion: DistribucionCategorias?,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Column {
+    TarjetaSeccion(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column {
+            TituloSeccion("Distribución por categorías")
+            if (distribucion != null && !distribucion.estaVacia) {
                 Text(
-                    text = "Distribución por categorías",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                if (distribucion != null && !distribucion.estaVacia) {
-                    Text(
-                        text = textoCategoriasConGasto(distribucion.porciones.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            val porciones = distribucion?.porciones.orEmpty()
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val enFila = maxWidth >= ANCHO_FILA
-                val donut: @Composable () -> Unit = { DonutConCentro(distribucion) }
-                if (porciones.isEmpty()) {
-                    // Cargando o vacío: sin leyenda, el donut va solo y centrado.
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { donut() }
-                } else if (enFila) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(24.dp),
-                    ) {
-                        // El donut ocupa su franja y se centra en ella (no pegado al borde).
-                        Box(modifier = Modifier.weight(0.4f), contentAlignment = Alignment.Center) { donut() }
-                        LeyendaCategorias(porciones, Modifier.weight(0.6f))
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        donut()
-                        LeyendaCategorias(porciones, Modifier.fillMaxWidth())
-                    }
-                }
-            }
-
-            if (distribucion != null && distribucion.estaVacia) {
-                Text(
-                    text = "Aún no hay gastos en este periodo.",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("donut_vacio"),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = textoCategoriasConGasto(distribucion.porciones.size),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
                 )
-            } else if (porciones.isNotEmpty()) {
-                DesgloseCategorias(porciones)
             }
+        }
+
+        val porciones = distribucion?.porciones.orEmpty()
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val enFila = maxWidth >= ANCHO_FILA
+            val donut: @Composable () -> Unit = { DonutConCentro(distribucion) }
+            if (porciones.isEmpty()) {
+                // Cargando o vacío: sin leyenda, el donut va solo y centrado.
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { donut() }
+            } else if (enFila) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                ) {
+                    // El donut ocupa su franja y se centra en ella (no pegado al borde).
+                    Box(modifier = Modifier.weight(0.4f), contentAlignment = Alignment.Center) { donut() }
+                    LeyendaCategorias(porciones, Modifier.weight(0.6f))
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    donut()
+                    LeyendaCategorias(porciones, Modifier.fillMaxWidth())
+                }
+            }
+        }
+
+        if (distribucion != null && distribucion.estaVacia) {
+            Text(
+                text = "Aún no hay gastos en este periodo.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("donut_vacio"),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        } else if (porciones.isNotEmpty()) {
+            DesgloseCategorias(porciones)
         }
     }
 }

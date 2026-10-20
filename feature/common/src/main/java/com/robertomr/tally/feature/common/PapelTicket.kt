@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -190,7 +191,8 @@ fun FilaRecibo(
     // letras: el importe baja a su propia linea, a la derecha.
     val apilar = LocalDensity.current.fontScale > 1.4f
     var capa by remember { mutableStateOf<TextLayoutResult?>(null) }
-    Column(modifier = modifier.fillMaxWidth()) {
+    // Una sola parada de TalkBack por fila: "2×, concepto, importe" (V17).
+    Column(modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {}) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),

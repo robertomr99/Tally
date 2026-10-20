@@ -339,6 +339,9 @@ app ──────────► feature:* ──────────�
 - `TicketDetalleViewModel`: id por `SavedStateHandle`, lectura única del ticket (`getById`), estado
   `Cargando | NoExiste | Datos` por cadena de operadores; guardar/borrar con guarda anti doble toque y `hecho`
   que dispara `onBack` una vez. Sin migración Room ni dependencias nuevas.
+- `mejoras-visuales-2`: `:feature:common/ComponentesSeccion.kt` añade `TarjetaSeccion`, `TituloSeccion`,
+  `EstadoPantalla` y `CargandoPantalla` (usados por Resumen, Ajustes, Gastos, Detalle y Escanear sin que los
+  features se conozcan) y `LayoutAncho.kt` la constante `UMBRAL_APILAR_BOTONES`. Sin módulos ni dependencias nuevos.
 
 ### Papel de ticket (`papel-ticket`)
 

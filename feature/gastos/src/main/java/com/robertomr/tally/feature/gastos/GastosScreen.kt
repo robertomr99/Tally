@@ -28,6 +28,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.feature.common.CabeceraDia
 import com.robertomr.tally.feature.common.CabeceraPantalla
+import com.robertomr.tally.feature.common.CargandoPantalla
+import com.robertomr.tally.feature.common.EstadoPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FilaTicket
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
@@ -94,8 +96,11 @@ fun GastosContenido(
 
             val grupos = ui.grupos
             when {
-                // Cargando: cabecera y selector sin filas, sin spinner.
-                grupos == null -> Unit
+                // Cargando: cabecera y selector con el indicador común de carga.
+                grupos == null -> CargandoPantalla(
+                    modifier = Modifier.weight(1f),
+                    indicadorModifier = Modifier.testTag("listado_cargando"),
+                )
                 grupos.isEmpty() -> EstadoVacio(onEscanear)
                 else -> LazyColumn(
                     state = estado.lista,
@@ -136,31 +141,14 @@ fun GastosContenido(
 
 @Composable
 private fun EstadoVacio(onEscanear: () -> Unit) {
-    Column(
+    EstadoPantalla(
+        titulo = "Aún no hay tickets en este periodo",
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp)
             .testTag("listado_vacio"),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+        icono = Icons.Outlined.ReceiptLong,
+        mensaje = "Escanea un ticket y aparecerá aquí con su comercio, fecha y categoría.",
     ) {
-        Icon(
-            imageVector = Icons.Outlined.ReceiptLong,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "Aún no hay tickets en este periodo",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = "Escanea un ticket y aparecerá aquí con su comercio, fecha y categoría.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
         Button(onClick = onEscanear, modifier = Modifier.testTag("boton_escanear_vacio")) {
             Text("Escanear ticket")
         }

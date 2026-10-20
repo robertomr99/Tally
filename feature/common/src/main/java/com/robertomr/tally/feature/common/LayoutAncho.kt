@@ -23,6 +23,12 @@ val ANCHO_MAXIMO_CONTENIDO = 720.dp
 val PADDING_PANTALLA = 20.dp
 
 /**
+ * Escala de fuente a partir de la cual los pares de botones de un dock (Descartar/Guardar,
+ * Repetir foto/Continuar) se apilan en vertical, con el botón principal primero.
+ */
+const val UMBRAL_APILAR_BOTONES = 1.15f
+
+/**
  * Contenedor único de las pantallas: centra el contenido en una columna de
  * [ANCHO_MAXIMO_CONTENIDO]. El [modifier] se aplica al `Box` exterior (a todo el
  * ancho), de modo que fondos, scroll y `fillMaxSize` los decide el llamador fuera

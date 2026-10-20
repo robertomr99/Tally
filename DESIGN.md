@@ -156,9 +156,27 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
   `enableEdgeToEdge` con barras transparentes e iconos oscuros (la app solo tiene
   tema claro). Detalle y Revisión de datos aplican `imePadding()` para que el dock
   y el campo enfocado queden sobre el teclado.
-- **Fuentes grandes**: con `fontScale` > 1,15 el dock de edición apila sus botones
-  (Guardar primero) y baja el subtítulo del total; con > 1,4 los pasos de Procesado
-  se apilan sin chevrons.
+- **Fuentes grandes**: con `fontScale` > 1,15 (`UMBRAL_APILAR_BOTONES` en
+  `LayoutAncho.kt`) los pares de botones de un dock se apilan con el principal
+  primero: Guardar/Descartar en el dock de edición (además baja el subtítulo del
+  total) y Continuar/Repetir foto en Revisar foto. Con > 1,1 el selector de periodo
+  pasa a dos filas (Día/Semana/Mes y Personalizado a ancho completo, sin check);
+  con > 1,4 los pasos de Procesado se apilan sin chevrons. El título de
+  `CabeceraPantalla` admite dos líneas.
+- **Estados de pantalla**: vacío, error y permiso usan `EstadoPantalla`
+  (icono de 40 dp opcional, titular `headlineSmall`, mensaje `bodyMedium` y botón
+  debajo; 24 dp laterales) y la carga usa `CargandoPantalla` (indicador de 40 dp
+  centrado), ambos en `feature/common/ComponentesSeccion.kt`.
+- **Tarjetas y secciones**: una sola tarjeta, `TarjetaSeccion` (fondo
+  `surfaceContainerLow`, borde `outlineVariant` al 40 %, radio 24 dp, padding de
+  20 dp), la usan Resumen y Ajustes; los títulos de sección son `TituloSeccion`
+  (`titleMedium` SemiBold, `heading` para TalkBack).
+- **Contraste**: el texto de 11 sp sobre `surface` usa `onSurfaceVariant`, no
+  `outline` (que queda para trazos y guías decorativas).
+- **Accesibilidad táctil**: segmentos del selector de 48 dp; chips de categoría con
+  área táctil de 48 dp (`minimumInteractiveComponentSize`) sin agrandar el chip;
+  filas de recibo y barra inferior agrupadas semánticamente; obturador y "Cerrar"
+  de la cámara con `Role.Button`.
 - **Transiciones** (`NavHost`): entre pestañas, fundido de 150 ms; hacia/desde
   Detalle y Ajustes, deslizamiento horizontal de 300 ms con pop inverso.
 - **Regla única de ancho**: TODAS las pantallas usan una sola columna centrada
@@ -192,7 +210,7 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
 
 Pill (9999dp) para botones primarios, FAB, pills de navegación y chips
 activos. 12dp en cards y filas. 16dp en bottom sheets, contenedor de recibo y
-radios interiores. 24dp en las tarjetas grandes de Resumen. 28dp en diálogos
+radios interiores. 24dp en las tarjetas de sección (`TarjetaSeccion`: Resumen y Ajustes). 28dp en diálogos
 (`AlertDialog`, `DatePickerDialog`): es la forma `extraLarge` del tema
 (`theme/Theme.kt`), así que los diálogos NO fijan `shape` propia. La píldora se
 pide siempre explícita (`RoundedCornerShape(9999.dp)`) y nunca depende de

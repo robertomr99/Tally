@@ -50,6 +50,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -331,7 +332,7 @@ private fun BotonObturador(
             .border(3.dp, Color.White.copy(alpha = 0.9f), CircleShape)
             .padding(4.dp)
             .background(Color.White, CircleShape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .testTag("captura_obturador"),
         contentAlignment = Alignment.Center,
     ) {
@@ -352,7 +353,7 @@ private fun BotonCerrar(onClick: () -> Unit) {
                 .size(48.dp)
                 .background(Color.White.copy(alpha = 0.1f), CircleShape)
                 .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
-                .clickable(onClick = onClick)
+                .clickable(role = Role.Button, onClick = onClick)
                 .testTag("captura_cerrar"),
             contentAlignment = Alignment.Center,
         ) {

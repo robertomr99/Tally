@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -211,7 +212,7 @@ private fun ChipsCategoria(
             .fillMaxWidth()
             .testTag("revision_categoria"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         Categoria.entries.forEach { categoria ->
             val activa = categoria == seleccionada
@@ -227,6 +228,8 @@ private fun ChipsCategoria(
             }
             Row(
                 modifier = Modifier
+                    // Área táctil de 48 dp sin agrandar el chip visual (V16).
+                    .minimumInteractiveComponentSize()
                     .selectable(
                         selected = activa,
                         role = Role.RadioButton,
@@ -297,12 +300,7 @@ private fun EditorLineas(
             modifier = Modifier.padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "Desglose de artículos",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
+            TituloSeccion("Desglose de artículos", modifier = Modifier.weight(1f))
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = contadorArticulos(lineas.size),
@@ -490,7 +488,7 @@ private fun ContenidoDock(
 ) {
     // Con fuente grande el dock no cabe en una fila (V03): los botones se apilan
     // (Guardar primero) y el subtítulo del total baja a ancho completo.
-    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_DOCK
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
     val botonDescartar: @Composable (Modifier) -> Unit = { modificador ->
         OutlinedButton(
             onClick = onDescartar,
@@ -588,12 +586,10 @@ private fun SubtituloTotalRecalculado(lineas: List<LineaEditable>) {
     Text(
         text = "Calculado a partir de ${contadorArticulos(lineas.size)}",
         style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.outline,
+        // onSurfaceVariant (no outline): el texto de 11 sp necesita contraste AA (V23).
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
-
-/** Escala de fuente a partir de la cual los botones del dock se apilan en vertical. */
-private const val UMBRAL_APILAR_DOCK = 1.15f
 
 /** Contador REAL de filas (DESIGN.md: nada de "6 articulos" inventados). */
 private fun contadorArticulos(n: Int): String =

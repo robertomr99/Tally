@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -78,7 +78,7 @@ private fun ResumenContenido(
                     accion = {
                         IconButton(onClick = onAbrirAjustes, modifier = Modifier.testTag("boton_ajustes")) {
                             Icon(
-                                imageVector = Icons.Filled.Settings,
+                                imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Ajustes",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

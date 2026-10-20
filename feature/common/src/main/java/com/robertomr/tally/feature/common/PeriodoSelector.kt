@@ -3,6 +3,7 @@ package com.robertomr.tally.feature.common
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -52,22 +54,47 @@ fun PeriodoSelector(
     modifier: Modifier = Modifier,
 ) {
     var pickerAbierto by rememberSaveable { mutableStateOf(false) }
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        // Pesos según la longitud del texto para que los 4 quepan en 360 dp.
-        Segmento(PeriodoTipo.DIA, "Día", "periodo_dia", seleccionado, onSeleccionarTipo, Modifier.weight(0.8f))
-        Segmento(PeriodoTipo.SEMANA, "Semana", "periodo_semana", seleccionado, onSeleccionarTipo, Modifier.weight(1.1f))
-        Segmento(PeriodoTipo.MES, "Mes", "periodo_mes", seleccionado, onSeleccionarTipo, Modifier.weight(0.8f))
-        Segmento(
-            PeriodoTipo.PERSONALIZADO, "Personalizado", "periodo_personalizado", seleccionado,
-            { pickerAbierto = true }, Modifier.weight(1.6f),
-        )
+    // Con fuente grande los 4 segmentos no caben en una fila ("Personalizado" se recortaba, V12):
+    // pasan a dos filas, Día/Semana/Mes arriba y Personalizado a ancho completo debajo.
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_SELECTOR
+    val alPulsarPersonalizado: (PeriodoTipo) -> Unit = { pickerAbierto = true }
+    if (apilar) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Segmento(PeriodoTipo.DIA, "Día", "periodo_dia", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false)
+                Segmento(PeriodoTipo.SEMANA, "Semana", "periodo_semana", seleccionado, onSeleccionarTipo, Modifier.weight(1.3f), conCheck = false)
+                Segmento(PeriodoTipo.MES, "Mes", "periodo_mes", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false)
+            }
+            Segmento(
+                PeriodoTipo.PERSONALIZADO, "Personalizado", "periodo_personalizado", seleccionado,
+                alPulsarPersonalizado, Modifier.fillMaxWidth(), conCheck = false,
+            )
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            // Pesos según la longitud del texto para que los 4 quepan en 360 dp.
+            Segmento(PeriodoTipo.DIA, "Día", "periodo_dia", seleccionado, onSeleccionarTipo, Modifier.weight(0.8f))
+            Segmento(PeriodoTipo.SEMANA, "Semana", "periodo_semana", seleccionado, onSeleccionarTipo, Modifier.weight(1.1f))
+            Segmento(PeriodoTipo.MES, "Mes", "periodo_mes", seleccionado, onSeleccionarTipo, Modifier.weight(0.8f))
+            Segmento(
+                PeriodoTipo.PERSONALIZADO, "Personalizado", "periodo_personalizado", seleccionado,
+                alPulsarPersonalizado, Modifier.weight(1.6f),
+            )
+        }
     }
     if (pickerAbierto) {
         RangoFechasDialog(
@@ -90,13 +117,14 @@ private fun Segmento(
     seleccionado: PeriodoTipo,
     onSeleccionar: (PeriodoTipo) -> Unit,
     modifier: Modifier,
+    conCheck: Boolean = true,
 ) {
     val activo = tipo == seleccionado
     val fondo = if (activo) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
     val contenido = if (activo) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Row(
         modifier = modifier
-            .defaultMinSize(minHeight = 44.dp)
+            .defaultMinSize(minHeight = 48.dp)
             .clip(RoundedCornerShape(50))
             .background(fondo)
             .clickable(role = Role.Tab) { onSeleccionar(tipo) }
@@ -106,7 +134,7 @@ private fun Segmento(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (activo) {
+        if (activo && conCheck) {
             Icon(
                 imageVector = Icons.Filled.Check,
                 contentDescription = null,
@@ -122,7 +150,10 @@ private fun Segmento(
             color = contenido,
             maxLines = 1,
             softWrap = false,
-            overflow = TextOverflow.Clip,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
+
+/** Escala de fuente a partir de la cual el selector pasa a dos filas. */
+private const val UMBRAL_APILAR_SELECTOR = 1.1f

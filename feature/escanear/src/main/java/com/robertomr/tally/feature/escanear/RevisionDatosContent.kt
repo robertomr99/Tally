@@ -71,10 +71,6 @@ fun RevisionDatosContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ColumnaCentrada { CabeceraPantalla(titulo = "Revisar ticket") }
-        BadgeMotor(
-            motor = extraido.motor,
-            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
-        )
 
         Column(
             modifier = Modifier
@@ -88,6 +84,13 @@ fun RevisionDatosContent(
                     modifier = Modifier.padding(horizontal = PADDING_PANTALLA),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
+                    // El badge se desplaza con el contenido: no gasta altura fija (V21).
+                    BadgeMotor(
+                        motor = extraido.motor,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 4.dp),
+                    )
                     FormularioTicketEditable(
                         datos = datos,
                         onComercioEditado = onComercioEditado,

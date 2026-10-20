@@ -75,7 +75,8 @@ fun CabeceraPantalla(
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                // Dos líneas: con fuente grande "Detalle del ticket" baja de línea en vez de cortarse (V22).
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             if (subtitulo != null) {

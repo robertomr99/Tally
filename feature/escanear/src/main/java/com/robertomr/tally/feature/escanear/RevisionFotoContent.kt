@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -31,12 +32,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FotoOriginal
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
+import com.robertomr.tally.feature.common.UMBRAL_APILAR_BOTONES
 
 /**
  * Pantalla 05: revision de la foto ya procesada (mockup 05, spec captura-foto).
@@ -151,18 +155,17 @@ private fun DockAcciones(
     onContinuar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // Con fuente grande "Repetir foto" se cortaba ("Rep"): los botones se apilan, como el
+    // dock de edición (mismo umbral), con "Continuar" primero.
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
+    val botonRepetir: @Composable (Modifier) -> Unit = { m ->
         OutlinedButton(
             onClick = onRepetirFoto,
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
+            modifier = m
+                .heightIn(min = 48.dp)
                 .testTag("captura_repetir"),
             shape = RoundedCornerShape(9999.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
         ) {
             Icon(
                 imageVector = Icons.Outlined.Replay,
@@ -170,27 +173,44 @@ private fun DockAcciones(
                 modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Repetir foto")
+            Text(text = "Repetir foto", maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-
-        // "Continuar" abre el procesado de la extraccion (spec procesado-ui).
+    }
+    // "Continuar" abre el procesado de la extraccion (spec procesado-ui).
+    val botonContinuar: @Composable (Modifier) -> Unit = { m ->
         Button(
             onClick = onContinuar,
             enabled = true,
-            modifier = Modifier
-                .weight(1.4f)
-                .height(48.dp)
+            modifier = m
+                .heightIn(min = 48.dp)
                 .testTag("captura_continuar"),
             shape = RoundedCornerShape(9999.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
             colors = ButtonDefaults.buttonColors(),
         ) {
-            Text(text = "Continuar")
+            Text(text = "Continuar", maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
             )
+        }
+    }
+
+    if (apilar) {
+        Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            botonContinuar(Modifier.fillMaxWidth())
+            botonRepetir(Modifier.fillMaxWidth())
+        }
+    } else {
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            botonRepetir(Modifier.weight(1f))
+            botonContinuar(Modifier.weight(1f))
         }
     }
 }

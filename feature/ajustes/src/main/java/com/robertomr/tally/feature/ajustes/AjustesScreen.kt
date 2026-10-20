@@ -12,14 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -49,6 +46,8 @@ import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
+import com.robertomr.tally.feature.common.TarjetaSeccion
+import com.robertomr.tally.feature.common.TituloSeccion
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
@@ -201,37 +200,29 @@ private fun SeccionMotor(
     ui: AjustesUiState,
     onElegir: (PreferenciaMotor) -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("seccion_motor"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    TarjetaSeccion(
+        modifier = Modifier.testTag("seccion_motor"),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Text("Motor de extracción", style = MaterialTheme.typography.titleMedium)
+        TituloSeccion("Motor de extracción")
+        Text(
+            "Se aplica a la siguiente extracción. Auto usa Local si el dispositivo puede " +
+                "y el modelo está descargado; si no, Nube.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Column(Modifier.selectableGroup()) {
+            OpcionMotor("Auto", PreferenciaMotor.AUTO, "motor_opcion_auto", ui.preferencia, onElegir)
+            OpcionMotor("Local", PreferenciaMotor.LOCAL, "motor_opcion_local", ui.preferencia, onElegir)
+            OpcionMotor("Nube", PreferenciaMotor.NUBE, "motor_opcion_nube", ui.preferencia, onElegir)
+        }
+        if (ui.avisoLocal) {
             Text(
-                "Se aplica a la siguiente extracción. Auto usa Local si el dispositivo puede " +
-                    "y el modelo está descargado; si no, Nube.",
+                text = "Local necesita el modelo descargado; sin él la extracción fallará",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.testTag("motor_aviso_local"),
             )
-            Column(Modifier.selectableGroup()) {
-                OpcionMotor("Auto", PreferenciaMotor.AUTO, "motor_opcion_auto", ui.preferencia, onElegir)
-                OpcionMotor("Local", PreferenciaMotor.LOCAL, "motor_opcion_local", ui.preferencia, onElegir)
-                OpcionMotor("Nube", PreferenciaMotor.NUBE, "motor_opcion_nube", ui.preferencia, onElegir)
-            }
-            if (ui.avisoLocal) {
-                Text(
-                    text = "Local necesita el modelo descargado; sin él la extracción fallará",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("motor_aviso_local"),
-                )
-            }
         }
     }
 }
@@ -272,81 +263,73 @@ private fun SeccionModeloLocal(
     onCancelar: () -> Unit,
     onPedirEliminar: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("seccion_modelo_local"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    TarjetaSeccion(
+        modifier = Modifier.testTag("seccion_modelo_local"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text("Modelo local", style = MaterialTheme.typography.titleMedium)
+        TituloSeccion("Modelo local")
+        Text(
+            "Gemma 3n E2B · extracción sin red, el ticket no sale del dispositivo",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (ui.cargando) {
+            Text("Comprobando…", style = MaterialTheme.typography.bodyMedium)
+            return@TarjetaSeccion
+        }
+
+        val estado = ui.estado
+        Text(
+            text = etiquetaEstado(estado),
+            style = MaterialTheme.typography.titleSmall,
+            color = if (estado is EstadoModelo.Fallo) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            modifier = Modifier.testTag("modelo_estado"),
+        )
+
+        when (estado) {
+            is EstadoModelo.Descargando -> Progreso(estado.bytes, estado.total)
+            is EstadoModelo.EnPausa -> Progreso(estado.bytes, estado.total)
+            else -> Unit
+        }
+        detalleEstado(estado)?.let {
             Text(
-                "Gemma 3n E2B · extracción sin red, el ticket no sale del dispositivo",
-                style = MaterialTheme.typography.bodyMedium,
+                text = it,
+                style = MaterialTheme.typography.bodyMedium.cifrasTabulares(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("modelo_detalle"),
             )
+        }
 
-            if (ui.cargando) {
-                Text("Comprobando…", style = MaterialTheme.typography.bodyMedium)
-                return@Column
-            }
-
-            val estado = ui.estado
+        ui.aviso?.let { aviso ->
             Text(
-                text = etiquetaEstado(estado),
-                style = MaterialTheme.typography.titleSmall,
-                color = if (estado is EstadoModelo.Fallo) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                modifier = Modifier.testTag("modelo_estado"),
+                text = textoAviso(aviso),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.testTag("modelo_aviso"),
             )
+        }
 
-            when (estado) {
-                is EstadoModelo.Descargando -> Progreso(estado.bytes, estado.total)
-                is EstadoModelo.EnPausa -> Progreso(estado.bytes, estado.total)
-                else -> Unit
-            }
-            detalleEstado(estado)?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium.cifrasTabulares(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.testTag("modelo_detalle"),
-                )
-            }
-
-            ui.aviso?.let { aviso ->
-                Text(
-                    text = textoAviso(aviso),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.testTag("modelo_aviso"),
-                )
-            }
-
-            when (estado) {
-                EstadoModelo.NoDescargado, is EstadoModelo.Fallo ->
-                    Button(
-                        onClick = onDescargar,
-                        modifier = Modifier.testTag("boton_descargar_modelo"),
-                    ) { Text(if (estado is EstadoModelo.Fallo) "Reintentar descarga" else "Descargar modelo") }
-                is EstadoModelo.Descargando, is EstadoModelo.EnPausa ->
-                    OutlinedButton(
-                        onClick = onCancelar,
-                        modifier = Modifier.testTag("boton_cancelar_descarga"),
-                    ) { Text("Cancelar") }
-                is EstadoModelo.Descargado ->
-                    OutlinedButton(
-                        onClick = onPedirEliminar,
-                        modifier = Modifier.testTag("boton_eliminar_modelo"),
-                    ) { Text("Eliminar modelo") }
-            }
+        when (estado) {
+            EstadoModelo.NoDescargado, is EstadoModelo.Fallo ->
+                Button(
+                    onClick = onDescargar,
+                    modifier = Modifier.testTag("boton_descargar_modelo"),
+                ) { Text(if (estado is EstadoModelo.Fallo) "Reintentar descarga" else "Descargar modelo") }
+            is EstadoModelo.Descargando, is EstadoModelo.EnPausa ->
+                OutlinedButton(
+                    onClick = onCancelar,
+                    modifier = Modifier.testTag("boton_cancelar_descarga"),
+                ) { Text("Cancelar") }
+            is EstadoModelo.Descargado ->
+                OutlinedButton(
+                    onClick = onPedirEliminar,
+                    modifier = Modifier.testTag("boton_eliminar_modelo"),
+                ) { Text("Eliminar modelo") }
         }
     }
 }
@@ -372,50 +355,41 @@ private fun SeccionToken(
     onGuardar: () -> Unit,
     onBorrar: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text("Token de Hugging Face", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "El modelo exige aceptar su licencia en Hugging Face. Pega aquí un token de " +
-                    "solo lectura; se guarda solo en este dispositivo.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = if (hayToken) "Token guardado" else "Sin token",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.testTag("token_estado"),
-            )
-            OutlinedTextField(
-                value = escrito,
-                onValueChange = onEscribir,
-                label = { Text("Token") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("campo_token"),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onGuardar,
-                    enabled = escrito.isNotBlank(),
-                    modifier = Modifier.testTag("boton_guardar_token"),
-                ) { Text("Guardar token") }
-                if (hayToken) {
-                    OutlinedButton(
-                        onClick = onBorrar,
-                        modifier = Modifier.testTag("boton_borrar_token"),
-                    ) { Text("Borrar token") }
-                }
+    TarjetaSeccion(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        TituloSeccion("Token de Hugging Face")
+        Text(
+            "El modelo exige aceptar su licencia en Hugging Face. Pega aquí un token de " +
+                "solo lectura; se guarda solo en este dispositivo.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = if (hayToken) "Token guardado" else "Sin token",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.testTag("token_estado"),
+        )
+        OutlinedTextField(
+            value = escrito,
+            onValueChange = onEscribir,
+            label = { Text("Token") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("campo_token"),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onGuardar,
+                enabled = escrito.isNotBlank(),
+                modifier = Modifier.testTag("boton_guardar_token"),
+            ) { Text("Guardar token") }
+            if (hayToken) {
+                OutlinedButton(
+                    onClick = onBorrar,
+                    modifier = Modifier.testTag("boton_borrar_token"),
+                ) { Text("Borrar token") }
             }
         }
     }
@@ -434,66 +408,58 @@ private fun SeccionDiagnostico(
     onBorrar: () -> Unit,
 ) {
     val mono = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("diagnostico_extracciones"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+    TarjetaSeccion(
+        modifier = Modifier.testTag("diagnostico_extracciones"),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text("Diagnóstico de extracciones", style = MaterialTheme.typography.titleMedium)
+        TituloSeccion("Diagnóstico de extracciones")
+        Text(
+            "Solo metadatos (motor, duración, resultado, longitud); nunca el texto del ticket.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (diagnostico.recientes.isEmpty()) {
             Text(
-                "Solo metadatos (motor, duración, resultado, longitud); nunca el texto del ticket.",
+                "Sin extracciones registradas",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag("diagnostico_vacio"),
             )
-            if (diagnostico.recientes.isEmpty()) {
-                Text(
-                    "Sin extracciones registradas",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.testTag("diagnostico_vacio"),
-                )
-            }
-            diagnostico.resumen.forEach { r ->
-                Text(
-                    text = textoResumen(r),
-                    style = mono,
-                    modifier = Modifier.testTag("diagnostico_resumen_${r.motor.name}"),
-                )
-            }
-            diagnostico.recientes.forEachIndexed { i, fila ->
-                Text(
-                    text = textoFila(fila),
-                    style = mono,
-                    color = if (fila.resultado == ResultadoExtraccion.FALLO) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                    modifier = Modifier.testTag("diagnostico_fila_$i"),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onCopiarCsv,
-                    modifier = Modifier.testTag("diagnostico_copiar_csv"),
-                ) { Text("Copiar CSV") }
-                OutlinedButton(
-                    onClick = onBorrar,
-                    modifier = Modifier.testTag("diagnostico_borrar"),
-                ) { Text("Borrar registro") }
-            }
-            if (csvCopiado) {
-                Text(
-                    "CSV copiado",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.testTag("diagnostico_csv_copiado"),
-                )
-            }
+        }
+        diagnostico.resumen.forEach { r ->
+            Text(
+                text = textoResumen(r),
+                style = mono,
+                modifier = Modifier.testTag("diagnostico_resumen_${r.motor.name}"),
+            )
+        }
+        diagnostico.recientes.forEachIndexed { i, fila ->
+            Text(
+                text = textoFila(fila),
+                style = mono,
+                color = if (fila.resultado == ResultadoExtraccion.FALLO) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                modifier = Modifier.testTag("diagnostico_fila_$i"),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = onCopiarCsv,
+                modifier = Modifier.testTag("diagnostico_copiar_csv"),
+            ) { Text("Copiar CSV") }
+            OutlinedButton(
+                onClick = onBorrar,
+                modifier = Modifier.testTag("diagnostico_borrar"),
+            ) { Text("Borrar registro") }
+        }
+        if (csvCopiado) {
+            Text(
+                "CSV copiado",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag("diagnostico_csv_copiado"),
+            )
         }
     }
 }
