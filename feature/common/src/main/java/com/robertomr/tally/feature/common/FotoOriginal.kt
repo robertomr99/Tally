@@ -8,7 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -73,12 +73,14 @@ fun FotoOriginal(
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         when (val actual = estado) {
             EstadoFoto.Cargando -> CircularProgressIndicator(modifier = Modifier.size(32.dp))
+            // Relación de aspecto de la imagen real: el recorte y el borde envuelven la foto
+            // visible y no todo el área disponible con barras vacías a los lados (V06).
             is EstadoFoto.Imagen -> Image(
                 bitmap = actual.bitmap,
                 contentDescription = contentDescription,
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
-                    .fillMaxSize()
+                    .aspectRatio(actual.bitmap.width.toFloat() / actual.bitmap.height.toFloat())
                     .clip(RoundedCornerShape(16.dp))
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
                     .testTag(testTagImagen),

@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,7 +62,10 @@ import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.TicketExtraido
+import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.FilaRecibo
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
+import com.robertomr.tally.feature.common.PAPEL_ANCHO_MAXIMO
 import com.robertomr.tally.feature.common.PapelTicket
 import com.robertomr.tally.feature.common.SeparadorPunteado
 import com.robertomr.tally.feature.common.importeDeLinea
@@ -108,27 +114,16 @@ fun ProcesandoExtraccionContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .testTag("procesado_pantalla"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // Cabecera común (V07): el titular y su explicación pasan a título y subtítulo.
+        CabeceraPantalla(
+            titulo = "Analizando ticket de compra",
+            subtitulo = "Extrayendo comercio, fecha e importes del ticket.",
+        )
         CabeceraDeProceso(motor = motor, estado = EstadoBadge.PROCESANDO)
-
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Analizando ticket de compra",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp),
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Extrayendo comercio, fecha e importes del ticket.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 24.dp),
-        )
 
         Box(
             modifier = Modifier
@@ -167,9 +162,11 @@ fun ExtraccionListaContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .testTag("procesado_pantalla"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        CabeceraPantalla(titulo = "Resultado")
         // Tras el resultado el badge refleja el motor del propio resultado.
         CabeceraDeProceso(motor = extraido.motor, estado = EstadoBadge.COMPLETADO)
         PasosDeProceso(categorizacion = EstadoPaso.COMPLETADO)
@@ -179,17 +176,24 @@ fun ExtraccionListaContent(
                 .weight(1f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = PADDING_PANTALLA),
         ) {
             Spacer(modifier = Modifier.height(16.dp))
             ResumenDeTicket(extraido = extraido)
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = etiquetaCompletitud(extraido),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.testTag("procesado_completitud"),
-            )
+            // Dentro de un contenedor del ancho del papel (centrado) para que el texto
+            // quede alineado con su borde izquierdo y no con el de la pantalla (V10).
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                Text(
+                    text = etiquetaCompletitud(extraido),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .widthIn(max = PAPEL_ANCHO_MAXIMO)
+                        .fillMaxWidth()
+                        .testTag("procesado_completitud"),
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -198,7 +202,7 @@ fun ExtraccionListaContent(
         BotonOtroMotor(
             otro = otro,
             onClick = onReintentarOtro,
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+            modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp),
         )
 
         // "Revisar ticket" abre la revision editable (spec revision-datos).
@@ -207,7 +211,7 @@ fun ExtraccionListaContent(
             onClick = onRevisar,
             enabled = true,
             modifier = Modifier
-                .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)
+                .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 24.dp)
                 .fillMaxWidth()
                 .height(48.dp)
                 .testTag("procesado_revisar"),
@@ -241,9 +245,11 @@ fun ExtraccionFallidaContent(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding()
             .testTag("procesado_pantalla"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        CabeceraPantalla(titulo = "Resultado")
         CabeceraDeProceso(motor = motor, estado = EstadoBadge.FALLIDO)
         PasosDeProceso(categorizacion = EstadoPaso.FALLIDO)
 
@@ -251,7 +257,7 @@ fun ExtraccionFallidaContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = PADDING_PANTALLA),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -288,13 +294,13 @@ fun ExtraccionFallidaContent(
         BotonOtroMotor(
             otro = otro,
             onClick = onReintentarOtro,
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp),
+            modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp),
         )
         if (hayAnterior) {
             TextButton(
                 onClick = onVolverAnterior,
                 modifier = Modifier
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = PADDING_PANTALLA)
                     .testTag("procesado_volver_anterior"),
             ) {
                 Text(text = "Volver al resultado anterior")
@@ -304,7 +310,7 @@ fun ExtraccionFallidaContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
+                .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -404,7 +410,7 @@ private fun CabeceraDeProceso(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.padding(top = 16.dp),
+        modifier = modifier.padding(top = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -493,34 +499,50 @@ private fun PasosDeProceso(
     categorizacion: EstadoPaso,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            // Aire respecto al texto "Procesado en ..." de la cabecera y al contenido de debajo.
-            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 12.dp)
-            .testTag("procesado_pasos"),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // Con fuente muy grande los tres chips no caben en una fila: se apilan (V04),
+    // sin chevrons, para que ninguno envuelva su texto ni pierda la forma de p\u00edldora.
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_PASOS
+    val modificadorFila = modifier
+        .fillMaxWidth()
+        // Aire respecto al texto "Procesado en ..." de la cabecera y al contenido de debajo.
+        .padding(start = PADDING_PANTALLA, top = 16.dp, end = PADDING_PANTALLA, bottom = 12.dp)
+        .testTag("procesado_pasos")
+    val pasos: @Composable () -> Unit = {
         ChipPaso(
             texto = "Encuadre",
             estado = EstadoPaso.COMPLETADO,
             modifier = Modifier.testTag("procesado_paso_encuadre"),
         )
-        IconoSeparador()
+        if (!apilar) IconoSeparador()
         ChipPaso(
             texto = "OCR",
             estado = EstadoPaso.COMPLETADO,
             modifier = Modifier.testTag("procesado_paso_ocr"),
         )
-        IconoSeparador()
+        if (!apilar) IconoSeparador()
         ChipPaso(
             texto = "Categorizaci\u00f3n",
             estado = categorizacion,
             modifier = Modifier.testTag("procesado_paso_categoria"),
         )
     }
+    if (apilar) {
+        Column(
+            modifier = modificadorFila,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) { pasos() }
+    } else {
+        Row(
+            modifier = modificadorFila,
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) { pasos() }
+    }
 }
+
+/** Escala de fuente a partir de la cual los pasos del proceso se apilan en vertical. */
+private const val UMBRAL_APILAR_PASOS = 1.4f
 
 @Composable
 private fun ChipPaso(
@@ -572,6 +594,8 @@ private fun ChipPaso(
             text = texto,
             style = MaterialTheme.typography.labelSmall,
             color = contenido,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

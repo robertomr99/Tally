@@ -27,9 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.ResumenPeriodo
-import com.robertomr.tally.feature.common.etiquetaPeriodo
 import com.robertomr.tally.feature.common.EstiloTabular
 import com.robertomr.tally.feature.common.formatoImporte
 
@@ -40,9 +38,7 @@ import com.robertomr.tally.feature.common.formatoImporte
  */
 @Composable
 internal fun TarjetaTotal(
-    periodo: Periodo?,
     resumen: ResumenPeriodo?,
-    hoy: java.time.LocalDate? = null,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -52,34 +48,12 @@ internal fun TarjetaTotal(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "GASTO TOTAL DEL PERIODO",
-                    modifier = Modifier.weight(1f, fill = false),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.width(8.dp))
-                if (periodo != null) {
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    ) {
-                        Text(
-                            text = etiquetaPeriodo(periodo, hoy),
-                            modifier = Modifier
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
-                                .testTag("periodo_rango"),
-                            style = MaterialTheme.typography.labelLarge.merge(EstiloTabular),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
+            // El rango del periodo ya está en el subtítulo de la cabecera (una sola vez).
+            Text(
+                text = "GASTO TOTAL DEL PERIODO",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Text(
                 text = resumen?.let { formatoImporte(it.total) } ?: "—",
@@ -127,7 +101,7 @@ private fun BadgeComparativa(variacion: Double?) {
     } else {
         MaterialTheme.colorScheme.onSecondaryContainer
     }
-    val texto = if (variacion == null) TEXTO_SIN_REFERENCIA else "${formatoVariacion(variacion)} vs período anterior"
+    val texto = if (variacion == null) TEXTO_SIN_REFERENCIA else "${formatoVariacion(variacion)} vs periodo anterior"
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))

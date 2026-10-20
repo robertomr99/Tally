@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FotoOriginal
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 
 /**
  * Pantalla 05: revision de la foto ya procesada (mockup 05, spec captura-foto).
@@ -61,12 +62,14 @@ fun RevisionFotoContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            // Mismo fondo que el resto de pantallas: la barra de estado (innerPadding del shell)
+            // es `surface` y otro color aquí dibujaría una banda visible bajo el reloj.
+            .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
             .testTag("captura_revision"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Título y controles en la columna única; la foto y su fondo, a todo el ancho.
+        // Título y controles en la columna única; la foto ocupa el ancho disponible.
         ColumnaCentrada { CabeceraPantalla(titulo = "Revisar foto") }
 
         FotoOriginal(
@@ -77,7 +80,7 @@ fun RevisionFotoContent(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 16.dp, bottom = 8.dp),
         )
 
         ColumnaCentrada {
@@ -87,7 +90,7 @@ fun RevisionFotoContent(
                     ocrNoDisponible = ocrNoDisponible,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp),
+                        .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA),
                 )
 
                 DockAcciones(
@@ -95,7 +98,7 @@ fun RevisionFotoContent(
                     onContinuar = onContinuar,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
+                        .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 16.dp),
                 )
             }
         }

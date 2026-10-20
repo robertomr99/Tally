@@ -357,6 +357,15 @@ app ──────────► feature:* ──────────�
   features no se importan entre si: solo dependen de `:feature:common`. `:feature:ajustes` gana esa dependencia de
   proyecto (no es un modulo nuevo). Sin `WindowSizeClass`, dominio ni framework tocados.
 
+### Pulido visual (`mejoras-visuales`)
+
+- `:app` (`MainActivity`) llama a `enableEdgeToEdge` con `SystemBarStyle.light` (iconos oscuros) y `TallyApp` marca
+  `innerPadding` como consumido en el `NavHost` (un solo inset superior); define las transiciones (fundido 150 ms entre
+  pestañas, deslizamiento 300 ms hacia/desde Detalle y Ajustes). `:feature:common` añade `PADDING_PANTALLA` (20 dp),
+  `PAPEL_ANCHO_MAXIMO` pública y la forma `extraLarge` = 28 dp en el tema; Procesado (`:feature:escanear`) usa la
+  `CabeceraPantalla` común. Sin módulos, dependencias, dominio ni framework tocados; el tag `periodo_rango` desaparece
+  (el rango vive solo en `resumen_rango`).
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

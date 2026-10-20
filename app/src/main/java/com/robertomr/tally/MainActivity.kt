@@ -1,11 +1,14 @@
 package com.robertomr.tally
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.robertomr.tally.feature.common.theme.TallyTheme
 import com.robertomr.tally.navigation.TallyApp
@@ -38,6 +41,13 @@ class MainActivity : ComponentActivity() {
         }
 
         super.onCreate(savedInstanceState)
+        // Edge-to-edge con barras transparentes e iconos OSCUROS: la app solo tiene
+        // tema claro, así que el reloj y los iconos no deben ser blancos aunque el
+        // sistema esté en modo oscuro (mismo aspecto en API < 35 y >= 35).
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+        )
         setContent {
             TallyTheme {
                 TallyApp()

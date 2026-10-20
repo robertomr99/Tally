@@ -1,5 +1,11 @@
 package com.robertomr.tally.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -48,7 +54,45 @@ fun TallyApp() {
         NavHost(
             navController = navController,
             startDestination = TallyRoute.Resumen.route,
-            modifier = Modifier.padding(innerPadding),
+            // Un solo inset superior: el Scaffold ya reserva la barra de estado en
+            // innerPadding y se marca como consumido; así los statusBarsPadding() de
+            // cada pantalla resuelven a 0 en vez de duplicar el hueco (V01). La
+            // altura de la barra de estado la aporta innerPadding.
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
+            // Entre pestañas: fundido corto. Hacia/desde las pantallas secundarias
+            // (Detalle, Ajustes): deslizamiento horizontal con pop inverso (V19).
+            enterTransition = {
+                if (targetState.esSecundaria()) {
+                    slideInHorizontally(tween(DURACION_DESLIZAMIENTO_MS)) { ancho -> ancho }
+                } else {
+                    fadeIn(tween(DURACION_FUNDIDO_MS))
+                }
+            },
+            exitTransition = {
+                if (targetState.esSecundaria()) {
+                    slideOutHorizontally(tween(DURACION_DESLIZAMIENTO_MS)) { ancho -> -ancho / 4 } +
+                        fadeOut(tween(DURACION_DESLIZAMIENTO_MS))
+                } else {
+                    fadeOut(tween(DURACION_FUNDIDO_MS))
+                }
+            },
+            popEnterTransition = {
+                if (initialState.esSecundaria()) {
+                    slideInHorizontally(tween(DURACION_DESLIZAMIENTO_MS)) { ancho -> -ancho / 4 } +
+                        fadeIn(tween(DURACION_DESLIZAMIENTO_MS))
+                } else {
+                    fadeIn(tween(DURACION_FUNDIDO_MS))
+                }
+            },
+            popExitTransition = {
+                if (initialState.esSecundaria()) {
+                    slideOutHorizontally(tween(DURACION_DESLIZAMIENTO_MS)) { ancho -> ancho }
+                } else {
+                    fadeOut(tween(DURACION_FUNDIDO_MS))
+                }
+            },
         ) {
             composable(TallyRoute.Resumen.route) {
                 ResumenScreen(
@@ -87,6 +131,13 @@ fun TallyApp() {
         }
     }
 }
+
+private const val DURACION_FUNDIDO_MS = 150
+private const val DURACION_DESLIZAMIENTO_MS = 300
+
+// Detalle del ticket y Ajustes cuelgan de una pestaña: se abren deslizando.
+private fun NavBackStackEntry.esSecundaria(): Boolean =
+    destination.route == TallyRoute.Ticket.route || destination.route == TallyRoute.Ajustes.route
 
 // Navegación estándar de bottom bar: launchSingleTop + restoreState y
 // popUpTo(start) con saveState. El back del sistema vuelve a Resumen y un

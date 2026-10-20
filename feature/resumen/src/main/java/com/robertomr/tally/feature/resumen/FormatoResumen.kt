@@ -4,7 +4,7 @@ import com.robertomr.tally.feature.common.formatoImporte
 import java.util.Locale
 
 /** Texto del badge cuando el período anterior no tiene gasto (variación `null`). */
-const val TEXTO_SIN_REFERENCIA = "Sin datos del período anterior"
+const val TEXTO_SIN_REFERENCIA = "Sin datos del periodo anterior"
 
 
 private val ES = Locale.forLanguageTag("es-ES")

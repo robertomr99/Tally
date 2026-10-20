@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -52,6 +53,7 @@ import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
 import com.robertomr.tally.feature.common.FormularioTicketEditable
 import com.robertomr.tally.feature.common.FotoOriginal
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.TarjetaFotoAusente
 import com.robertomr.tally.feature.common.existeFoto
 import com.robertomr.tally.feature.common.formatoImporte
@@ -129,6 +131,7 @@ internal fun TicketDetalleContenido(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
+            .imePadding()
             .testTag("pantalla_detalle_ticket"),
     ) {
         BarraSuperior(
@@ -170,7 +173,7 @@ internal fun TicketDetalleContenido(
                         // El scroll ocupa todo el ancho; el contenido va en la columna centrada.
                         ColumnaCentrada {
                             Column(
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                                modifier = Modifier.padding(horizontal = PADDING_PANTALLA),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                             ) {
                                 SeccionFoto(
@@ -203,7 +206,7 @@ internal fun TicketDetalleContenido(
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 4.dp)
+                                .padding(horizontal = PADDING_PANTALLA, vertical = 4.dp)
                                 .testTag("detalle_error"),
                         )
                     }
@@ -383,8 +386,6 @@ private fun ConfirmarBorrado(
     AlertDialog(
         onDismissRequest = onCancelar,
         modifier = Modifier.testTag("detalle_confirmar_borrado"),
-        // La forma extraLarge del tema es una píldora: el diálogo lleva su forma de 28 dp.
-        shape = RoundedCornerShape(28.dp),
         title = { Text("Eliminar ticket") },
         text = {
             Text(

@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PeriodoSelector
 import com.robertomr.tally.feature.common.etiquetaPeriodo
 import java.time.LocalDate
@@ -91,14 +92,14 @@ private fun ResumenContenido(
                     hoy = ui.hoy,
                     onSeleccionarTipo = onSeleccionarPeriodo,
                     onSeleccionarRango = onSeleccionarRango,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = PADDING_PANTALLA, vertical = 12.dp),
                 )
 
                 Column(
-                    modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                    modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    TarjetaTotal(periodo = ui.periodo, resumen = ui.resumen, hoy = ui.hoy)
+                    TarjetaTotal(resumen = ui.resumen)
                     TarjetaDistribucion(distribucion = ui.distribucion)
                     SeccionRecientes(
                         recientes = ui.recientes,

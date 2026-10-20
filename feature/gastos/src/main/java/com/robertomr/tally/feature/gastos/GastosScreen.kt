@@ -30,6 +30,7 @@ import com.robertomr.tally.feature.common.CabeceraDia
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FilaTicket
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PeriodoSelector
 import java.time.LocalDate
 import com.robertomr.tally.feature.common.etiquetaPeriodo
@@ -88,7 +89,7 @@ fun GastosContenido(
                 hoy = ui.hoy,
                 onSeleccionarTipo = onSeleccionarPeriodo,
                 onSeleccionarRango = onSeleccionarRango,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = PADDING_PANTALLA, vertical = 12.dp),
             )
 
             val grupos = ui.grupos
@@ -102,7 +103,7 @@ fun GastosContenido(
                         .weight(1f)
                         .fillMaxWidth()
                         .testTag("lista_gastos"),
-                    contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 24.dp),
+                    contentPadding = PaddingValues(start = PADDING_PANTALLA, end = PADDING_PANTALLA, bottom = 24.dp),
                 ) {
                     for (grupo in grupos) {
                         item(key = "d_${grupo.fecha}", contentType = "dia") {

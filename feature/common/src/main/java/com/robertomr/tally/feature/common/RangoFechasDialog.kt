@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.MaterialTheme
@@ -77,8 +76,6 @@ private fun DialogoRango(
             ) { Text("Aplicar rango") }
         },
         modifier = Modifier.testTag("rango_dialogo"),
-        // La forma extraLarge del tema es una píldora (9999 dp): el diálogo necesita la suya.
-        shape = RoundedCornerShape(28.dp),
         dismissButton = {
             TextButton(onClick = onCancelar, modifier = Modifier.testTag("rango_cancelar")) { Text("Cancelar") }
         },

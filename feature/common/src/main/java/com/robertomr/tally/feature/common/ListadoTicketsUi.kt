@@ -63,7 +63,7 @@ fun CabeceraDia(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = 8.dp)
+            .padding(top = 16.dp, bottom = 8.dp)
             .testTag(tag),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

@@ -17,6 +17,12 @@ import androidx.compose.ui.unit.dp
 val ANCHO_MAXIMO_CONTENIDO = 720.dp
 
 /**
+ * Margen horizontal de pantalla: el mismo en cabecera, selector, tarjetas, listas,
+ * formularios y docks. El papel de ticket conserva su padding interior de 16 dp.
+ */
+val PADDING_PANTALLA = 20.dp
+
+/**
  * Contenedor único de las pantallas: centra el contenido en una columna de
  * [ANCHO_MAXIMO_CONTENIDO]. El [modifier] se aplica al `Box` exterior (a todo el
  * ancho), de modo que fondos, scroll y `fillMaxSize` los decide el llamador fuera

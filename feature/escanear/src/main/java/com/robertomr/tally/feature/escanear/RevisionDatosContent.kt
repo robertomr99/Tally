@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,7 @@ import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
 import com.robertomr.tally.feature.common.FormularioTicketEditable
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 
 /**
  * Pantalla de revision y edicion del ticket digitalizado (spec revision-datos,
@@ -64,6 +66,7 @@ fun RevisionDatosContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding()
+            .imePadding()
             .testTag("revision_pantalla"),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -82,7 +85,7 @@ fun RevisionDatosContent(
             // El scroll ocupa todo el ancho; el formulario va en la columna centrada.
             ColumnaCentrada {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = PADDING_PANTALLA),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     FormularioTicketEditable(
@@ -109,7 +112,7 @@ fun RevisionDatosContent(
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 4.dp)
+                    .padding(horizontal = PADDING_PANTALLA, vertical = 4.dp)
                     .testTag("revision_error_guardado"),
             )
         }

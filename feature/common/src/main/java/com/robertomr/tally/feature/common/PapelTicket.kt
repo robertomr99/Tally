@@ -58,8 +58,11 @@ import kotlin.math.roundToInt
 private val DIENTE_ALTO = 6.dp
 private val DIENTE_ANCHO = 12.dp
 
-/** Ancho maximo del papel: en tablet se centra en vez de estirarse. */
-private val PAPEL_ANCHO_MAXIMO = 480.dp
+/**
+ * Ancho maximo del papel: en tablet se centra en vez de estirarse. Es publico para que
+ * los textos que acompanan al papel (p. ej. "n/5 campos extraidos") alineen con su borde.
+ */
+val PAPEL_ANCHO_MAXIMO = 480.dp
 
 /**
  * Hoja de papel de ticket: fondo blanco (`surfaceContainerLowest`), bordes

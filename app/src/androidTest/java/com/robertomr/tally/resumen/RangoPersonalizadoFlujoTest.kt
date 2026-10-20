@@ -154,7 +154,7 @@ class RangoPersonalizadoFlujoTest {
         composeRule.onNodeWithTag("periodo_personalizado").assertIsSelected()
         composeRule.onNodeWithTag("periodo_mes").assertIsNotSelected()
         val dentro = 2
-        esperarTexto("periodo_rango", etiquetaPeriodo(rango, hoy))
+        esperarTexto("resumen_rango", etiquetaPeriodo(rango, hoy))
         esperarTexto("resumen_num_tickets", textoTickets(base.size + dentro))
         esperarTexto("resumen_suma", formatoImporte(base.sumOf { it.total } + 11.11 + 22.22))
 
@@ -178,7 +178,7 @@ class RangoPersonalizadoFlujoTest {
         composeRule.onNodeWithTag("bottom_bar_resumen").performClick()
         esperarTag("pantalla_resumen")
         composeRule.onNodeWithTag("periodo_personalizado").assertIsSelected()
-        esperarTexto("periodo_rango", etiquetaPeriodo(rango, hoy))
+        esperarTexto("resumen_rango", etiquetaPeriodo(rango, hoy))
         esperarTexto("resumen_num_tickets", textoTickets(base.size + dentro))
     }
 
@@ -204,6 +204,6 @@ class RangoPersonalizadoFlujoTest {
         composeRule.onNodeWithTag("rango_aplicar").assertIsEnabled().performClick()
         composeRule.waitUntil(10_000) { !existe("rango_dialogo") }
         composeRule.onNodeWithTag("periodo_personalizado").assertIsSelected()
-        esperarTexto("periodo_rango", etiquetaPeriodo(rango, hoy))
+        esperarTexto("resumen_rango", etiquetaPeriodo(rango, hoy))
     }
 }

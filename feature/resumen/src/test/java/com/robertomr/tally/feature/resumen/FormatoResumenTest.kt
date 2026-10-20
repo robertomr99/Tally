@@ -35,7 +35,7 @@ class FormatoResumenTest {
 
     @Test
     fun variacionNulaEsTextoSinReferencia() {
-        assertEquals("Sin datos del período anterior", formatoVariacion(null))
+        assertEquals("Sin datos del periodo anterior", formatoVariacion(null))
     }
 
     @Test

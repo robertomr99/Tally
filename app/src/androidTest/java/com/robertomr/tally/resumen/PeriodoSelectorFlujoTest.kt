@@ -106,7 +106,7 @@ class PeriodoSelectorFlujoTest {
         val sembradosEnRango = siembra.filter { it.emision >= periodo.desde && it.emision <= periodo.hasta }
         val numEsperado = base.getValue(tipo).size + sembradosEnRango.size
         val sumaEsperada = base.getValue(tipo).sumOf { it.total } + sembradosEnRango.sumOf { it.total }
-        esperarTexto("periodo_rango", etiquetaPeriodo(periodo))
+        esperarTexto("resumen_rango", etiquetaPeriodo(periodo))
         esperarTexto("resumen_num_tickets", textoTickets(numEsperado))
         esperarTexto("resumen_suma", formatoImporte(sumaEsperada))
         composeRule.onNodeWithTag("pantalla_resumen").assertIsDisplayed()

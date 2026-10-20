@@ -541,6 +541,42 @@
     "notes": "Petición del usuario (2026-10-19) en la Tab S9+ horizontal: donut pegado a la izquierda en Resumen, selector a todo el ancho en Resumen pero colapsado en Gastos, titulos inconsistentes. Decisiones del usuario: columna centrada de 720 dp en todo y cabecera común titulo+subtitulo. Rama correcciones-visuales; sin WindowSizeClass, sin módulos ni dependencias nuevas. Plan en el fichero de plan de la sesión."
   },
   {
+    "id": "mejoras-visuales",
+    "area": "diseno",
+    "title": "Pasada de mejoras y correcciones visuales",
+    "user_visible_behavior": "Las pantallas de la app se ven pulidas y coherentes en móvil y tablet: paddings unificados, jerarquía tipográfica consistente, sin información duplicada, accesibilidad de cabeceras y fuentes grandes corregida, y estados vacíos/carga/error con el mismo lenguaje visual.",
+    "depends_on": ["layout-tablet-coherente", "papel-ticket"],
+    "status": "accepted",
+    "verification": [
+      "Auditoría visual documentada en la spec (hallazgos priorizados con captura o referencia de código) y cada mejora aceptada implementada o descartada con motivo",
+      "Capturas antes/después en móvil, 360 dp, fontScale alto y tablet horizontal en emulator-5556",
+      "Suite :app y JVM en verde sin debilitar tests; tags existentes conservados salvo cambios justificados y actualizados en la spec"
+    ],
+    "evidence": [
+      "2026-10-19 sesión 061 (F1: V01-V11, V19, V20): gradlew assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest en verde (testDebugUnitTest 197 tests, 0 fallos); emulator-5556: am instrument con notClass de los reales OK (45 tests, 0 fallos)",
+      "Capturas antes/después en docs/evidence/mejoras-visuales/ (móvil, 360 dp, fontScale 1,3 y 2,0, tablet horizontal; Resumen, Gastos, Detalle, Ajustes, cámara, Revisar foto, Resultado, Revisar ticket, teclado abierto, diálogo de borrar y DatePicker); ver README.md de esa carpeta. wm size/density, font_scale y rotación restaurados",
+      "Tests tocados (solo lo que justifica la spec): tag periodo_rango -> resumen_rango con el mismo valor esperado en RangoPersonalizadoFlujoTest (3) y PeriodoSelectorFlujoTest (1); literal 'período' -> 'periodo' en FormatoResumenTest, ResumenTotalFlujoTest (2). Ninguna aserción debilitada; el único tag eliminado es periodo_rango",
+      "NO cubierto: diálogo 'Eliminar modelo' de Ajustes sin captura (exige modelo descargado; por código usa el AlertDialog sin forma propia y Button error); transiciones 150/300 ms sin captura (solo E2E de navegación); decisiones por defecto A2 (se quita el chip, se conserva el subtítulo), A3 (extraLarge 28 dp), A4 (división en dos features); A1 (campos con subrayado) diferido. Visto y fuera de F1: 'Repetir foto' se corta a fontScale 2,0 (candidato F2)",
+      "2026-10-20 sesion 062: validator independiente -> accept (assembleDebug y testDebugUnitTest re-ejecutados; los 13 hallazgos HACER V01-V11, V19 y V20 verificados en diff y capturas; nada de F2/F3 colado; diff de tests solo lo declarado (periodo_rango a resumen_rango x4 con el mismo valor esperado y periodo sin tilde x3) sin debilitar aserciones; unico tag eliminado periodo_rango; insets, transiciones, forma extraLarge 28 dp y imePadding revisados; instrumentados apoyados en evidencia de emulator-5556, OK 45 tests). Aceptado sin verificar: dialogo Eliminar modelo de Ajustes (sin captura), transiciones (solo E2E de navegacion), SystemBarStyle.light solo en API 37, estados procesando y fallo de Procesado sin captura. Pendiente humano: revision visual de las capturas."
+    ],
+    "notes": "Petición del usuario (2026-10-19) tras layout-tablet-coherente: revisar todas las mejoras visuales posibles, especificarlas, implementarlas y validarlas como feature. Rama correcciones-visuales. Seguimientos ya conocidos: chip de rango duplicado en TarjetaTotal de Resumen; padding 16 vs 20 dp; cabecera común en Procesado; dock de edición y chip Categorización a fontScale 2,0; semántica agrupada de FilaRecibo; revisión editable aún con aspecto de formulario (campos solo con subrayado, evaluar riesgo); marco de Revisar foto a todo el ancho; cabecera de Procesado y paddings de 24 dp en tablet; desfase de 4 dp en el borde izquierdo."
+  },
+  {
+    "id": "mejoras-visuales-2",
+    "area": "diseno",
+    "title": "Mejoras visuales (2): accesibilidad y consistencia de componentes",
+    "user_visible_behavior": "Segunda pasada visual: selector de periodo con tamaño táctil y fuentes grandes correctos, tarjetas de Ajustes coherentes con las de Resumen, estados vacío/error/carga unificados, semántica de accesibilidad agrupada y contraste corregido.",
+    "depends_on": ["mejoras-visuales"],
+    "status": "not_started",
+    "verification": [
+      "Hallazgos V12-V25 de docs/specs/mejoras-visuales.md implementados o descartados con motivo",
+      "Capturas antes/después en móvil, 360 dp, fontScale alto y tablet horizontal en emulator-5556",
+      "Suite :app y JVM en verde sin debilitar tests"
+    ],
+    "evidence": [],
+    "notes": "Dividida de mejoras-visuales por el planner (auditoria de 39 hallazgos): F1 = V01-V11, V19, V20; F2 = V12-V25; F3 diferidos (V26-V30: campos del papel solo con subrayado, snackbar de confirmacion, transicion interna de Escanear, dock en movil horizontal, aviso al salir de la Revision con la barra inferior). Spec en docs/specs/mejoras-visuales.md. Candidato nuevo detectado en F1: el boton 'Repetir foto' de Revisar foto se corta ('Rep') con fontScale 2,0."
+  },
+  {
     "id": "seed-demo",
     "area": "demo",
     "title": "Datos de demo sembrados (build debug)",

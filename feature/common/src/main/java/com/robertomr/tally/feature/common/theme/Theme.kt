@@ -63,7 +63,9 @@ private val TallyShapes = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
     large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(9999.dp),
+    // Diálogos M3 (AlertDialog, DatePicker): 28 dp. Los botones y chips que quieren
+    // píldora la piden explícita (RoundedCornerShape(9999.dp)), no dependen de este valor.
+    extraLarge = RoundedCornerShape(28.dp),
 )
 
 @Composable

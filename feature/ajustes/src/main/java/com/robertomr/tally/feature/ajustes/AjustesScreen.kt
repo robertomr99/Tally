@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -47,6 +48,7 @@ import android.content.pm.ApplicationInfo
 import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
+import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.domain.expenses.entities.EstadoModelo
 import com.robertomr.tally.domain.expenses.entities.ModeloLocal
 import com.robertomr.tally.domain.expenses.entities.MotivoFallo
@@ -135,7 +137,7 @@ internal fun AjustesContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .padding(horizontal = PADDING_PANTALLA, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     SeccionMotor(ui = ui, onElegir = onElegirMotor)
@@ -174,12 +176,17 @@ internal fun AjustesContent(
             title = { Text("Eliminar modelo") },
             text = { Text("Se borrará el modelo descargado (3,4 GB). Podrás volver a descargarlo.") },
             confirmButton = {
-                TextButton(
+                // Botón destructivo en paleta `error`, igual que en el detalle del ticket.
+                Button(
                     onClick = {
                         estadoVisual.cerrarConfirmarEliminar()
                         onEliminar()
                     },
                     modifier = Modifier.testTag("confirmar_eliminar_modelo"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
                 ) { Text("Eliminar") }
             },
             dismissButton = {

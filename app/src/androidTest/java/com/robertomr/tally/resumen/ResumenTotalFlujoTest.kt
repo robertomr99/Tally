@@ -81,7 +81,7 @@ class ResumenTotalFlujoTest {
         esperarTexto("resumen_suma", formatoImporte(total))
         esperarTexto("resumen_num_tickets", textoTickets(baseActual.size + 2))
         esperarTexto("resumen_promedio", formatoPromedio(total / dias))
-        esperarTexto("resumen_comparativa", "${formatoVariacion(variacion)} vs período anterior")
+        esperarTexto("resumen_comparativa", "${formatoVariacion(variacion)} vs periodo anterior")
         composeRule.onNodeWithTag("pantalla_resumen").assertIsDisplayed()
     }
 
@@ -103,7 +103,7 @@ class ResumenTotalFlujoTest {
         val esperadoBadge = if (totalAyer <= 0.0) {
             TEXTO_SIN_REFERENCIA
         } else {
-            "${formatoVariacion((totalDia - totalAyer) / totalAyer)} vs período anterior"
+            "${formatoVariacion((totalDia - totalAyer) / totalAyer)} vs periodo anterior"
         }
         esperarTexto("resumen_comparativa", esperadoBadge)
     }

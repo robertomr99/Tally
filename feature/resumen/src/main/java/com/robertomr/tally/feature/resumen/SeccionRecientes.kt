@@ -40,7 +40,7 @@ internal fun SeccionRecientes(
     ) {
         Text(
             text = "Gastos del periodo",
-            modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+            modifier = Modifier.padding(top = 4.dp),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
@@ -50,7 +50,7 @@ internal fun SeccionRecientes(
             recientes.isEmpty() -> Text(
                 text = "Sin tickets en este periodo.",
                 modifier = Modifier
-                    .padding(start = 4.dp, bottom = 8.dp)
+                    .padding(bottom = 8.dp)
                     .testTag("resumen_recientes_vacio"),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `seed-demo` (`layout-tablet-coherente` `accepted` en la rama `correcciones-visuales`, sesión 060).
+- Current next ready feature: `mejoras-visuales-2` (`mejoras-visuales` `accepted`, sesión 062, rama `correcciones-visuales`); `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2696,3 +2696,39 @@
 - Seguimiento: quitar el chip de rango duplicado de `TarjetaTotal` en Resumen (tocaria el tag `periodo_rango` y
   sus aserciones), unificar padding 16/20 dp, cabecera comun en Procesado, revision visual humana en la Tab.
 - Status: `layout-tablet-coherente` = **accepted**.
+
+## Session 061 - mejoras-visuales F1 implementacion (2026-10-19, rama correcciones-visuales)
+
+- Alcance: hallazgos V01-V11, V19, V20 de `docs/specs/mejoras-visuales.md` (tareas 1-8). V12-V25 son de
+  `mejoras-visuales-2`; V26-V30 diferidos. Decisiones por defecto: A2 quitar el chip de `TarjetaTotal` y conservar el
+  subtitulo, A3 `extraLarge` = 28 dp en el tema, A4 division en dos features; A1 (campos con subrayado) diferida.
+- Hecho: V01 (`consumeWindowInsets` en el `NavHost`), V02 (`enableEdgeToEdge` con `SystemBarStyle.light`), V03 (dock
+  apilado con fontScale > 1,15, pesos 1:1,3 en fila y total en <=2 lineas), V04 (pasos apilados con fontScale > 1,4 y
+  `maxLines=1`), V05 (forma `extraLarge` 28 dp, parches retirados, boton `error` en Ajustes), V06 (`aspectRatio` en
+  `FotoOriginal`), V07 (`CabeceraPantalla` en los 3 estados de Procesado; "Resultado" en resultado/fallo), V08, V09,
+  V10/V11 (`PADDING_PANTALLA` = 20 dp; "n/5 campos" alineado al papel con `PAPEL_ANCHO_MAXIMO` ahora publico), V19
+  (fundido 150 ms entre pestanas, deslizamiento 300 ms hacia/desde Detalle y Ajustes), V20 (`imePadding` en Detalle y
+  Revision de datos). Extra: Revisar foto usa fondo `surface` (con `surfaceContainerHigh` quedaba una banda bajo el
+  reloj).
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :app:installDebug :app:installDebugAndroidTest` en
+  verde (197 tests JVM, 0 fallos); `am instrument -e notClass ...ExtraccionLocalRealTest,...ExtraccionNubeRealTest`
+  en `emulator-5556`: OK (45 tests). Capturas antes/despues en `docs/evidence/mejoras-visuales/`.
+- Tests tocados: `periodo_rango` -> `resumen_rango` (mismo valor esperado) en `RangoPersonalizadoFlujoTest` y
+  `PeriodoSelectorFlujoTest`; "periodo" sin tilde en `FormatoResumenTest` y `ResumenTotalFlujoTest`. Nada debilitado.
+- No hecho / pendiente: captura del dialogo "Eliminar modelo" (requiere modelo descargado) y de las transiciones;
+  "Repetir foto" se corta a fontScale 2,0 (nuevo, candidato F2); V12-V25 en `mejoras-visuales-2`.
+- Estado: `mejoras-visuales` = **passing**, pendiente de validator independiente. El test temporal de capturas
+  (`ZzCapturaTemporalTest`) se elimino; el emulador quedo restaurado (1280x2856 @480, font_scale 1.0, rotacion 0/auto).
+
+## Session 062 - mejoras-visuales (F1) validacion (2026-10-20, rama correcciones-visuales)
+
+- Validator independiente: **accept** (`assembleDebug` y `testDebugUnitTest` re-ejecutados; 13 hallazgos HACER
+  V01-V11, V19 y V20 verificados en diff y capturas; nada de F2/F3 colado; cambios de tests solo los declarados:
+  `periodo_rango` a `resumen_rango` x4 con el mismo valor esperado y "periodo" sin tilde x3, sin debilitar
+  aserciones; insets, transiciones, forma `extraLarge` 28 dp e `imePadding` revisados; instrumentados apoyados
+  en la evidencia de emulator-5556, OK 45 tests).
+- Aceptado sin verificar: dialogo "Eliminar modelo" de Ajustes (sin captura), transiciones (solo E2E de
+  navegacion), `SystemBarStyle.light` solo en API 37, estados procesando y fallo de Procesado sin captura.
+- Pendiente humano: revision visual de las capturas en la Tab.
+- Candidato nuevo para `mejoras-visuales-2`: "Repetir foto" se corta a fontScale 2,0.
+- Status: `mejoras-visuales` = **accepted**.

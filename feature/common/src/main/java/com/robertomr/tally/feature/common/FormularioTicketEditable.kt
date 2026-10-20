@@ -488,10 +488,53 @@ private fun ContenidoDock(
     guardarHabilitado: Boolean,
     descartarHabilitado: Boolean,
 ) {
+    // Con fuente grande el dock no cabe en una fila (V03): los botones se apilan
+    // (Guardar primero) y el subtítulo del total baja a ancho completo.
+    val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_DOCK
+    val botonDescartar: @Composable (Modifier) -> Unit = { modificador ->
+        OutlinedButton(
+            onClick = onDescartar,
+            enabled = descartarHabilitado,
+            modifier = modificador
+                .heightIn(min = 48.dp)
+                .testTag("revision_descartar"),
+            shape = RoundedCornerShape(9999.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Close,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(text = "Descartar", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+    val botonGuardar: @Composable (Modifier) -> Unit = { modificador ->
+        Button(
+            onClick = onGuardar,
+            enabled = guardarHabilitado,
+            modifier = modificador
+                .heightIn(min = 48.dp)
+                .testTag("revision_guardar"),
+            shape = RoundedCornerShape(9999.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            colors = ButtonDefaults.buttonColors(),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Save,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(text = "Guardar cambios", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
+            .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -515,11 +558,7 @@ private fun ContenidoDock(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(
-                    text = "Calculado a partir de ${contadorArticulos(lineas.size)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
+                if (!apilar) SubtituloTotalRecalculado(lineas)
             }
             Text(
                 text = formatoImporte(totalRecalculado(lineas)),
@@ -530,47 +569,31 @@ private fun ContenidoDock(
                 modifier = Modifier.testTag("revision_total_recalculado"),
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(
-                onClick = onDescartar,
-                enabled = descartarHabilitado,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .testTag("revision_descartar"),
-                shape = RoundedCornerShape(9999.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Close,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "Descartar", maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Button(
-                onClick = onGuardar,
-                enabled = guardarHabilitado,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
-                    .testTag("revision_guardar"),
-                shape = RoundedCornerShape(9999.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                colors = ButtonDefaults.buttonColors(),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Save,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = "Guardar cambios", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (apilar) {
+            SubtituloTotalRecalculado(lineas)
+            botonGuardar(Modifier.fillMaxWidth())
+            botonDescartar(Modifier.fillMaxWidth())
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // "Guardar cambios" es la etiqueta larga: más peso para que no se trunque en 360 dp.
+                botonDescartar(Modifier.weight(1f))
+                botonGuardar(Modifier.weight(1.3f))
             }
         }
     }
 }
+
+@Composable
+private fun SubtituloTotalRecalculado(lineas: List<LineaEditable>) {
+    Text(
+        text = "Calculado a partir de ${contadorArticulos(lineas.size)}",
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.outline,
+    )
+}
+
+/** Escala de fuente a partir de la cual los botones del dock se apilan en vertical. */
+private const val UMBRAL_APILAR_DOCK = 1.15f
 
 /** Contador REAL de filas (DESIGN.md: nada de "6 articulos" inventados). */
 private fun contadorArticulos(n: Int): String =

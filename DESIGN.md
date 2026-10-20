@@ -62,8 +62,9 @@ typography:
     fontFeatureSettings: "tnum" (cifras tabulares) en TODOS los importes
 rounded:
   sm: 8dp (inputs, chips, mini-indicadores)
-  md: 12dp (cards, diálogos)
+  md: 12dp (cards, filas)
   lg: 16dp (bottom sheets, contenedor de recibo)
+  xl: 28dp (diálogos; forma extraLarge del tema)
   pill: 9999dp (botones primarios, FAB, pills de navegación, chips activos)
 spacing:
   base: rejilla de 8dp (malla de 4dp para listas densas)
@@ -141,8 +142,25 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
 
 ## Layout
 
-- Rejilla de 8dp; márgenes 16/20dp en todas las anchuras (los 24dp de tablet
-  del mockup quedan como seguimiento, no MVP).
+- Rejilla de 8dp; margen horizontal de pantalla único de **20dp** en todas las
+  anchuras (`PADDING_PANTALLA` en `feature/common/LayoutAncho.kt`): cabecera,
+  selector, tarjetas, listas, formularios, docks y botones de Procesado. El
+  papel de ticket conserva su padding interior de 16dp. Los 24dp de tablet del
+  mockup quedan como seguimiento, no MVP.
+- **Un solo inset superior**: el `Scaffold` de `TallyApp` reserva la barra de
+  estado en `innerPadding` y el `NavHost` lo marca como consumido
+  (`consumeWindowInsets`), de modo que el título de toda pantalla arranca a la
+  misma distancia (alto de barra + el padding de `CabeceraPantalla`). Las
+  pantallas pueden seguir llamando a `statusBarsPadding()` (resuelve a 0); ninguna
+  pinta un fondo distinto al `surface` en esa franja. `MainActivity` activa
+  `enableEdgeToEdge` con barras transparentes e iconos oscuros (la app solo tiene
+  tema claro). Detalle y Revisión de datos aplican `imePadding()` para que el dock
+  y el campo enfocado queden sobre el teclado.
+- **Fuentes grandes**: con `fontScale` > 1,15 el dock de edición apila sus botones
+  (Guardar primero) y baja el subtítulo del total; con > 1,4 los pasos de Procesado
+  se apilan sin chevrons.
+- **Transiciones** (`NavHost`): entre pestañas, fundido de 150 ms; hacia/desde
+  Detalle y Ajustes, deslizamiento horizontal de 300 ms con pop inverso.
 - **Regla única de ancho**: TODAS las pantallas usan una sola columna centrada
   de `ANCHO_MAXIMO_CONTENIDO` = 720 dp (`feature/common/LayoutAncho.kt`,
   contenedor `ColumnaCentrada`). Los 720 dp incluyen los paddings horizontales
@@ -173,9 +191,14 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
 ## Shapes
 
 Pill (9999dp) para botones primarios, FAB, pills de navegación y chips
-activos. 12dp en cards. 16dp en bottom sheets y contenedor de recibo. 8dp en
-inputs, chips de categoría e indicadores mínimos. Elevación tonal con
-contornos hairline (`outline-variant` al 30–40 %) en lugar de sombras.
+activos. 12dp en cards y filas. 16dp en bottom sheets, contenedor de recibo y
+radios interiores. 24dp en las tarjetas grandes de Resumen. 28dp en diálogos
+(`AlertDialog`, `DatePickerDialog`): es la forma `extraLarge` del tema
+(`theme/Theme.kt`), así que los diálogos NO fijan `shape` propia. La píldora se
+pide siempre explícita (`RoundedCornerShape(9999.dp)`) y nunca depende de
+`extraLarge`. 8dp en inputs, chips de categoría e indicadores mínimos.
+Elevación tonal con contornos hairline (`outline-variant` al 30–40 %) en lugar
+de sombras.
 
 ## Components
 
