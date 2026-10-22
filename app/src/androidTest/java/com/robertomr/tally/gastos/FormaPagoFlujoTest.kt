@@ -1,8 +1,12 @@
 package com.robertomr.tally.gastos
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -191,17 +195,23 @@ class FormaPagoFlujoTest {
         assertEquals("36,10", texto("revision_cambio"))
         assertFalse(existe("revision_aviso_pago"))
 
-        reemplazar("revision_cambio", "30")
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("revision_aviso_pago").performScrollTo().assertIsDisplayed()
+        // spec gasto-manual-2: el cambio es derivado y de solo lectura (no se puede teclear).
+        composeRule.onNodeWithTag("revision_cambio").assert(SemanticsMatcher.keyNotDefined(SemanticsActions.SetText))
 
-        // El aviso no bloquea: Guardar sigue activo y persiste lo escrito.
+        // Entregado menor que el total: cambio vacio y aviso con el faltante (13,90 - 5 = 8,90).
+        reemplazar("revision_entregado", "5")
+        composeRule.waitForIdle()
+        assertEquals("", texto("revision_cambio"))
+        composeRule.onNodeWithTag("revision_aviso_pago").performScrollTo().assertIsDisplayed()
+            .assertTextContains("faltan 8,90 €", substring = true)
+
+        // El aviso no bloquea: Guardar sigue activo y persiste entregado 5 y cambio null.
         composeRule.onNodeWithTag("revision_guardar").performClick()
         esperarTag("pantalla_gastos")
         val guardado = runBlocking { repositorio.getById(t.id) }!!
         assertEquals(FormaPago.EFECTIVO, guardado.formaPago)
-        assertEquals(50.0, guardado.entregado!!, 0.0)
-        assertEquals(30.0, guardado.cambio!!, 0.0)
+        assertEquals(5.0, guardado.entregado!!, 0.0)
+        assertNull(guardado.cambio)
         assertEquals(13.90, guardado.total, 0.0)
     }
 }

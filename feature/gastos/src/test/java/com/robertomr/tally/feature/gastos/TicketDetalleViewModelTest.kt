@@ -323,4 +323,84 @@ class TicketDetalleViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    // --- total unico (spec gasto-manual-2) -------------------------------------
+
+    @Test
+    fun ticketConLineasQueNoSumanSuTotalSeAbreTecleadoYConservaElTotal() = runTest {
+        val vm = viewModel(sembrar())
+        vm.uiState.test {
+            val s = esperarDatos()
+            assertFalse(s.datos.totalAutomatico)
+            assertEquals(10.0, s.datos.total, 0.0)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun usarLaSumaYEditarAManoNoHabilitanGuardarPeroCambiarElTotalSi() = runTest {
+        val vm = viewModel(sembrar())
+        vm.uiState.test {
+            esperarDatos()
+            vm.onTotalAutomaticoElegido(true)
+            val auto = esperarDatos { it.datos.totalAutomatico }
+            assertEquals(5.0, auto.datos.total, 0.0)
+            assertTrue(auto.hayCambios)
+
+            vm.onTotalAutomaticoElegido(false)
+            val manual = esperarDatos { !it.datos.totalAutomatico }
+            assertEquals(5.0, manual.datos.total, 0.0)
+            assertTrue(manual.hayCambios)
+
+            vm.onTotalEditado("10")
+            assertFalse(esperarDatos { !it.hayCambios }.hayCambios)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun alternarElModoSinCambiarValoresNoCuentaComoCambio() = runTest {
+        // Total 5 = suma de las lineas: se abre en automatico.
+        val id = repository.save(
+            Ticket(
+                comercio = "MERCADONA",
+                fechaEmision = emision,
+                total = 5.0,
+                categoria = Categoria.ALIMENTACION,
+                fechaCaptura = captura,
+                motor = Motor.NUBE,
+                rutaFoto = "fotos/x.jpg",
+                lineas = listOf(Linea("LECHE", 2, 1.0), Linea("PAN", 1, 3.0)),
+            ),
+        )
+        val vm = viewModel(id)
+        vm.uiState.test {
+            val abierto = esperarDatos()
+            assertTrue(abierto.datos.totalAutomatico)
+            vm.onTotalAutomaticoElegido(false)
+            val manual = esperarDatos { !it.datos.totalAutomatico }
+            assertEquals(5.0, manual.datos.total, 0.0)
+            assertFalse("mismos valores que lo guardado: sin cambios", manual.hayCambios)
+            vm.onTotalAutomaticoElegido(true)
+            assertFalse(esperarDatos { it.datos.totalAutomatico }.hayCambios)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+    @Test
+    fun enAutomaticoEditarUnaCantidadActualizaElTotalYGuardaLoMostrado() = runTest {
+        val id = sembrar()
+        val vm = viewModel(id)
+        vm.uiState.test {
+            esperarDatos()
+            vm.onTotalAutomaticoElegido(true)
+            esperarDatos { it.datos.totalAutomatico }
+            vm.onLineaCantidadEditada(0, "4")
+            val s = esperarDatos { it.datos.total == 7.0 }
+            vm.onGuardar()
+            esperarDatos { it.hecho }
+            assertEquals(7.0, repository.getById(id)!!.total, 0.0)
+            assertEquals(7.0, s.datos.total, 0.0)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

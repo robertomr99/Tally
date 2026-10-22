@@ -6,6 +6,7 @@ import com.robertomr.tally.domain.expenses.data.CropRegion
 import com.robertomr.tally.domain.expenses.data.EngineRouter
 import com.robertomr.tally.domain.expenses.data.TicketRepository
 import com.robertomr.tally.domain.expenses.entities.Categoria
+import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.Linea
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
@@ -34,6 +35,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -1151,7 +1153,9 @@ class EscanearViewModelTest {
 
         val ticket = ticketsGuardados().single()
         assertEquals(listOf(Linea("MENU DEL DIA", 1, 12.50)), ticket.lineas)
-        assertEquals(0.0, ticket.total, 0.0)
+        // Contrato spec gasto-manual-2: la primera linea con total 0 pasa a total automatico,
+        // asi que se persiste la suma de las lineas con concepto (12,50), no 0.
+        assertEquals(12.50, ticket.total, 0.0)
     }
 
     @Test
@@ -1249,4 +1253,58 @@ class EscanearViewModelTest {
     /** Tickets persistidos (via el repositorio, como los observara el listado). */
     private suspend fun ticketsGuardados(): List<Ticket> =
         repository.observeByDateRange(LocalDate.MIN, LocalDate.MAX).first()
+
+    // --- total unico y cambio derivado (spec gasto-manual-2) --------------------
+
+    @Test
+    fun totalAusenteConLineasSalePorSumaYSigueLasEdicionesHastaElegirAMano() = runTest {
+        textEngine.result = textEngine.result!!.copy(total = null)
+        val revision = abrirRevisionDatos()
+        assertTrue(revision.datos.totalAutomatico)
+        assertEquals(2.10, revision.datos.total, 0.0)
+
+        viewModel.onLineaCantidadEditada(0, "3")
+        esperarEstado { it is CapturaUiState.RevisionDatos && it.datos.total == 3.15 }
+
+        viewModel.onTotalAutomaticoElegido(false)
+        viewModel.onTotalEditado("9")
+        val manual = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.total == 9.0
+        } as CapturaUiState.RevisionDatos
+        assertFalse(manual.datos.totalAutomatico)
+    }
+
+    @Test
+    fun totalDelPapelQueNoCuadraSeConservaYUsarLaSumaLoSustituye() = runTest {
+        val revision = abrirRevisionDatos()
+        assertFalse(revision.datos.totalAutomatico)
+        assertEquals(35.30, revision.datos.total, 0.0)
+
+        viewModel.onTotalAutomaticoElegido(true)
+        val auto = esperarEstado {
+            it is CapturaUiState.RevisionDatos && it.datos.totalAutomatico
+        } as CapturaUiState.RevisionDatos
+        assertEquals(2.10, auto.datos.total, 0.0)
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+        assertEquals(2.10, ticketsGuardados().single().total, 0.0)
+    }
+
+    @Test
+    fun cambioExtraidoQueContradiceSeRecalculaEnRevisionYAlGuardar() = runTest {
+        textEngine.result = textEngine.result!!.copy(
+            total = 13.90,
+            lineas = emptyList(),
+            formaPago = FormaPago.EFECTIVO,
+            entregado = 50.0,
+            cambio = 30.0,
+        )
+        val revision = abrirRevisionDatos()
+        assertEquals(36.10, revision.datos.cambio!!, 0.0)
+
+        viewModel.onGuardar()
+        esperarEstado { it is CapturaUiState.Guardado }
+        assertEquals(36.10, ticketsGuardados().single().cambio!!, 0.0)
+    }
 }

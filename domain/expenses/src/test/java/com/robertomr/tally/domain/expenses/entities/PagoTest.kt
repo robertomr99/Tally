@@ -126,12 +126,15 @@ class PagoTest {
     }
 
     @Test
-    fun cambioEsEditableTrasElCalculo() {
+    fun cambioNoEsEditableSeDerivaSiempreDeEntregadoYTotal() {
+        // spec gasto-manual-2: ya no hay reductor de cambio; entregado 50 -> 36,10
+        // y un cambio ajeno en el estado se recalcula al tocar entregado o total.
         val r = base.conFormaPago(FormaPago.EFECTIVO)
             .conEntregadoTexto("50")!!
-            .conCambioTexto("30,00")!!
-        assertEquals(30.0, r.cambio!!, 0.0)
-        assertEquals(AvisoPago.CAMBIO_NO_CUADRA, avisoPago(r))
+            .copy(cambio = 30.0)
+            .conEntregadoTexto("50")!!
+        assertEquals(36.10, r.cambio!!, 0.0)
+        assertNull(avisoPago(r))
     }
 
     @Test
@@ -146,9 +149,9 @@ class PagoTest {
         val r = base.conFormaPago(FormaPago.EFECTIVO).conEntregadoTexto("50")!!
         assertNull(r.conEntregadoTexto("cincuenta"))
         assertNull(r.conEntregadoTexto("-3"))
-        assertNull(r.conCambioTexto("abc"))
         assertNull(r.conEntregadoTexto("")!!.entregado)
-        assertNull(r.conCambioTexto("  ")!!.cambio)
+        assertNull(r.conEntregadoTexto("  ")!!.entregado)
+        assertNull(r.conEntregadoTexto("")!!.cambio)
     }
 
     @Test
@@ -189,5 +192,97 @@ class PagoTest {
             formaPago = FormaPago.TARJETA,
         )
         assertEquals(FormaPago.TARJETA, datosRevisionDe(t).formaPago)
+    }
+
+    // --- cambio derivado (spec gasto-manual-2, A) ----------------------------------
+
+    @Test
+    fun entregadoMenorQueTotalDejaCambioNuloNuncaNegativo() {
+        val r = base.conFormaPago(FormaPago.EFECTIVO).conEntregadoTexto("5")!!
+        assertNull(r.cambio)
+        assertEquals(AvisoPago.ENTREGADO_MENOR_QUE_TOTAL, avisoPago(r))
+    }
+
+    @Test
+    fun entregadoVacioLimpiaEntregadoYCambio() {
+        val r = base.conFormaPago(FormaPago.EFECTIVO).conEntregadoTexto("50")!!
+        val vacio = r.conEntregadoTexto("")!!
+        assertNull(vacio.entregado)
+        assertNull(vacio.cambio)
+        assertNull(avisoPago(vacio))
+    }
+
+    @Test
+    fun entregadoExactoDaCambioCero() {
+        val r = base.conFormaPago(FormaPago.EFECTIVO).conEntregadoTexto("13,90")!!
+        assertEquals(0.0, r.cambio!!, 0.0)
+    }
+
+    @Test
+    fun cambiarFormaPagoAEfectivoRecalculaConLoYaEntregado() {
+        val r = base.copy(entregado = 20.0).conFormaPago(FormaPago.EFECTIVO)
+        assertEquals(6.10, r.cambio!!, 0.0)
+    }
+
+    @Test
+    fun normalizarPagoIgnoraElCambioExtraidoQueContradice() {
+        // E=50, C=30 (la IA se equivoco), T=13,90 -> 36,10.
+        val r = normalizarPago(FormaPago.EFECTIVO, 13.90, 50.0, 30.0)
+        assertEquals(50.0, r.entregado!!, 0.0)
+        assertEquals(36.10, r.cambio!!, 0.0)
+        // Sin cubrir el total el cambio extraido tampoco se conserva.
+        assertNull(normalizarPago(FormaPago.EFECTIVO, 13.90, 5.0, 30.0).cambio)
+    }
+
+    @Test
+    fun normalizadaPersisteElCambioCalculadoAunqueElDatoTraigaOtro() {
+        val d = base.copy(formaPago = FormaPago.EFECTIVO, entregado = 50.0, cambio = 30.0).normalizada()
+        assertEquals(36.10, d.cambio!!, 0.0)
+    }
+
+    @Test
+    fun conTotalDesconocidoNormalizarPagoConservaLoExtraido() {
+        val r = normalizarPago(FormaPago.EFECTIVO, 0.0, 20.0, 5.0)
+        assertEquals(20.0, r.entregado!!, 0.0)
+        assertEquals(5.0, r.cambio!!, 0.0)
+    }
+
+    @Test
+    fun soloCambioExtraidoInfiereEntregadoAlAbrirYElUsuarioPuedeBorrarlo() {
+        val extraido = TicketExtraido(
+            total = 7.91,
+            motor = Motor.NUBE,
+            formaPago = FormaPago.EFECTIVO,
+            entregado = null,
+            cambio = 2.09,
+        )
+        val d = datosRevisionInicial(extraido)
+        assertEquals(10.0, d.entregado!!, 0.0)
+        assertEquals(2.09, d.cambio!!, 0.0)
+        val borrado = d.conEntregadoTexto("")!!
+        assertNull(borrado.entregado)
+        assertNull(borrado.cambio)
+        // Tocar el total despues no reinventa entregado.
+        assertNull(borrado.conTotalTexto("9")!!.entregado)
+    }
+
+    @Test
+    fun datosRevisionInicialRecalculaElCambioExtraidoQueContradice() {
+        val extraido = TicketExtraido(
+            total = 13.90,
+            motor = Motor.NUBE,
+            formaPago = FormaPago.EFECTIVO,
+            entregado = 50.0,
+            cambio = 30.0,
+        )
+        assertEquals(36.10, datosRevisionInicial(extraido).cambio!!, 0.0)
+    }
+
+    @Test
+    fun tarjetaYNoIndicadaConservanOcultosSinRecalcular() {
+        val tarjeta = base.copy(formaPago = FormaPago.TARJETA, entregado = 50.0, cambio = 30.0)
+        val r = tarjeta.conTotalTexto("20")!!
+        assertEquals(50.0, r.entregado!!, 0.0)
+        assertEquals(30.0, r.cambio!!, 0.0)
     }
 }

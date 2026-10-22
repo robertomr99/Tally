@@ -6,7 +6,6 @@ import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.DatosRevision
 import com.robertomr.tally.domain.expenses.entities.ErrorGastoManual
 import com.robertomr.tally.domain.expenses.entities.FormaPago
-import com.robertomr.tally.domain.expenses.entities.conCambioTexto
 import com.robertomr.tally.domain.expenses.entities.conEntregadoTexto
 import com.robertomr.tally.domain.expenses.entities.conFechaTexto
 import com.robertomr.tally.domain.expenses.entities.conFormaPago
@@ -14,6 +13,7 @@ import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
 import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
 import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
 import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
+import com.robertomr.tally.domain.expenses.entities.conTotalAutomatico
 import com.robertomr.tally.domain.expenses.entities.conTotalTexto
 import com.robertomr.tally.domain.expenses.entities.datosGastoManualInicial
 import com.robertomr.tally.domain.expenses.entities.errorGastoManual
@@ -128,8 +128,9 @@ class NuevoGastoViewModel @Inject constructor(
         editar { it.conEntregadoTexto(texto) }
     }
 
-    fun onCambioEditado(texto: String) {
-        editar { it.conCambioTexto(texto) }
+    /** "Usar la suma de las lineas" (`true`) o "Editar total a mano" (`false`). */
+    fun onTotalAutomaticoElegido(automatico: Boolean) {
+        editar { it.conTotalAutomatico(automatico) }
     }
 
     fun onCategoriaElegida(categoria: Categoria) {

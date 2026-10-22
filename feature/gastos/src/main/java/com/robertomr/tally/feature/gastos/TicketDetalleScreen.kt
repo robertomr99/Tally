@@ -101,7 +101,7 @@ fun TicketDetalleScreen(
         onLineaEliminada = viewModel::onLineaEliminada,
         onFormaPagoElegida = viewModel::onFormaPagoElegida,
         onEntregadoEditado = viewModel::onEntregadoEditado,
-        onCambioEditado = viewModel::onCambioEditado,
+        onTotalAutomaticoElegido = viewModel::onTotalAutomaticoElegido,
         onDescartar = {
             viewModel.onDescartar()
             estado.recrearFormulario()
@@ -131,7 +131,7 @@ internal fun TicketDetalleContenido(
     onLineaEliminada: (Long) -> Unit,
     onFormaPagoElegida: (FormaPago) -> Unit,
     onEntregadoEditado: (String) -> Unit,
-    onCambioEditado: (String) -> Unit,
+    onTotalAutomaticoElegido: (Boolean) -> Unit,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     onConfirmarBorrado: () -> Unit,
@@ -234,7 +234,7 @@ internal fun TicketDetalleContenido(
                                         onLineaEliminada = onLineaEliminada,
                                         onFormaPagoElegida = onFormaPagoElegida,
                                         onEntregadoEditado = onEntregadoEditado,
-                                        onCambioEditado = onCambioEditado,
+                                        onTotalAutomaticoElegido = onTotalAutomaticoElegido,
                                     )
                                 }
                             }
@@ -255,7 +255,6 @@ internal fun TicketDetalleContenido(
                     }
 
                     DockEdicion(
-                        lineas = ui.datos.lineas,
                         onDescartar = onDescartar,
                         onGuardar = onGuardar,
                         guardarHabilitado = ui.hayCambios && !ocupado,

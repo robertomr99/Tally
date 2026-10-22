@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.robertomr.tally.domain.expenses.entities.DisponibilidadMotor
 import com.robertomr.tally.domain.expenses.entities.FiltroFormaPago
-import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.Motor
 import com.robertomr.tally.domain.expenses.entities.OfertaMotor
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
@@ -134,33 +133,32 @@ class FuentesGrandesFlujoTest {
     }
 
     @Test
-    fun dockSinTotalRecalculadoNoLoMuestraYUsaElTextoDelLlamador() {
+    fun dockSoloTieneDosBotonesYUsaElTextoDelLlamador() {
         contenidoConLetraDoble {
             DockEdicion(
-                lineas = emptyList(),
                 onDescartar = {},
                 onGuardar = {},
                 textoGuardar = "Guardar gasto",
-                mostrarTotalRecalculado = false,
             )
         }
         composeRule.onNodeWithTag("revision_total_recalculado").assertDoesNotExist()
-        composeRule.onNodeWithTag("revision_guardar").assertIsDisplayed()
+        composeRule.onNodeWithTag("revision_guardar").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         composeRule.onNodeWithText("Guardar gasto").assertIsDisplayed()
-        composeRule.onNodeWithTag("revision_descartar").assertIsDisplayed()
+        composeRule.onNodeWithTag("revision_descartar").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
     }
 
     @Test
-    fun dockConLineasMuestraElTotalRecalculado() {
+    fun gastosMuestraAnadirGastoEnFilaPropiaConLetraDoble() {
         contenidoConLetraDoble {
-            DockEdicion(
-                lineas = listOf(LineaEditable(id = 0, concepto = "Café", cantidad = 1, precioUnitario = 1.5)),
-                onDescartar = {},
-                onGuardar = {},
-                textoGuardar = "Guardar gasto",
-                mostrarTotalRecalculado = true,
+            GastosContenido(
+                ui = GastosUiState(cargando = false, tipo = PeriodoTipo.DIA, grupos = emptyList()),
+                onSeleccionarPeriodo = {},
+                onSeleccionarRango = { _, _ -> },
+                onTicketClick = {},
+                onEscanear = {},
             )
         }
-        composeRule.onNodeWithTag("revision_total_recalculado").assertIsDisplayed()
+        composeRule.onNodeWithTag("gastos_anadir").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        composeRule.onNodeWithText("Añadir gasto").assertIsDisplayed()
     }
 }

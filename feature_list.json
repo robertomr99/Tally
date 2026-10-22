@@ -690,6 +690,30 @@
     "notes": "Petición del usuario (2026-10-20). Selector del sistema PickVisualMedia (sin permiso). Botón en el hueco izquierdo de la fila del obturador y en la pantalla de permiso. Recorte neutral con el aspecto de la imagen ya rotada. Actualizar captura-foto.md, captura-recorte-encuadre.md, KDoc de CameraEncuadre y DESIGN.md/build-brief.md si procede."
   },
   {
+    "id": "gasto-manual-2",
+    "area": "seguimiento",
+    "title": "Correcciones de gasto manual: cambio y total automaticos, y alta de gasto mas descubrible",
+    "user_visible_behavior": "En efectivo, el cambio se calcula solo a partir de lo entregado y del total (nunca se teclea). El total de un gasto se obtiene sumando las lineas de producto cuando las hay, sin un \"Total con IVA\" desincronizado de los productos; y el boton para anadir un gasto nuevo es mas claro que un \"+\" suelto.",
+    "depends_on": ["gasto-manual", "forma-pago", "mejoras-visuales-3"],
+    "status": "accepted",
+    "verification": [
+      "Entregado y total determinan el cambio automaticamente (formulario de Nuevo gasto, Revision y Detalle); el cambio no es editable a mano",
+      "Cambio no editable en los tres flujos (Nuevo gasto, Revision, Detalle): solo lectura, nunca negativo, aviso con el faltante si lo entregado no cubre el total, y se persiste el calculado aunque la IA diera otro",
+      "Anadir o quitar lineas actualiza el total automaticamente; no hay dos totales contradictorios en pantalla",
+      "Aviso de diferencia total/lineas: un total tecleado o del papel que no cuadra con las lineas se conserva con aviso y 'Usar la suma de las lineas'",
+      "La alta de gasto es reconocible a simple vista (etiqueta/accion visible) en Gastos y accesible a 360 dp, fontScale 2.0 y tablet",
+      "Suite JVM y :app en verde sin debilitar tests existentes; tags conservados salvo cambio justificado"
+    ],
+    "evidence": [
+      "gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test verde: 527 tests, 0 fallos (nuevos: TotalAutomaticoTest 18, PagoTest +10 y VM tests de Nuevo gasto, Detalle y Escanear)",
+      "emulator-5556 (solo emulador, fuera de la Tab fisica): suite :app sin *RealTest por paquetes, 78 tests: captura 13, diseno 6, gastos 37, navigation 3, resumen 11 OK; ajustes 8 con 1 fallo (AjustesModeloFlujoTest.ajustesDesdeResumenMuestraModeloLocalNoDescargado: token_estado fuera de pantalla con wm size 1080x2400), OK 3/3 aislada con wm size por defecto",
+      "Clases nuevas OK: TotalCambioAutomaticosFlujoTest 3, AnadirGastoBotonFlujoTest 4; reescritas OK: NuevoGastoDockFlujoTest 2, FuentesGrandesFlujoTest 6, FormaPagoFlujoTest 3, RevisionDatosFlujoTest 3; GastoManualFlujoTest 3 OK tras borrar por la UI los tickets vacios de hoy",
+      "Capturas antes/despues en docs/evidence/gasto-manual-2/ (README con lectura honesta; revision humana pendiente)",
+      "No verificado: TalkBack, ticket escaneado real con IA, tablet fisica, formulario completo dentro de la pantalla en tablet, antes de fs 1.3 y tablet"
+    ],
+    "notes": "Peticion del usuario (2026-10-22): (1) el cambio no debe ponerse a mano: con entregado y lo gastado se opera solo; (2) el \"Total con IVA\" no tiene sentido si no se actualiza al meter productos: o se quita y queda solo \"Total recalculado\", o la suma es automatica segun los productos (el usuario cree que lo segundo tiene mas sentido); (3) el \"+\" para anadir gasto resulta poco intuitivo: darle una vuelta. Decisiones de diseno del planner con default razonable; preservar que un ticket escaneado conserva el total extraido (ver riesgo: ticket sin lineas o con lineas que no cuadran con el total del papel)."
+  },
+  {
     "id": "seed-demo",
     "area": "demo",
     "title": "Datos de demo sembrados (build debug)",

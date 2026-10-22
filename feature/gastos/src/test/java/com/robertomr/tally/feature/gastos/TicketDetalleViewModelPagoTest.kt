@@ -133,13 +133,41 @@ class TicketDetalleViewModelPagoTest {
     }
 
     @Test
-    fun textoInvalidoDeEntregadoOCambioSeIgnora() = runTest {
+    fun textoInvalidoDeEntregadoSeIgnora() = runTest {
         val vm = viewModel(sembrar(FormaPago.EFECTIVO, 50.0, 36.10))
         vm.uiState.test {
             esperarDatos()
             vm.onEntregadoEditado("abc")
-            vm.onCambioEditado("-5")
             expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // --- cambio derivado y total automatico (spec gasto-manual-2) ---------------
+
+    @Test
+    fun cambiarElTotalRecalculaElCambioYGuardaElCalculado() = runTest {
+        val id = sembrar(FormaPago.EFECTIVO, 50.0, 36.10)
+        val vm = viewModel(id)
+        vm.uiState.test {
+            esperarDatos()
+            vm.onTotalEditado("20")
+            val s = esperarDatos { it.datos.total == 20.0 }
+            assertEquals(30.0, s.datos.cambio!!, 0.0)
+            vm.onGuardar()
+            esperarDatos { it.hecho }
+            assertEquals(30.0, repository.getById(id)!!.cambio!!, 0.0)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun ticketAntiguoConCambioQueNoCuadraSeAbreConElCalculadoYAlGuardarSePersisteEse() = runTest {
+        val id = sembrar(FormaPago.EFECTIVO, 50.0, 30.0)
+        val vm = viewModel(id)
+        vm.uiState.test {
+            val s = esperarDatos()
+            assertEquals(36.10, s.datos.cambio!!, 0.0)
             cancelAndIgnoreRemainingEvents()
         }
     }

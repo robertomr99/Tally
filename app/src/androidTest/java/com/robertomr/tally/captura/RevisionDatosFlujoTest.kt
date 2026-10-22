@@ -90,8 +90,8 @@ class RevisionDatosFlujoTest {
     }
 
     // E2E enfocado de edicion-lineas (spec, T7): extraccion vacia -> Revisar ->
-    // anadir dos lineas -> editarlas -> eliminar una -> el "Total recalculado"
-    // sigue la suma y el total del ticket NO cambia -> Guardar cambios -> Gastos.
+    // anadir dos lineas -> editarlas -> eliminar una -> el total unico (spec gasto-manual-2)
+    // es automatico y sigue la suma -> Guardar cambios -> Gastos.
     // La persistencia exacta de las lineas editadas se verifica en JVM
     // (GuardarTicketTest/EscanearViewModelTest) hasta que exista listado-gastos.
     @Test
@@ -100,7 +100,7 @@ class RevisionDatosFlujoTest {
 
         composeRule.onNodeWithTag("revision_lineas").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("0 artículos", substring = true)
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("0,00", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("0,00", substring = true)
 
         // Anadir dos lineas (ids 0 y 1) y rellenarlas.
         composeRule.onNodeWithTag("revision_anadir_linea").performScrollTo().performClick()
@@ -112,18 +112,18 @@ class RevisionDatosFlujoTest {
         escribir("revision_linea_1_concepto", "AGUA")
         escribir("revision_linea_1_precio", "2")
         composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("2 artículos", substring = true)
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("6,50", substring = true)
 
         // Una cantidad invalida se ignora: la pantalla sigue viva y la suma igual.
         escribir("revision_linea_0_cantidad", "0")
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("6,50", substring = true)
         escribir("revision_linea_0_cantidad", "3")
 
         // Un precio vacio cuenta como 0 (el total baja) y se puede volver a rellenar.
         escribir("revision_linea_1_precio", "")
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("4,50", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("4,50", substring = true)
         escribir("revision_linea_1_precio", "2")
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("6,50", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("6,50", substring = true)
 
         // Eliminar la segunda linea.
         composeRule.onNodeWithTag("revision_linea_1_borrar").performScrollTo().performClick()
@@ -133,10 +133,12 @@ class RevisionDatosFlujoTest {
             composeRule.onAllNodesWithTag("revision_linea_1").fetchSemanticsNodes().isEmpty(),
         )
         composeRule.onNodeWithTag("revision_lineas_contador").assertTextContains("1 artículo", substring = true)
-        composeRule.onNodeWithTag("revision_total_recalculado").assertTextContains("4,50", substring = true)
+        composeRule.onNodeWithTag("revision_total").assertTextContains("4,50", substring = true)
 
-        // El total del ticket (autoritativo) no se ha tocado al editar lineas.
-        composeRule.onNodeWithTag("revision_total").performScrollTo().assertTextContains("0,00", substring = true)
+        // Contrato spec gasto-manual-2: con total 0 la primera linea pasa el total a AUTOMATICO,
+        // asi que el total unico es la suma de las lineas (4,50) y es de solo lectura.
+        composeRule.onNodeWithTag("revision_total").performScrollTo().assertTextContains("4,50", substring = true)
+        composeRule.onNodeWithTag("revision_total_manual").performScrollTo().assertIsDisplayed()
 
         composeRule.onNodeWithTag("revision_guardar").assertIsEnabled()
         composeRule.onNodeWithTag("revision_guardar").performClick()

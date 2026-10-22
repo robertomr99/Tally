@@ -8,7 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -19,8 +22,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -97,27 +99,25 @@ fun GastosContenido(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Cabecera fija (no desplazable); la lista ocupa el resto con weight.
+            // Boton extendido "Añadir gasto" (spec gasto-manual-2, C): en la cabecera con
+            // letra normal; con letra grande, en fila propia a ancho completo bajo ella.
+            val botonEnFila = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
             CabeceraPantalla(
                 titulo = "Gastos",
                 subtitulo = ui.periodo?.let { etiquetaPeriodo(it, ui.hoy) },
                 subtituloTag = "gastos_rango",
-                accion = {
-                    IconButton(
-                        onClick = onAnadirGasto,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .testTag("gastos_anadir"),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "Añadir gasto",
-                        )
-                    }
+                accion = if (botonEnFila) null else {
+                    { BotonAnadirGasto(onAnadirGasto) }
                 },
             )
+            if (botonEnFila) {
+                BotonAnadirGasto(
+                    onClick = onAnadirGasto,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = PADDING_PANTALLA),
+                )
+            }
             val grupos = ui.grupos
             val selectores: @Composable () -> Unit = {
                 PeriodoSelector(
@@ -198,6 +198,27 @@ fun GastosContenido(
                 }
             }
         }
+    }
+}
+
+/** Acción principal de la cabecera: tonal, píldora, icono + texto (no un "+" suelto). */
+@Composable
+private fun BotonAnadirGasto(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .testTag("gastos_anadir"),
+        shape = RoundedCornerShape(9999.dp),
+        contentPadding = PaddingValues(start = 14.dp, end = 18.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Add,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(text = "Añadir gasto", style = MaterialTheme.typography.labelLarge, maxLines = 1)
     }
 }
 

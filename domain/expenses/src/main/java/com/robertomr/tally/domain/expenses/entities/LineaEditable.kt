@@ -86,3 +86,13 @@ fun List<LineaEditable>.aLineas(): List<Linea> =
                 precioUnitario = editable.precioUnitario.coerceAtLeast(0.0),
             )
         }
+
+/**
+ * Total de las lineas para el modo AUTOMATICO (spec gasto-manual-2): suma de
+ * `cantidad x precio` SOLO de las lineas con concepto no en blanco (las que
+ * [aLineas] guardara), redondeada a centimos.
+ */
+fun totalDeLineas(lineas: List<LineaEditable>): Double =
+    redondearCentimos(
+        lineas.filter { it.concepto.isNotBlank() }.sumOf { it.cantidad * it.precioUnitario },
+    )

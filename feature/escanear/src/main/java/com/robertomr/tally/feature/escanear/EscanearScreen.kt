@@ -224,7 +224,7 @@ fun EscanearScreen(onGastoGuardado: () -> Unit) {
                     onLineaEliminada = viewModel::onLineaEliminada,
                     onFormaPagoElegida = viewModel::onFormaPagoElegida,
                     onEntregadoEditado = viewModel::onEntregadoEditado,
-                    onCambioEditado = viewModel::onCambioEditado,
+                    onTotalAutomaticoElegido = viewModel::onTotalAutomaticoElegido,
                     onDescartar = viewModel::onVolverAlResultado,
                     onGuardar = viewModel::onGuardar,
                 )

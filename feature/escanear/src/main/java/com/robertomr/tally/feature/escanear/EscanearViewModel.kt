@@ -18,9 +18,9 @@ import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
 import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
 import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
 import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
-import com.robertomr.tally.domain.expenses.entities.conCambioTexto
 import com.robertomr.tally.domain.expenses.entities.conEntregadoTexto
 import com.robertomr.tally.domain.expenses.entities.conFormaPago
+import com.robertomr.tally.domain.expenses.entities.conTotalAutomatico
 import com.robertomr.tally.domain.expenses.entities.conTotalTexto
 import com.robertomr.tally.domain.expenses.entities.sinLinea
 import com.robertomr.tally.domain.expenses.usecases.ExtraerTicket
@@ -389,9 +389,9 @@ class EscanearViewModel @Inject constructor(
         actualizarDatosSiValido { it.conEntregadoTexto(texto) }
     }
 
-    /** Cambio como texto (editable tras el calculo); un texto no valido se ignora. */
-    fun onCambioEditado(texto: String) {
-        actualizarDatosSiValido { it.conCambioTexto(texto) }
+    /** "Usar la suma de las lineas" (`true`) o "Editar total a mano" (`false`). */
+    fun onTotalAutomaticoElegido(automatico: Boolean) {
+        actualizarDatos { it.conTotalAutomatico(automatico) }
     }
 
     /** Chips de categoria: solo las 6 de la enum fija (CONTEXT.md). */

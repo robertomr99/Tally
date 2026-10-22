@@ -250,9 +250,20 @@ de sombras.
     en `primary` y marca de check en la activa. En fila (hasta `UMBRAL_APILAR_BOTONES`
     = 1,15) cada opción pone icono encima y texto debajo para que a 360 dp ninguna
     etiqueta se parta a mitad de palabra; con fuente mayor se apilan a ancho completo
-    con icono + texto + check en una línea. Con Efectivo aparecen los campos
-    "Entregado (€)" y "Cambio (€)" (teclado decimal, formato es-ES como el total) y,
-    si no cuadran, un aviso de texto con icono, no bloqueante.
+    con icono + texto + check en una línea. Con Efectivo aparecen "Entregado (€)"
+    (editable, teclado decimal, formato es-ES como el total) y "Cambio (€)" de SOLO LECTURA
+    (`readOnly`, `supportingText` "Se calcula: entregado - total", `gasto-manual-2`): el cambio
+    siempre es `entregado - total`, vacío si falta entregado o no cubre el total. Si entregado
+    no cubre el total, un aviso de texto con icono, no bloqueante y con el faltante: "Lo
+    entregado no cubre el total: faltan X €. Puedes guardar igualmente."
+  - **Total único** (`gasto-manual-2`): al final del papel hay UN solo "Total" (`headlineSmall`
+    bold a la derecha, tag `revision_total`); ya no existen "Total (con IVA)" ni "Total
+    recalculado". Automático (suma de las líneas): campo de solo lectura con "Suma de las
+    líneas · N artículos" y el `TextButton` "Editar total a mano" (≥ 48 dp). Tecleado: campo
+    editable y, si hay líneas que no cuadran, un aviso con icono `WarningAmber` + texto ("Las
+    líneas suman S € y el total del ticket es T € (diferencia D €). Se guarda el total del
+    ticket.", no bloqueante) y el `TextButton` "Usar la suma de las líneas". Una fila con
+    precio pero sin concepto muestra bajo el concepto "Escribe un concepto para que cuente".
   - Filtro del listado (`filtro-forma-pago`, `FiltroFormaPagoSelector.kt`): tres `FilterChip`
     de selección única (Todos / Efectivo / Tarjeta, `Role.RadioButton` + `selected`) bajo el
     `PeriodoSelector`, con el mismo margen de pantalla. Alto ≥ 48 dp, icono de la forma + texto;
@@ -289,7 +300,7 @@ de sombras.
   "Añadir producto o línea" con borde discontinuo (pantalla 08).
 - **Dock inferior de acciones** (pantallas 07/08): Reintentar (outlined) /
   Editar (tonal) / Guardar (filled pill). En edición: Descartar / Guardar
-  cambios + "Total recalculado".
+  cambios, sin bloque de total (el total único vive en el papel, `gasto-manual-2`).
 - **Procesado** (pantalla 06): badge on-device/nube, silueta de ticket con
   scan beam, progreso circular, pasos Encuadre → OCR → Categorización,
   botón Cancelar. El toggle "Cambiar a Nube/Dispositivo" del mockup es el
@@ -311,18 +322,24 @@ de sombras.
   `error` y "Cancelar". El texto dice "...junto con sus líneas y su foto..."; en un gasto
   manual (sin foto) dice "...junto con sus líneas.". Ticket inexistente: "Este ticket ya no existe" + "Volver".
 - **Gasto manual** (`gasto-manual`): 
-  - Botón "+" (`Icons.Outlined.Add`, 48 dp, `contentDescription` "Añadir gasto", color
-    `primary`, tag `gastos_anadir`) como acción de la `CabeceraPantalla` de Gastos: fija y
-    siempre visible, sin FAB (la sombra se reserva a FAB/docks y un FAB competiría con la
-    barra inferior y la lista). En el estado vacío, además, `OutlinedButton` "Añadir gasto
+  - Botón extendido "Añadir gasto" (`gasto-manual-2`; antes un "+" suelto poco descubrible):
+    `FilledTonalButton` (`secondary-container` / `on-secondary-container`, no compite con el
+    primario "Escanear ticket" del vacío), píldora 9999 dp, ≥ 48 dp, icono `Icons.Outlined.Add`
+    de 18 dp + texto `labelLarge` de una línea, tag `gastos_anadir` (el icono no lleva
+    `contentDescription`: el texto ya nombra la acción). Con `fontScale` ≤ 1,15
+    (`UMBRAL_APILAR_BOTONES`) es la acción de la `CabeceraPantalla`, a la derecha del título y
+    el subtítulo; con letra mayor la cabecera queda sin acción y el botón va en una fila propia
+    a ancho completo justo bajo ella, fija y sobre los selectores. Sin FAB (la sombra se
+    reserva a FAB/docks y un FAB competiría con la barra inferior y la lista, y a fontScale 2,0
+    tapa contenido). En el estado vacío, además, `OutlinedButton` "Añadir gasto
     manualmente" (`gastos_anadir_vacio`, ≥ 48 dp) apilado bajo "Escanear ticket"
-    (`boton_escanear_vacio`), ambos a ancho completo.
+    (`boton_escanear_vacio`), ambos a ancho completo; el botón de cabecera sigue visible.
   - "Nuevo gasto": cabecera con flecha atrás, el mismo papel editable de la revisión
-    (sin foto ni badge), y el dock "Descartar" / "Guardar gasto"; el bloque "Total
-    recalculado" solo aparece cuando hay al menos una línea (Revisión y Detalle lo
-    mantienen siempre visible y conservan "Guardar cambios"). Si falta algo, "Guardar
+    (sin foto ni badge) con el total único (automático al añadir líneas con total 0), y el
+    dock "Descartar" / "Guardar gasto". Si falta algo, "Guardar
     gasto" queda deshabilitado y junto al dock hay un texto `bodySmall` con icono (info),
-    nunca solo color: "Indica un total mayor que 0" / "La fecha no puede ser futura".
+    nunca solo color: "Indica un total mayor que 0" (con total automático y suma 0:
+    "Añade el precio de al menos un producto") / "La fecha no puede ser futura".
     La barra inferior se oculta en esta pantalla.
   - Detalle: el chip "Manual" (icono `EditNote`, estilo del badge de motor, sin color de IA)
     sustituye al badge del motor, y la tarjeta "Sin foto" + "Este gasto se añadió a mano"

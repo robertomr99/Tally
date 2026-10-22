@@ -31,8 +31,16 @@ de pago Efectivo. **No es el total**: el total es lo que cuesta el ticket.
 
 ### Cambio
 Importe que se devolvió al cliente en efectivo (p. ej. 36,10 € = entregado 50,00
-− total 13,90). Solo con Efectivo. **No es el total.** Un "A DEVOLVER 0,00" de un
-pago con tarjeta no es un cambio.
+− total 13,90). Solo con Efectivo. **Se calcula** (`entregado − total`, nunca se
+teclea; vacío si falta entregado o no cubre el total). **No es el total.** Un "A
+DEVOLVER 0,00" de un pago con tarjeta no es un cambio.
+
+### Total automático
+Modo del total de un ticket en edición: el total es la suma de las líneas con
+concepto y se actualiza solo (solo lectura, con "Editar total a mano"). Lo
+contrario es el total **tecleado** (o el del papel): se conserva aunque las
+líneas no sumen lo mismo, con un aviso de diferencia y "Usar la suma de las
+líneas". Sin líneas el total siempre es tecleado. El modo no se guarda.
 
 ### Ticket digitalizado
 Nombre en UI del "ticket virtual": pantalla de detalle con los datos

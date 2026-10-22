@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `mejoras-visuales-3` en `passing` (sesión 071) a la espera de validator; `seed-demo` queda para el final.
+- Current next ready feature: `gasto-manual-2` en `passing` (sesión 072) a la espera de validator; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2957,3 +2957,48 @@
   `captura_error` real, transiciones, motores reales, tablet fisica, camara real de papel, dialogo de borrado de
   un manual en pantalla (solo JVM), borde W01 sin test automatico (captura + codigo).
 - Status: `mejoras-visuales-3` = **accepted** (validator independiente: accept; JVM 486 OK, E2E 70 OK en emulator-5556; flaky de GastoManualFlujoTest = tickets basura en la BD del emulador). Seguimiento: limpieza en @After de las pruebas que dejan tickets vacios. Siguiente: `seed-demo` (al final).
+
+
+## Session 072 - gasto-manual-2 implementacion (2026-10-22, master)
+
+- Implementado (spec `docs/specs/gasto-manual-2.md`, A, B y C; C no se complico y no se difirio):
+  - A cambio derivado: `DatosRevision.conPagoCoherente()` (solo Efectivo; `cambio = entregado - total` a centimos, `null`
+    si no cubre el total, nunca negativo; "solo cambio" extraido infiere `entregado = total + cambio`); retirados
+    `conCambioTexto` y `onCambioEditado` (3 ViewModels, 3 pantallas, `FormularioTicketEditable`); `revision_cambio` es
+    `readOnly` con "Se calcula: entregado - total"; aviso `revision_aviso_pago` con el faltante; `normalizarPago` recalcula
+    el cambio ignorando el extraido que contradiga (con total <= 0 conserva lo extraido); `normalizada()` re-sincroniza el
+    total si es automatico.
+  - B total unico: `DatosRevision.totalAutomatico` (no se persiste, sin Room), `totalDeLineas`, `conModoTotalInicial`
+    (B3), `conTotalSincronizado` (B4, privado), `conTotalAutomatico` (B5) y `onTotalAutomaticoElegido` en los 3
+    ViewModels; `conTotalTexto` devuelve `null` en automatico; `hayCambios` del Detalle ignora solo el flag (B8). UI: un
+    unico "Total" (`BloqueTotal`) con "Suma de las lineas - N articulos" + "Editar total a mano", o editable con aviso de
+    diferencia + "Usar la suma de las lineas"; ayuda "Escribe un concepto para que cuente"; `DockEdicion` sin
+    `lineas`/`mostrarTotalRecalculado` y sin bloque "Total recalculado". Nuevo gasto: requisito "Anade el precio de al menos
+    un producto" con total automatico y suma 0.
+  - C boton: `FilledTonalButton` pildora "Anadir gasto" (icono + texto, tag `gastos_anadir`) en la cabecera de Gastos con
+    `fontScale` <= 1,15 y en fila propia a ancho completo con letra mayor; `gastos_anadir_vacio` intacto.
+- Sin cambios de Room/migracion, modulos, dependencias ni `build-logic/`. Tags: solo se retira `revision_total_recalculado`;
+  nuevos `revision_total_manual`, `revision_total_usar_suma`, `revision_aviso_total`.
+- Tests nuevos: `TotalAutomaticoTest` (18), `PagoTest` (+10), VM de Nuevo gasto (+4), Detalle (+4 y +2 en PagoTest),
+  Escanear (+3); E2E `TotalCambioAutomaticosFlujoTest` (3) y `AnadirGastoBotonFlujoTest` (4).
+- Tests existentes cambiados (por la spec, sin debilitar mas de lo que exige el contrato): `PagoTest.cambioEsEditableTrasElCalculo`
+  -> `cambioNoEsEditableSeDerivaSiempre...` y `textoInvalidoSeIgnoraYBlancoLimpia` (sin `conCambioTexto`; blanco limpia entregado y
+  cambio); `TicketDetalleViewModelPagoTest.textoInvalidoDeEntregadoOCambioSeIgnora` -> solo entregado; `FormaPagoFlujoTest.entregadoCalcula...`
+  (entregado 5 -> cambio vacio + aviso con faltante + guarda cambio null, y `revision_cambio` sin `SetText`); `RevisionDatosFlujoTest`
+  (`revision_total_recalculado` -> `revision_total`, final "4,50 automatico" en vez de "0,00"); `NuevoGastoDockFlujoTest` y dos de
+  `FuentesGrandesFlujoTest` reescritos para el dock de dos botones. FUERA de la lista de la spec:
+  `EscanearViewModelTest.extraccionVaciaAnadirLineasAManoYGuardarPersisteLasIntroducidas` ahora espera total 12,50 (antes 0,0): con
+  total 0 la primera linea pasa a automatico (B4a), consecuencia directa del contrato.
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test` verde, 527 tests, 0 fallos.
+  Instrumentados solo en emulator-5556, por paquetes (`am instrument -e package`, sin *RealTest): captura 13, diseno 6, gastos 37,
+  navigation 3, resumen 11 OK; ajustes 8 con 1 fallo (`AjustesModeloFlujoTest...NoDescargado`, `token_estado` fuera de pantalla por el
+  `wm size 1080x2400` que deje puesto), OK 3/3 aislada con el tamano por defecto. Una suite completa previa cayo con
+  `System has crashed` (emulador sin activity manager); `adb reboot` sin wipe y repeticion por paquetes.
+- Entorno: los E2E dejan tickets vacios en la BD del emulador. Identificado: `RevisionDatosFlujoTest` (guarda por la UI sin @After; ahora
+  ademas guarda 4,50). Se borraron por la UI los de hoy antes de la suite; `GastoManualFlujoTest` paso. Emulador restaurado
+  (`wm size`/`density` reset, font_scale 1.0, rotacion 0). Nada en la Tab fisica, ningun token leido.
+- Capturas antes/despues y README en `docs/evidence/gasto-manual-2/`. Las `despues-form-*` salen de una prueba temporal ya borrada
+  (formulario con reductores reales), no de la pantalla Nuevo gasto completa.
+- NO verificado: TalkBack, ticket escaneado real con IA, tablet fisica, formulario completo en tablet, "antes" a fontScale 1,3 y tablet,
+  revision visual humana de las capturas.
+- Status: `gasto-manual-2` = **accepted** (validator independiente: accept; JVM 527 OK; E2E por paquetes en emulator-5556 OK; GaleriaFlujoTest flaky de entorno, aislado OK). Notas: total del papel que difiere <=0,01 de la suma se abre automatico (B3); en automatico con conceptos vacios el total pasa a 0 (aviso visible). Siguiente: `seed-demo` (al final).

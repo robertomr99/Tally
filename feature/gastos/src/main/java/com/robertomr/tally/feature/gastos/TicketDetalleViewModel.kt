@@ -12,9 +12,9 @@ import com.robertomr.tally.domain.expenses.entities.conLineaAnadida
 import com.robertomr.tally.domain.expenses.entities.conLineaCantidad
 import com.robertomr.tally.domain.expenses.entities.conLineaConcepto
 import com.robertomr.tally.domain.expenses.entities.conLineaPrecio
-import com.robertomr.tally.domain.expenses.entities.conCambioTexto
 import com.robertomr.tally.domain.expenses.entities.conEntregadoTexto
 import com.robertomr.tally.domain.expenses.entities.conFormaPago
+import com.robertomr.tally.domain.expenses.entities.conTotalAutomatico
 import com.robertomr.tally.domain.expenses.entities.conTotalTexto
 import com.robertomr.tally.domain.expenses.entities.datosRevisionDe
 import com.robertomr.tally.domain.expenses.entities.sinLinea
@@ -131,7 +131,8 @@ class TicketDetalleViewModel @Inject constructor(
                         TicketDetalleUiState.Datos(
                             ticket = carga.ticket,
                             datos = datos,
-                            hayCambios = datos != inicial,
+                            // Alternar el modo del total sin cambiar valores no es un cambio (B8).
+                            hayCambios = datos.copy(totalAutomatico = inicial.totalAutomatico) != inicial,
                             guardando = ejec == Ejecucion.Guardando,
                             borrando = ejec == Ejecucion.Borrando,
                             error = (ejec as? Ejecucion.Fallo)?.mensaje,
@@ -165,8 +166,9 @@ class TicketDetalleViewModel @Inject constructor(
         editar { it.conEntregadoTexto(texto) }
     }
 
-    fun onCambioEditado(texto: String) {
-        editar { it.conCambioTexto(texto) }
+    /** "Usar la suma de las lineas" (`true`) o "Editar total a mano" (`false`). */
+    fun onTotalAutomaticoElegido(automatico: Boolean) {
+        editar { it.conTotalAutomatico(automatico) }
     }
 
     fun onCategoriaElegida(categoria: Categoria) {

@@ -42,8 +42,10 @@ import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import java.time.LocalDate
 
 /** Texto visible del motivo por el que "Guardar" esta deshabilitado (no solo color). */
-internal fun textoRequisito(error: ErrorGastoManual): String = when (error) {
-    ErrorGastoManual.TOTAL_NO_POSITIVO -> "Indica un total mayor que 0"
+internal fun textoRequisito(error: ErrorGastoManual, totalAutomatico: Boolean = false): String = when (error) {
+    // Con total automatico la suma 0 se arregla poniendo precio a algun producto.
+    ErrorGastoManual.TOTAL_NO_POSITIVO ->
+        if (totalAutomatico) "Añade el precio de al menos un producto" else "Indica un total mayor que 0"
     ErrorGastoManual.FECHA_FUTURA -> "La fecha no puede ser futura"
 }
 
@@ -78,7 +80,7 @@ fun NuevoGastoScreen(
         onLineaEliminada = viewModel::onLineaEliminada,
         onFormaPagoElegida = viewModel::onFormaPagoElegida,
         onEntregadoEditado = viewModel::onEntregadoEditado,
-        onCambioEditado = viewModel::onCambioEditado,
+        onTotalAutomaticoElegido = viewModel::onTotalAutomaticoElegido,
         onDescartar = {
             viewModel.onDescartar()
             estado.recrearFormulario()
@@ -104,7 +106,7 @@ internal fun NuevoGastoContenido(
     onLineaEliminada: (Long) -> Unit,
     onFormaPagoElegida: (FormaPago) -> Unit,
     onEntregadoEditado: (String) -> Unit,
-    onCambioEditado: (String) -> Unit,
+    onTotalAutomaticoElegido: (Boolean) -> Unit,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
 ) {
@@ -155,7 +157,7 @@ internal fun NuevoGastoContenido(
                             onLineaEliminada = onLineaEliminada,
                             onFormaPagoElegida = onFormaPagoElegida,
                             onEntregadoEditado = onEntregadoEditado,
-                            onCambioEditado = onCambioEditado,
+                            onTotalAutomaticoElegido = onTotalAutomaticoElegido,
                         )
                     }
                 }
@@ -172,7 +174,7 @@ internal fun NuevoGastoContenido(
         } else if (ui.error != null) {
             // Icono + texto: el motivo no depende solo del color.
             MensajeEstado(
-                texto = textoRequisito(ui.error),
+                texto = textoRequisito(ui.error, ui.datos.totalAutomatico),
                 icono = Icons.Outlined.Info,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 tag = "nuevo_gasto_requisito",
@@ -180,13 +182,11 @@ internal fun NuevoGastoContenido(
         }
 
         DockEdicion(
-            lineas = ui.datos.lineas,
             onDescartar = onDescartar,
             onGuardar = onGuardar,
             guardarHabilitado = ui.error == null && !ui.guardando && !ui.hecho,
             descartarHabilitado = ui.hayCambios && !ui.guardando && !ui.hecho,
             textoGuardar = "Guardar gasto",
-            mostrarTotalRecalculado = ui.datos.lineas.isNotEmpty(),
         )
     }
 }

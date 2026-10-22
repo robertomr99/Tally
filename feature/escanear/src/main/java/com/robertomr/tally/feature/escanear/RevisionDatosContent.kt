@@ -60,7 +60,7 @@ fun RevisionDatosContent(
     onLineaEliminada: (Long) -> Unit,
     onFormaPagoElegida: (FormaPago) -> Unit,
     onEntregadoEditado: (String) -> Unit,
-    onCambioEditado: (String) -> Unit,
+    onTotalAutomaticoElegido: (Boolean) -> Unit,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     modifier: Modifier = Modifier,
@@ -108,7 +108,7 @@ fun RevisionDatosContent(
                         onLineaEliminada = onLineaEliminada,
                         onFormaPagoElegida = onFormaPagoElegida,
                         onEntregadoEditado = onEntregadoEditado,
-                        onCambioEditado = onCambioEditado,
+                        onTotalAutomaticoElegido = onTotalAutomaticoElegido,
                     )
                 }
             }
@@ -128,7 +128,6 @@ fun RevisionDatosContent(
         }
 
         DockEdicion(
-            lineas = datos.lineas,
             onDescartar = onDescartar,
             onGuardar = onGuardar,
         )

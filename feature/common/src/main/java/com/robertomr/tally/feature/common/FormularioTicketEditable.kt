@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,7 +25,6 @@ import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Functions
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
@@ -38,6 +35,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -71,8 +69,9 @@ import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.domain.expenses.entities.LineaEditable
 import com.robertomr.tally.domain.expenses.entities.avisoPago
 import com.robertomr.tally.domain.expenses.entities.parsearCantidad
+import com.robertomr.tally.domain.expenses.entities.TOLERANCIA_PAGO
 import com.robertomr.tally.domain.expenses.entities.parsearPrecio
-import com.robertomr.tally.domain.expenses.entities.totalRecalculado
+import com.robertomr.tally.domain.expenses.entities.totalDeLineas
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -94,9 +93,10 @@ import kotlin.math.abs
  * Contenedor de recibo (cabecera editable) + editor de lineas. Va dentro de la
  * columna con scroll que aporta la pantalla.
  *
- * El campo "Total (con IVA)" se conserva (desviacion justificada del mockup 08):
- * el total es el dato autoritativo y NUNCA se sobrescribe con la suma de lineas
- * (docs/domain-model.md, "Total vs lineas").
+ * Un unico "Total" (spec gasto-manual-2): automatico (suma de lineas, solo
+ * lectura) o tecleado; un total tecleado/del papel que no cuadra con las lineas
+ * NUNCA se sobrescribe y se avisa de la diferencia (docs/domain-model.md,
+ * "Total vs lineas").
  *
  * Cada campo guarda su texto con `rememberSaveable(valorInicial)`: para
  * restablecer el formulario (p. ej. "Descartar") la pantalla debe re-crearlo con
@@ -116,7 +116,7 @@ fun FormularioTicketEditable(
     onLineaEliminada: (Long) -> Unit,
     onFormaPagoElegida: (FormaPago) -> Unit,
     onEntregadoEditado: (String) -> Unit,
-    onCambioEditado: (String) -> Unit,
+    onTotalAutomaticoElegido: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Un solo papel (spec papel-ticket, D5), en orden de recibo: cabecera,
@@ -157,15 +157,11 @@ fun FormularioTicketEditable(
 
         SeparadorPunteado(modifier = Modifier.padding(vertical = 16.dp))
 
-        // Total autoritativo al final del recibo, destacado y a la derecha.
-        CampoEditable(
-            etiqueta = "Total (con IVA)",
-            valorInicial = formatoTotalRevision(datos.total),
-            onValorCambiado = onTotalEditado,
-            testTag = "revision_total",
-            keyboardType = KeyboardType.Decimal,
-            estilo = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            alineacion = TextAlign.End,
+        // Un unico total al final del recibo, destacado y a la derecha (spec gasto-manual-2).
+        BloqueTotal(
+            datos = datos,
+            onTotalEditado = onTotalEditado,
+            onTotalAutomaticoElegido = onTotalAutomaticoElegido,
         )
 
         // Forma de pago bajo el total, como en un recibo (spec forma-pago).
@@ -174,8 +170,83 @@ fun FormularioTicketEditable(
             datos = datos,
             onFormaPagoElegida = onFormaPagoElegida,
             onEntregadoEditado = onEntregadoEditado,
-            onCambioEditado = onCambioEditado,
         )
+    }
+}
+
+/**
+ * Total unico del papel (spec gasto-manual-2, B6). AUTOMATICO: campo de solo
+ * lectura con la suma de las lineas y "Editar total a mano". TECLEADO: campo
+ * editable y, si hay lineas que no cuadran, aviso de diferencia (no bloqueante)
+ * con "Usar la suma de las lineas". Cada modo es una rama distinta: al cambiar
+ * de modo el campo editable se recrea con el valor vigente.
+ */
+@Composable
+private fun BloqueTotal(
+    datos: DatosRevision,
+    onTotalEditado: (String) -> Unit,
+    onTotalAutomaticoElegido: (Boolean) -> Unit,
+) {
+    val estiloTotal = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (datos.totalAutomatico) {
+            OutlinedTextField(
+                value = formatoTotalRevision(datos.total),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Total") },
+                supportingText = {
+                    Text("Suma de las líneas · ${contadorArticulos(datos.lineas.size)}")
+                },
+                singleLine = true,
+                textStyle = reciboTexto(estiloTotal).copy(textAlign = TextAlign.End),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("revision_total"),
+            )
+            TextButton(
+                onClick = { onTotalAutomaticoElegido(false) },
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .heightIn(min = 48.dp)
+                    .testTag("revision_total_manual"),
+            ) {
+                Text("Editar total a mano")
+            }
+        } else {
+            CampoEditable(
+                etiqueta = "Total",
+                valorInicial = formatoTotalRevision(datos.total),
+                onValorCambiado = onTotalEditado,
+                testTag = "revision_total",
+                keyboardType = KeyboardType.Decimal,
+                estilo = estiloTotal,
+                alineacion = TextAlign.End,
+            )
+            val suma = totalDeLineas(datos.lineas)
+            if (datos.lineas.isNotEmpty() && abs(suma - datos.total) > TOLERANCIA_PAGO) {
+                AvisoConIcono(
+                    texto = "Las líneas suman ${formatoTotalRevision(suma)} € y el total del " +
+                        "ticket es ${formatoTotalRevision(datos.total)} € (diferencia " +
+                        "${formatoTotalRevision(abs(suma - datos.total))} €). " +
+                        "Se guarda el total del ticket.",
+                    tag = "revision_aviso_total",
+                )
+                TextButton(
+                    onClick = { onTotalAutomaticoElegido(true) },
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .heightIn(min = 48.dp)
+                        .testTag("revision_total_usar_suma"),
+                ) {
+                    Text("Usar la suma de las líneas")
+                }
+            }
+        }
     }
 }
 
@@ -190,6 +261,7 @@ private fun CampoEditable(
     estilo: TextStyle = MaterialTheme.typography.bodyLarge,
     alineacion: TextAlign = TextAlign.Start,
     esValido: (String) -> Boolean = { true },
+    textoAyuda: String? = null,
 ) {
     // El texto local es la fuente durante la edicion: el ViewModel parsea y
     // actualiza el dato, pero el campo no se re-formatea bajo los dedos.
@@ -201,6 +273,7 @@ private fun CampoEditable(
             onValorCambiado(it)
         },
         label = { Text(etiqueta) },
+        supportingText = textoAyuda?.let { ayuda -> { Text(ayuda) } },
         singleLine = true,
         // Un texto no valido se marca en error: el modelo conserva el ultimo
         // valor valido, y asi el usuario ve que lo escrito no es lo que cuenta.
@@ -369,6 +442,12 @@ private fun FilaLinea(
             valorInicial = linea.concepto,
             onValorCambiado = onConceptoEditado,
             testTag = "${prefijo}_concepto",
+            // Sin concepto la fila no se guarda ni suma (spec gasto-manual-2, B6).
+            textoAyuda = if (linea.concepto.isBlank() && linea.precioUnitario > 0.0) {
+                "Escribe un concepto para que cuente"
+            } else {
+                null
+            },
         )
         // Con fuentes muy grandes (>1,4) cantidad y precio no caben en una fila
         // sin que las etiquetas envuelvan: se apilan (cantidad / precio + borrar).
@@ -473,51 +552,42 @@ private fun BotonAnadirLinea(onClick: () -> Unit) {
 }
 
 /**
- * Dock inferior en edicion (mockup 08): "Total recalculado" como REFERENCIA
- * (suma de lineas con [totalRecalculado]; no toca el total del ticket) y
- * acciones "Descartar" (outlined, no escribe) / "Guardar cambios" (filled).
+ * Dock inferior en edicion: acciones "Descartar" (outlined, no escribe) /
+ * "Guardar cambios" (filled). El total ya no se repite aqui: hay un unico
+ * total al final del papel (spec gasto-manual-2).
  *
  * @param guardarHabilitado `false` deshabilita "Guardar cambios" (p. ej. sin
  * cambios o guardando en el detalle).
  * @param descartarHabilitado `false` deshabilita "Descartar".
  * @param textoGuardar etiqueta del botón principal ("Guardar gasto" en Nuevo gasto).
- * @param mostrarTotalRecalculado `false` oculta el bloque "Total recalculado" (Nuevo gasto
- * sin líneas: la suma de líneas no es el total que el usuario escribió).
  */
 @Composable
 fun DockEdicion(
-    lineas: List<LineaEditable>,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     modifier: Modifier = Modifier,
     guardarHabilitado: Boolean = true,
     descartarHabilitado: Boolean = true,
     textoGuardar: String = "Guardar cambios",
-    mostrarTotalRecalculado: Boolean = true,
 ) {
     // El fondo llega a todo el ancho; el contenido va en la columna centrada.
     ColumnaCentrada(
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
-        ContenidoDock(
-            lineas, onDescartar, onGuardar, guardarHabilitado, descartarHabilitado,
-            textoGuardar, mostrarTotalRecalculado,
-        )
+        ContenidoDock(onDescartar, onGuardar, guardarHabilitado, descartarHabilitado, textoGuardar)
     }
 }
 
 @Composable
 private fun ContenidoDock(
-    lineas: List<LineaEditable>,
     onDescartar: () -> Unit,
     onGuardar: () -> Unit,
     guardarHabilitado: Boolean,
     descartarHabilitado: Boolean,
     textoGuardar: String,
-    mostrarTotalRecalculado: Boolean,
 ) {
     // Con fuente grande el dock no cabe en una fila (V03): los botones se apilan
-    // (Guardar primero) y el subtítulo del total baja a ancho completo.
+    // (Guardar primero).
     val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
     val botonDescartar: @Composable (Modifier) -> Unit = { modificador ->
         OutlinedButton(
@@ -565,40 +635,7 @@ private fun ContenidoDock(
             .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (mostrarTotalRecalculado) Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Functions,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Total recalculado",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (!apilar) SubtituloTotalRecalculado(lineas)
-            }
-            Text(
-                text = formatoImporte(totalRecalculado(lineas)),
-                style = MaterialTheme.typography.headlineSmall
-                    .copy(fontWeight = FontWeight.SemiBold)
-                    .cifrasTabulares(),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("revision_total_recalculado"),
-            )
-        }
         if (apilar) {
-            if (mostrarTotalRecalculado) SubtituloTotalRecalculado(lineas)
             botonGuardar(Modifier.fillMaxWidth())
             botonDescartar(Modifier.fillMaxWidth())
         } else {
@@ -609,16 +646,6 @@ private fun ContenidoDock(
             }
         }
     }
-}
-
-@Composable
-private fun SubtituloTotalRecalculado(lineas: List<LineaEditable>) {
-    Text(
-        text = "Calculado a partir de ${contadorArticulos(lineas.size)}",
-        style = MaterialTheme.typography.labelSmall,
-        // onSurfaceVariant (no outline): el texto de 11 sp necesita contraste AA (V23).
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 /** Contador REAL de filas (DESIGN.md: nada de "6 articulos" inventados). */
@@ -657,7 +684,6 @@ private fun SeccionPago(
     datos: DatosRevision,
     onFormaPagoElegida: (FormaPago) -> Unit,
     onEntregadoEditado: (String) -> Unit,
-    onCambioEditado: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -674,13 +700,22 @@ private fun SeccionPago(
                 onValorCambiado = onEntregadoEditado,
                 testTag = "revision_entregado",
             )
-            CampoImporteOpcional(
-                etiqueta = "Cambio (€)",
-                valor = datos.cambio,
-                onValorCambiado = onCambioEditado,
-                testTag = "revision_cambio",
+            // El cambio es derivado (entregado - total): solo lectura (spec gasto-manual-2, A1).
+            OutlinedTextField(
+                value = formatoImporteOpcional(datos.cambio),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Cambio (€)") },
+                supportingText = { Text("Se calcula: entregado - total") },
+                singleLine = true,
+                textStyle = reciboTexto(MaterialTheme.typography.bodyLarge)
+                    .copy(textAlign = TextAlign.End),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("revision_cambio"),
             )
-            AvisoDePago(avisoPago(datos))
+            AvisoDePago(avisoPago(datos), datos)
         }
     }
 }
@@ -859,19 +894,27 @@ private fun CampoImporteOpcional(
 
 /** Aviso no bloqueante (texto + icono, no solo color) de coherencia entregado/cambio. */
 @Composable
-private fun AvisoDePago(aviso: AvisoPago?) {
+private fun AvisoDePago(aviso: AvisoPago?, datos: DatosRevision) {
     if (aviso == null) return
     val texto = when (aviso) {
-        AvisoPago.ENTREGADO_MENOR_QUE_TOTAL ->
-            "Aviso: lo entregado es menor que el total. Puedes guardar igualmente."
+        AvisoPago.ENTREGADO_MENOR_QUE_TOTAL -> {
+            val faltante = formatoTotalRevision(datos.total - (datos.entregado ?: 0.0))
+            "Lo entregado no cubre el total: faltan $faltante €. Puedes guardar igualmente."
+        }
         AvisoPago.CAMBIO_NO_CUADRA ->
             "Aviso: el cambio no coincide con entregado menos total. Puedes guardar igualmente."
     }
+    AvisoConIcono(texto = texto, tag = "revision_aviso_pago")
+}
+
+/** Aviso no bloqueante: icono + texto en `onSurfaceVariant` (no depende solo del color). */
+@Composable
+private fun AvisoConIcono(texto: String, tag: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {}
-            .testTag("revision_aviso_pago"),
+            .testTag(tag),
         verticalAlignment = Alignment.Top,
     ) {
         Icon(

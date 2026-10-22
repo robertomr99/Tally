@@ -74,9 +74,16 @@ Transiciones:
   y no considera la foto "gastada".
 - **Fechas**: si la fecha de emisión es ilegible, se propone hoy y el usuario la
   corrige; el ticket entra en el período de su fecha de emisión corregida.
-- **Total vs líneas**: el total es el dato autoritativo para el seguimiento;
-  la suma de líneas se muestra como referencia ("Total recalculado") y puede
-  no coincidir (OCR imperfecto). No hay error ni sobrescritura automática.
+- **Total vs líneas** (`gasto-manual-2`): el total es el dato persistido y
+  autoritativo para el seguimiento, con dos modos en edición (no se persiste el
+  modo, se deriva al abrir): **automático** (`total = suma cantidad × precio de
+  las líneas con concepto`, solo lectura) o **tecleado** (el del usuario o el
+  del papel). Sin líneas siempre tecleado; con líneas y total ausente/0 o que
+  cuadra (±0,01) se abre en automático; un total que NO cuadra con las líneas
+  (OCR imperfecto) se conserva tecleado con un aviso de diferencia (no bloqueante)
+  y "Usar la suma de las líneas". La suma solo sobrescribe el total en modo
+  automático, nunca sobre un total tecleado o del papel que no cuadre. No existe
+  ya un "Total recalculado" aparte.
 - **Total con IVA**: el precio que le cuesta al usuario es el total **con
   impuestos incluidos**. El texto crudo del OCR trae base, cuota y total por
   separado; la extracción estructurada (`extraccion-nube`/`extraccion-local`)
@@ -89,14 +96,17 @@ Transiciones:
   1. con forma `NO_INDICADA` y entregado o cambio presentes → `EFECTIVO` (tener
      entregado o cambio implica efectivo);
   2. con forma distinta de `EFECTIVO` → entregado y cambio son `null`;
-  3. `EFECTIVO` con total conocido (> 0): solo entregado → cambio = entregado −
-     total (si ≥ 0); solo cambio → entregado = total + cambio (ticket con
+  3. `EFECTIVO` con total conocido (> 0): con entregado → cambio = entregado −
+     total redondeado a céntimos (o `null` si no cubre el total; se RECALCULA
+     siempre e ignora un cambio extraído que lo contradiga); solo cambio →
+     entregado = total + cambio (ticket con
      "EFECTIVO / TOTAL A PAGAR 7,91 / CAMBIO 2,09" → entregado 10,00);
   4. valores negativos o no finitos → `null`.
 
-  En edición el cambio se calcula al escribir entregado o total y sigue siendo
-  editable; si `entregado < total` o `|entregado − total − cambio| > 0,01` aparece
-  un aviso NO bloqueante (`avisoPago`). Al pasar de efectivo a tarjeta, entregado
+  El cambio es siempre derivado (`gasto-manual-2`): en edición se recalcula al
+  escribir entregado o el total (o al cambiar las líneas con total automático) y
+  es de solo lectura; sin entregado queda vacío. Si `entregado < total` aparece
+  un aviso NO bloqueante con el faltante. Al pasar de efectivo a tarjeta, entregado
   y cambio se conservan ocultos en el estado de edición (volver a efectivo los
   recupera) y se limpian al guardar. La regla del total no cambia: ni entregado
   ni cambio son nunca el total (en el texto 3, total 13,90 / entregado 50,00 /

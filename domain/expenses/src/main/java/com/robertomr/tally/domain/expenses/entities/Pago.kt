@@ -39,8 +39,9 @@ internal fun redondearCentimos(valor: Double): Double = round(valor * 100.0) / 1
  * 1. entregado o cambio presentes con forma NO_INDICADA -> EFECTIVO (tener
  *    entregado o cambio implica efectivo);
  * 2. forma distinta de EFECTIVO -> entregado = cambio = null;
- * 3. EFECTIVO con total > 0: solo entregado -> cambio = entregado - total (si
- *    >= 0); solo cambio -> entregado = total + cambio;
+ * 3. EFECTIVO con total > 0: con entregado -> cambio = entregado - total (si
+ *    >= 0, si no `null`; recalculado SIEMPRE, el cambio extraido que lo
+ *    contradiga se ignora); solo cambio -> entregado = total + cambio;
  * 4. valores negativos o no finitos -> null.
  *
  * Con TARJETA no se infiere nada de entregado/cambio (se descartan).
@@ -65,19 +66,32 @@ fun normalizarPago(
     }
     val totalValido = total?.takeIf { it.isFinite() && it > 0.0 }
     if (totalValido != null) {
-        if (entregadoValido != null && cambioValido == null && entregadoValido >= totalValido) {
-            cambioValido = redondearCentimos(entregadoValido - totalValido)
-        } else if (cambioValido != null && entregadoValido == null) {
+        if (entregadoValido != null) {
+            // El cambio es derivado (spec gasto-manual-2, A4): se recalcula e ignora
+            // el extraido que lo contradiga; `null` si lo entregado no cubre el total.
+            val diferencia = redondearCentimos(entregadoValido - totalValido) + 0.0
+            cambioValido = if (diferencia >= 0.0) diferencia else null
+        } else if (cambioValido != null) {
             entregadoValido = redondearCentimos(totalValido + cambioValido)
         }
     }
     return PagoNormalizado(forma, entregadoValido, cambioValido)
 }
 
-/** Version con la invariante de pago aplicada; se usa al guardar (ver [normalizarPago]). */
+/**
+ * Version con las invariantes aplicadas; se usa al guardar: con total
+ * AUTOMATICO re-sincroniza `total = totalDeLineas` (defensa) y aplica
+ * [normalizarPago] (el cambio persistido es siempre el calculado).
+ */
 fun DatosRevision.normalizada(): DatosRevision {
+    val total = if (totalAutomatico && lineas.isNotEmpty()) totalDeLineas(lineas) else total
     val pago = normalizarPago(formaPago, total, entregado, cambio)
-    return copy(formaPago = pago.formaPago, entregado = pago.entregado, cambio = pago.cambio)
+    return copy(
+        total = total,
+        formaPago = pago.formaPago,
+        entregado = pago.entregado,
+        cambio = pago.cambio,
+    )
 }
 
 /**

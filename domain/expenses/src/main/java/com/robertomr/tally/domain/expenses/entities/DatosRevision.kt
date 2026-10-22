@@ -9,10 +9,16 @@ import java.time.LocalDateTime
  * corregida (comercio, fecha de emision, total y categoria) y las lineas
  * editables ([lineas]).
  *
- * El [total] es el dato autoritativo del ticket y solo cambia por edicion
- * explicita del usuario; NUNCA se deriva de [lineas] (docs/domain-model.md,
- * "Total vs lineas": la suma de lineas es solo referencia, ver
- * [totalRecalculado]). Los campos son no nulos: los ausentes en la extraccion
+ * El [total] tiene dos modos (spec gasto-manual-2, docs/domain-model.md,
+ * "Total vs lineas"):
+ * - AUTOMATICO ([totalAutomatico] = `true`): el total es la suma de las lineas
+ *   ([totalDeLineas]) y sigue a cada edicion; solo lectura en la UI.
+ * - TECLEADO (`false`): el total es el que escribio el usuario o el del papel
+ *   y NUNCA se sobrescribe; si hay lineas que no cuadran, la UI avisa. Sin
+ *   lineas siempre es TECLEADO.
+ *
+ * [totalAutomatico] no se persiste: se deriva al abrir ([datosRevisionInicial],
+ * [datosRevisionDe]). Los campos son no nulos: los ausentes en la extraccion
  * ya se han resuelto con los valores por defecto de [datosRevisionInicial].
  */
 data class DatosRevision(
@@ -24,6 +30,7 @@ data class DatosRevision(
     val formaPago: FormaPago = FormaPago.NO_INDICADA,
     val entregado: Double? = null,
     val cambio: Double? = null,
+    val totalAutomatico: Boolean = false,
 )
 
 /**
@@ -34,7 +41,8 @@ data class DatosRevision(
  * mantiene (la UI lo deja rellenar), fecha de emision nula -> "hoy", total nulo
  * -> `0.0`, categoria ya es una de las 6 de [Categoria]. Las lineas extraidas se
  * convierten en editables con [lineasEditablesIniciales]. Ningun campo bloquea
- * el guardado.
+ * el guardado. El modo del total sale de [conModoTotalInicial] y el pago se
+ * deja coherente con [conPagoCoherente].
  *
  * @param hoy fecha propuesta cuando el ticket no trae una legible; inyectable
  * para tests deterministas.
@@ -51,12 +59,12 @@ fun datosRevisionInicial(
     formaPago = extraido.formaPago,
     entregado = extraido.entregado,
     cambio = extraido.cambio,
-)
+).conModoTotalInicial().conPagoCoherente()
 
 /**
  * Estado inicial del alta de un gasto manual (spec gasto-manual): comercio
- * vacio, fecha de hoy a las 00:00 (el listado oculta la hora 00:00), total 0,
- * categoria [Categoria.OTROS], sin lineas y pago sin indicar.
+ * vacio, fecha de hoy a las 00:00 (el listado oculta la hora 00:00), total 0
+ * (TECLEADO), categoria [Categoria.OTROS], sin lineas y pago sin indicar.
  *
  * @param hoy inyectable para tests deterministas.
  */
