@@ -14,6 +14,10 @@ import java.time.LocalDateTime
  * [formaPago], [entregado] y [cambio] (spec forma-pago) son solo informativos:
  * el [total] sigue siendo lo que cuesta. [entregado]/[cambio] solo son no nulos
  * si [formaPago] es [FormaPago.EFECTIVO] (ver [normalizarPago]).
+ *
+ * [motor] nulo significa "sin extraccion": es un gasto manual (spec
+ * gasto-manual), que ademas no tiene foto ([rutaFoto] vacia). [Motor] sigue
+ * siendo "quien extrajo" (ADR 0001/0002); por eso no hay un `Motor.MANUAL`.
  */
 data class Ticket(
     val id: Long = 0L,
@@ -22,7 +26,7 @@ data class Ticket(
     val total: Double,
     val categoria: Categoria,
     val fechaCaptura: LocalDateTime,
-    val motor: Motor,
+    val motor: Motor? = null,
     val rutaFoto: String,
     val nota: String? = null,
     val textoCrudoOcr: String? = null,
@@ -31,3 +35,6 @@ data class Ticket(
     val entregado: Double? = null,
     val cambio: Double? = null,
 )
+
+/** Un ticket sin motor es un gasto añadido a mano (sin foto ni extraccion). */
+val Ticket.esManual: Boolean get() = motor == null

@@ -45,6 +45,31 @@ class ListadoGastosVacioTest {
         assertEquals(1, escanear)
     }
 
+    // Spec gasto-manual, escenario 8: el vacio ofrece ambas acciones, apiladas, y el
+    // boton de cabecera esta disponible tambien sin tickets.
+    @Test
+    fun estadoVacioOfreceTambienAnadirGastoYLaCabeceraTieneElBotonMas() {
+        var anadir = 0
+        var escanear = 0
+        composeRule.setContent {
+            TallyTheme {
+                GastosContenido(
+                    ui = GastosUiState(cargando = false, tipo = PeriodoTipo.DIA, grupos = emptyList()),
+                    onSeleccionarPeriodo = {},
+                    onSeleccionarRango = { _, _ -> },
+                    onTicketClick = {},
+                    onEscanear = { escanear++ },
+                    onAnadirGasto = { anadir++ },
+                )
+            }
+        }
+        composeRule.onNodeWithTag("boton_escanear_vacio").assertIsDisplayed()
+        composeRule.onNodeWithTag("gastos_anadir_vacio").assertIsDisplayed().performClick()
+        composeRule.onNodeWithTag("gastos_anadir").assertIsDisplayed().performClick()
+        assertEquals(2, anadir)
+        assertEquals(0, escanear)
+    }
+
     @Test
     fun cargandoNoPintaListaNiVacio() {
         composeRule.setContent {

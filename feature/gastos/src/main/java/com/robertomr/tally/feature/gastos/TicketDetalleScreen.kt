@@ -51,7 +51,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.domain.expenses.entities.Categoria
 import com.robertomr.tally.domain.expenses.entities.FormaPago
 import com.robertomr.tally.feature.common.BadgeMotor
+import com.robertomr.tally.domain.expenses.entities.esManual
 import com.robertomr.tally.feature.common.ChipFormaPago
+import com.robertomr.tally.feature.common.ChipManual
+import com.robertomr.tally.feature.common.TarjetaSinFoto
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.DockEdicion
@@ -194,7 +197,13 @@ internal fun TicketDetalleContenido(
                                     verticalArrangement = Arrangement.spacedBy(8.dp),
                                     itemVerticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    BadgeMotor(motor = ui.ticket.motor)
+                                    // Gasto manual (sin motor): chip "Manual" y nunca badge de IA.
+                                    val motor = ui.ticket.motor
+                                    if (motor != null) {
+                                        BadgeMotor(motor = motor)
+                                    } else {
+                                        ChipManual(modifier = Modifier.testTag("detalle_manual"))
+                                    }
                                     // Forma de pago vigente en la edicion (spec forma-pago);
                                     // NO_INDICADA no pinta chip.
                                     ChipFormaPago(
@@ -202,10 +211,14 @@ internal fun TicketDetalleContenido(
                                         modifier = Modifier.testTag("detalle_forma_pago"),
                                     )
                                 }
-                                SeccionFoto(
-                                    rutaFoto = ui.ticket.rutaFoto,
-                                    onVerFoto = estado::abrirFoto,
-                                )
+                                if (ui.ticket.esManual) {
+                                    TarjetaSinFoto(modifier = Modifier.testTag("detalle_sin_foto"))
+                                } else {
+                                    SeccionFoto(
+                                        rutaFoto = ui.ticket.rutaFoto,
+                                        onVerFoto = estado::abrirFoto,
+                                    )
+                                }
                                 key(estado.versionFormulario) {
                                     FormularioTicketEditable(
                                         datos = ui.datos,

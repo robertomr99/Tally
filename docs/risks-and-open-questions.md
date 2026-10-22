@@ -100,6 +100,13 @@
   con el total siempre editable y con tests JVM del parser sobre los 4 textos crudos. Sin verificación nube real
   en esta feature: la cuota de Gemini sigue agotada desde 2026-10-17 y `ExtraccionLocalRealTest` necesita el modelo
   local, que no está en el emulador; `ExtraccionNubeRealTest` no se ejecutó.
+- **R-MAN1 — Gasto manual: motor leído como manual y gasto fuera del periodo visible** (`gasto-manual`):
+  (1) `Ticket.motor == null` es "gasto manual" y en Room se guarda `MANUAL` en la columna `motor`; un valor
+  desconocido (p. ej. de una versión futura) se lee también como manual (sin badge): mismo criterio tolerante que
+  `FormaPago.desde`, a cambio de que la lectura nunca lance. Si algún día hay más orígenes habrá que añadir un campo
+  explícito con migración. (2) Al guardar se vuelve a Gastos con el periodo activo: un gasto con fecha fuera de ese
+  periodo no se ve en la lista al volver. Riesgo aceptado por la spec; mitigado con un aviso breve "Gasto guardado
+  (d/M/yyyy)" que no depende de la lista. No se salta de periodo automáticamente.
 - **R1 — Integración MediaPipe**: **resuelta el 2026-10-12** con el spike
   `spike-gemma-mediapipe` (decisión GO arriba, en "Blocking Next Phase" #1):
   Gemma 3n E2B-it int4 carga y responde en la Tab S9+ con

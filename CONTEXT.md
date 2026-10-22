@@ -10,8 +10,8 @@ Nombre de la app: control de gastos personales a partir de fotografías de
 tickets de compra. Android nativo, todo local.
 
 ### Ticket
-Registro de gasto guardado en la app, derivado de un ticket de papel
-fotografiado. Contiene: comercio, fecha/hora, importe total (con IVA, lo que
+Registro de gasto guardado en la app, normalmente derivado de un ticket de papel
+fotografiado (o, sin papel, un **Gasto manual**). Contiene: comercio, fecha/hora, importe total (con IVA, lo que
 cuesta), líneas, categoría y forma de pago (con entregado y cambio en efectivo).
 En la UI se presenta como "ticket digitalizado" con estética de recibo.
 
@@ -34,8 +34,16 @@ Nombre en UI del "ticket virtual": pantalla de detalle con los datos
 estructurados extraídos, con apariencia de recibo, junto a la foto original
 como evidencia. No es un renderizado del papel.
 
+### Gasto manual
+Ticket que el usuario añade a mano desde la pestaña Gastos, sin foto y sin
+extracción (no tiene Motor). Usa el mismo formulario editable que la revisión;
+exige un total mayor que 0 y una fecha no futura, y el comercio es opcional. En
+la UI se marca con el chip "Manual" y la tarjeta "Sin foto". No es una
+extracción: no aparece en el log ni cuenta como motor local o de nube.
+
 ### Foto original
-Imagen capturada por el usuario con la cámara o elegida de su galería. Es
+Imagen capturada por el usuario con la cámara o elegida de su galería (opcional:
+un Gasto manual no tiene). Es
 evidencia inmutable: nunca se reemplaza, solo se borra junto con su ticket
 (borrado en cascada). Es la copia procesada guardada en el almacenamiento
 privado de la app; la imagen de la galería no se modifica ni se enlaza, y puede

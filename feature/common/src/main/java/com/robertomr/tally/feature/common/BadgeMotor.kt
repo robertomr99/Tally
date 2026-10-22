@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.robertomr.tally.domain.expenses.entities.Motor
 
@@ -60,6 +63,42 @@ fun BadgeMotor(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.testTag("revision_badge_motor"),
+        )
+    }
+}
+
+/**
+ * Chip "Manual" del detalle de un gasto añadido a mano (spec gasto-manual): mismo
+ * estilo que [BadgeMotor] pero sin motor (no hubo extraccion). Icono + texto.
+ */
+@Composable
+fun ChipManual(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .semantics(mergeDescendants = true) { contentDescription = "Gasto añadido a mano" }
+            .background(
+                MaterialTheme.colorScheme.surfaceContainer,
+                RoundedCornerShape(9999.dp),
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(9999.dp),
+            )
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.EditNote,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.secondary,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Manual",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

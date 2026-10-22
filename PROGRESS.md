@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `gasto-manual` (`galeria-escaneo` `accepted`, sesión 068); luego `filtro-forma-pago`, `mejoras-visuales-3`; `seed-demo` queda para el final.
+- Current next ready feature: `gasto-manual` en `passing` (sesión 069) a la espera de validator; luego `filtro-forma-pago`, `mejoras-visuales-3`; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2881,3 +2881,25 @@
   (Continuar, extraccion, guardado) con foto de galeria sin probar (sin cuota ni modelo): probarlo a mano en la
   Tab; TalkBack; `GaleriaFlujoTest` deja un directorio vacio `Pictures/TallyTest`.
 - Status: `galeria-escaneo` = **accepted**.
+
+## Session 069 - gasto-manual implementacion (2026-10-20/21, master)
+
+- Implementado (spec `docs/specs/gasto-manual.md`, defaults de la spec): `Ticket.motor: Motor? = null` +
+  `esManual` (sin `Motor.MANUAL`, sin migración: Room v3 intacto, `MANUAL` en la columna `motor`, `rutaFoto = ""`;
+  mapper tolerante `motorDesde`, ya no hay `Motor.valueOf`), `datosGastoManualInicial`, `ErrorGastoManual`,
+  `GuardarGastoManual`; `NuevoGastoScreen/ViewModel/State` en `:feature:gastos`; `ChipManual` y `TarjetaSinFoto`
+  en `:feature:common`; botón `gastos_anadir` en la cabecera de Gastos y `gastos_anadir_vacio` en el vacío;
+  ruta `gasto/nuevo`, barra oculta y transición deslizante en `:app`.
+- Añadido sobre la spec: aviso `Snackbar` "Gasto guardado (d/M/yyyy)" (tag `gasto_guardado_aviso`) para el
+  riesgo del periodo no visible; se descarta al abrir Detalle/Nuevo gasto (tapaba el dock y bloqueaba un
+  clic del E2E). El estado vacío de Gastos pasó a ser desplazable (a 360 dp con letra 2,0 los botones quedaban
+  fuera de pantalla). Botones del vacío con alto mínimo 48 dp.
+- Impacto de la nulabilidad: 77 usos de `Ticket(`; cero cambios en tests existentes (los `Motor.X` siguen
+  compilando y `assertEquals` admite el nulo). Único uso de `Ticket.motor` en UI: el detalle.
+- Verificación: ver `feature_list.json` (JVM, 56 E2E de `:app`, 40 de `:framework:database`, todo en
+  emulator-5556). Capturas y README en `docs/evidence/gasto-manual/`.
+- Observaciones: el diálogo de borrado de un manual dice "y su foto" (texto sin cambios por la spec); el
+  `init.sh`/`testDebugUnitTest` no ejecuta los tests de `:domain:expenses` (JVM puro): hay que añadir
+  `:domain:expenses:test`. Gastos manuales del mismo día se ordenan al final (00:00).
+- NO verificado: tablet real, TalkBack, donut/resumen con un manual en pantalla (sin aserción propia).
+- Status: `gasto-manual` = **accepted** (validator independiente: accept; 470 JVM, 56 E2E :app, 40 :framework:database en emulator-5556). Desviacion aceptada: Snackbar "Gasto guardado". Siguiente: `filtro-forma-pago`.

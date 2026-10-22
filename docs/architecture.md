@@ -398,6 +398,20 @@ app ──────────► feature:* ──────────�
   `onFormaPagoElegida/onEntregadoEditado/onCambioEditado` hacia los reductores puros de `EdicionDatos.kt`.
   Sin módulos ni dependencias nuevos.
 
+### Gasto manual (`gasto-manual`)
+
+- Dominio: `Ticket.motor` pasa a `Motor? = null` (sin `Motor.MANUAL`: `Motor` sigue siendo "quién extrajo", ADR
+  0001/0002) con `Ticket.esManual`; `datosGastoManualInicial`, `ErrorGastoManual` + `DatosRevision.errorGastoManual`
+  (total > 0, fecha no futura; comercio opcional) y `GuardarGastoManual` (ticket con `motor = null`, `rutaFoto = ""`,
+  `textoCrudoOcr = null`; no pasa por el router ni por el log). `ActualizarTicket`/`BorrarTicket` no cambian.
+- Persistencia sin migración (schema v3): `TicketLocalDataSource` guarda `MOTOR_MANUAL = "MANUAL"` en la columna
+  `motor TEXT NOT NULL` y lee con `motorDesde` (tolerante, nunca lanza; reemplaza a `Motor.valueOf`).
+- `:feature:gastos`: `NuevoGastoScreen/ViewModel/State` (estado como cadena sobre `MutableStateFlow`, reductores
+  de `EdicionDatos.kt`, fecha con `conservarHora = false`, guarda anti doble toque). `:feature:common`: `ChipManual`
+  y `TarjetaSinFoto`. `:app`: ruta `gasto/nuevo` (`TallyRoute.NuevoGasto`), barra inferior oculta, transición
+  deslizante y un `SnackbarHost` en el `Scaffold` para el aviso de guardado; las pantallas solo reciben callbacks
+  (`onAnadirGasto`, `onBack`, `onGastoGuardado(fecha)`). Sin módulos ni dependencias nuevos.
+
 ## Convenciones de build
 
 - `build-logic/` expone 4 convention plugins: `tally.android.application`,

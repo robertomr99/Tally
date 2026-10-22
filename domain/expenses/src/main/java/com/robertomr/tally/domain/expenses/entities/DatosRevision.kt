@@ -1,5 +1,6 @@
 package com.robertomr.tally.domain.expenses.entities
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -50,4 +51,19 @@ fun datosRevisionInicial(
     formaPago = extraido.formaPago,
     entregado = extraido.entregado,
     cambio = extraido.cambio,
+)
+
+/**
+ * Estado inicial del alta de un gasto manual (spec gasto-manual): comercio
+ * vacio, fecha de hoy a las 00:00 (el listado oculta la hora 00:00), total 0,
+ * categoria [Categoria.OTROS], sin lineas y pago sin indicar.
+ *
+ * @param hoy inyectable para tests deterministas.
+ */
+fun datosGastoManualInicial(hoy: LocalDate = LocalDate.now()): DatosRevision = DatosRevision(
+    comercio = "",
+    fechaEmision = hoy.atStartOfDay(),
+    total = 0.0,
+    categoria = Categoria.OTROS,
+    lineas = emptyList(),
 )

@@ -62,6 +62,9 @@ Flujo vertical completo, de punta a punta, en dos dispositivos reales:
    (chips de la lista fija), líneas editables (añadir/quitar/editar),
    botones Reintentar / Editar / Guardar.
 5. Persistencia en Room + foto en ficheros privados; borrado en cascada.
+   Además, alta manual de un gasto sin ticket desde la pestaña Gastos (feature
+   `gasto-manual`, decidida por el usuario el 2026-10-20): la vía manual ya no
+   es solo el respaldo de una extracción fallida.
 6. Ajustes básicos: forzar motor (Auto/Local/Nube) y estado del modelo local.
 
 ## Validation Plan

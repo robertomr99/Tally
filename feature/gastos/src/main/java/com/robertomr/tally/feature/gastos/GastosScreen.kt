@@ -2,19 +2,28 @@ package com.robertomr.tally.feature.gastos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +55,7 @@ import com.robertomr.tally.feature.common.formaFilaTicket
 fun GastosScreen(
     onTicketClick: (Long) -> Unit = {},
     onEscanear: () -> Unit = {},
+    onAnadirGasto: () -> Unit = {},
     viewModel: GastosViewModel = hiltViewModel(),
 ) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
@@ -55,6 +65,7 @@ fun GastosScreen(
         onSeleccionarRango = viewModel::onSeleccionarRango,
         onTicketClick = onTicketClick,
         onEscanear = onEscanear,
+        onAnadirGasto = onAnadirGasto,
     )
 }
 
@@ -69,6 +80,7 @@ fun GastosContenido(
     onSeleccionarRango: (LocalDate, LocalDate) -> Unit,
     onTicketClick: (Long) -> Unit,
     onEscanear: () -> Unit,
+    onAnadirGasto: () -> Unit = {},
 ) {
     val estado = rememberGastosState()
     ColumnaCentrada(
@@ -84,6 +96,22 @@ fun GastosContenido(
                 titulo = "Gastos",
                 subtitulo = ui.periodo?.let { etiquetaPeriodo(it, ui.hoy) },
                 subtituloTag = "gastos_rango",
+                accion = {
+                    IconButton(
+                        onClick = onAnadirGasto,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .testTag("gastos_anadir"),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "Añadir gasto",
+                        )
+                    }
+                },
             )
             PeriodoSelector(
                 seleccionado = ui.tipo,
@@ -101,7 +129,7 @@ fun GastosContenido(
                     modifier = Modifier.weight(1f),
                     indicadorModifier = Modifier.testTag("listado_cargando"),
                 )
-                grupos.isEmpty() -> EstadoVacio(onEscanear)
+                grupos.isEmpty() -> EstadoVacio(onEscanear, onAnadirGasto)
                 else -> LazyColumn(
                     state = estado.lista,
                     modifier = Modifier
@@ -140,17 +168,39 @@ fun GastosContenido(
 }
 
 @Composable
-private fun EstadoVacio(onEscanear: () -> Unit) {
-    EstadoPantalla(
-        titulo = "Aún no hay tickets en este periodo",
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag("listado_vacio"),
-        icono = Icons.Outlined.ReceiptLong,
-        mensaje = "Escanea un ticket y aparecerá aquí con su comercio, fecha y categoría.",
-    ) {
-        Button(onClick = onEscanear, modifier = Modifier.testTag("boton_escanear_vacio")) {
-            Text("Escanear ticket")
+private fun EstadoVacio(onEscanear: () -> Unit, onAnadirGasto: () -> Unit) {
+    // Con letra grande el contenido no cabe en pantalla: se desplaza y, si cabe, queda centrado
+    // (alto mínimo = alto disponible).
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("listado_vacio")) {
+        val altoDisponible = maxHeight
+        EstadoPantalla(
+            titulo = "Aún no hay tickets en este periodo",
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = altoDisponible),
+            icono = Icons.Outlined.ReceiptLong,
+            mensaje = "Escanea un ticket o añade un gasto a mano y aparecerá aquí.",
+        ) {
+            // Apilados a ancho completo: caben a 360 dp y con letra grande.
+            Button(
+                onClick = onEscanear,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("boton_escanear_vacio"),
+            ) {
+                Text("Escanear ticket")
+            }
+            OutlinedButton(
+                onClick = onAnadirGasto,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("gastos_anadir_vacio"),
+            ) {
+                Text("Añadir gasto manualmente", textAlign = TextAlign.Center)
+            }
         }
     }
 }

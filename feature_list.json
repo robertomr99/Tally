@@ -640,13 +640,19 @@
     "title": "Añadir un gasto sin ticket",
     "user_visible_behavior": "Desde Gastos, un botón Añadir gasto abre el formulario de papel vacío (fecha de hoy, comercio, categoría, forma de pago, total y líneas opcionales) y guarda un gasto sin foto, sin badge de IA y editable y borrable como cualquier otro.",
     "depends_on": ["forma-pago"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Un gasto manual se guarda, aparece en listado, donut y resumen del periodo y se edita y borra desde el detalle",
       "El detalle muestra Sin foto (distinto de Foto no disponible) y ningún badge de motor",
       "CONTEXT.md y docs/domain-model.md actualizados: un Ticket ya no deriva siempre de una foto"
     ],
-    "evidence": [],
+    "evidence": [
+      "2026-10-20/21 (sesión 069) gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test :app:installDebug :app:installDebugAndroidTest :framework:database:installDebugAndroidTest con ANDROID_SERIAL=emulator-5556: BUILD SUCCESSFUL; JVM nuevos: GuardarGastoManualTest 11, NuevoGastoViewModelTest 8, MotorDesdeTest 3; ningún test existente modificado salvo un test aditivo en ListadoGastosVacioTest",
+      "am instrument com.robertomr.tally.test -e notClass ExtraccionLocalRealTest,ExtraccionNubeRealTest: OK 56 tests (GastoManualFlujoTest 3/3: alta por UI, detalle sin foto ni IA, editar, borrar, log de extracciones sin cambios, validación visible, atrás sin guardar); tras el arreglo del vacío desplazable se re-ejecutaron ListadoGastosVacioTest, ListadoGastosFlujoTest, GastoManualFlujoTest y DetalleTicketFlujoTest: OK 18",
+      "am instrument com.robertomr.tally.framework.database.test: OK 40 (TicketLocalDataSourceManualTest 4: MANUAL ida y vuelta, motor desconocido leído como manual, borrado; MigrationTest y MigracionFormaPagoTest en verde); git: sin cambios en schemas/ ni Migrations.kt (v3 intacto)",
+      "Manual en emulator-5556 (capturas en docs/evidence/gasto-manual/, README): botón +, vacío con dos botones, requisito visible, alta, fila sin hora, detalle con Manual y Sin foto, a 360 dp, fuente 2,0 y horizontal; en el vacío a 360 dp con fuente 2,0 el contenido se cortaba y se hizo desplazable; gastos de prueba borrados por la UI; wm/font/rotación restaurados",
+      "NO verificado: tablet real (no se tocó ningún dispositivo físico; la horizontal es el emulador girado), TalkBack, el snackbar en captura estática (solo por test y a ojo), donut/resumen con un gasto manual en pantalla (cubierto por ser un Ticket normal para el listado; no hay aserción específica de donut)"
+    ],
     "notes": "Petición del usuario (2026-10-20). Decisión del usuario: botón Añadir gasto en Gastos. Sin foto: rutaFoto vacía y origen MANUAL (revisar los when exhaustivos de Motor). Validación mínima a decidir por el planner."
   },
   {

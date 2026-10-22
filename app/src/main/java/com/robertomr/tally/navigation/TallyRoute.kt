@@ -10,6 +10,9 @@ sealed class TallyRoute(val route: String) {
     // Pantalla secundaria (sin pestaña de la bottom bar): se abre desde Resumen.
     data object Ajustes : TallyRoute("ajustes")
 
+    // Alta de un gasto sin ticket (spec gasto-manual), abierta desde Gastos.
+    data object NuevoGasto : TallyRoute("gasto/nuevo")
+
     // Detalle del ticket guardado (spec detalle-ticket). ARG_ID debe coincidir con
     // TicketDetalleViewModel.ARG_ID: el ViewModel lo lee de su SavedStateHandle.
     data object Ticket : TallyRoute("ticket/{ticketId}") {

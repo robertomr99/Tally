@@ -9,9 +9,18 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -26,8 +35,11 @@ import com.robertomr.tally.feature.common.BottomBarDestino
 import com.robertomr.tally.feature.common.TallyBottomBar
 import com.robertomr.tally.feature.escanear.EscanearScreen
 import com.robertomr.tally.feature.gastos.GastosScreen
+import com.robertomr.tally.feature.gastos.NuevoGastoScreen
 import com.robertomr.tally.feature.gastos.TicketDetalleScreen
 import com.robertomr.tally.feature.resumen.ResumenScreen
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 // Shell de la app: un único NavHost con los 3 destinos de la bottom bar
 // (start = Resumen). El NavController solo vive en :app; las pantallas de
@@ -38,12 +50,31 @@ fun TallyApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val activeDestination = backStackEntry.toBottomBarDestino()
 
+    // Aviso breve tras guardar un gasto manual: no depende de la lista, porque un
+    // gasto fuera del periodo activo de Gastos no se vera al volver.
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    // El aviso no debe quedar tapando el dock del detalle ni de Nuevo gasto.
+    val rutaActual = backStackEntry?.destination?.route
+    LaunchedEffect(rutaActual) {
+        if (rutaActual == TallyRoute.Ticket.route || rutaActual == TallyRoute.NuevoGasto.route) {
+            snackbarHostState.currentSnackbarData?.dismiss()
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { datos ->
+                Snackbar(modifier = Modifier.testTag("gasto_guardado_aviso")) { Text(datos.visuals.message) }
+            }
+        },
         bottomBar = {
             // El detalle del ticket (spec detalle-ticket, D5) oculta la barra
             // inferior: su dock de edicion ya ocupa ese borde.
-            if (backStackEntry?.destination?.route != TallyRoute.Ticket.route) {
+            // Nuevo gasto (spec gasto-manual) la oculta por lo mismo.
+            val ruta = backStackEntry?.destination?.route
+            if (ruta != TallyRoute.Ticket.route && ruta != TallyRoute.NuevoGasto.route) {
                 TallyBottomBar(
                     activeDestination = activeDestination,
                     onNavigate = { destination -> navController.navigateTo(destination) },
@@ -117,6 +148,22 @@ fun TallyApp() {
                 GastosScreen(
                     onTicketClick = { id -> navController.navigate(TallyRoute.Ticket.crear(id)) },
                     onEscanear = { navController.navigateTo(BottomBarDestino.Escanear) },
+                    onAnadirGasto = { navController.navigate(TallyRoute.NuevoGasto.route) },
+                )
+            }
+            composable(TallyRoute.NuevoGasto.route) {
+                NuevoGastoScreen(
+                    onBack = { navController.popBackStack() },
+                    onGastoGuardado = { fecha ->
+                        navController.popBackStack()
+                        scope.launch {
+                            snackbarHostState.currentSnackbarData?.dismiss()
+                            snackbarHostState.showSnackbar(
+                                message = "Gasto guardado (${fecha.format(FORMATO_AVISO)})",
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    },
                 )
             }
             composable(TallyRoute.Escanear.route) {
@@ -135,9 +182,13 @@ fun TallyApp() {
 private const val DURACION_FUNDIDO_MS = 150
 private const val DURACION_DESLIZAMIENTO_MS = 300
 
-// Detalle del ticket y Ajustes cuelgan de una pestaña: se abren deslizando.
+private val FORMATO_AVISO: DateTimeFormatter = DateTimeFormatter.ofPattern("d/M/yyyy")
+
+// Detalle del ticket, Nuevo gasto y Ajustes cuelgan de una pestaña: se abren deslizando.
 private fun NavBackStackEntry.esSecundaria(): Boolean =
-    destination.route == TallyRoute.Ticket.route || destination.route == TallyRoute.Ajustes.route
+    destination.route == TallyRoute.Ticket.route ||
+        destination.route == TallyRoute.NuevoGasto.route ||
+        destination.route == TallyRoute.Ajustes.route
 
 // Navegación estándar de bottom bar: launchSingleTop + restoreState y
 // popUpTo(start) con saveState. El back del sistema vuelve a Resumen y un

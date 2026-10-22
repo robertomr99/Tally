@@ -5,7 +5,11 @@
 - **Ticket**: agregado raíz. Campos: comercio, fecha/hora de emisión, total
   (editable), categoría, nota opcional, fecha de captura, motor usado en la
   extracción, ruta de la foto, texto crudo del OCR, forma de pago y, solo en
-  efectivo, importe entregado y cambio (`forma-pago`).
+  efectivo, importe entregado y cambio (`forma-pago`). Un **gasto manual**
+  (`gasto-manual`) es un Ticket con `motor = null` (sin extracción), ruta de foto
+  vacía y sin texto crudo: `Ticket.esManual`. En Room se guarda `MANUAL` en la
+  columna `motor` y `""` en `ruta_foto` (esquema v3 intacto); la lectura del
+  motor es tolerante (`MANUAL` o un valor desconocido → manual, nunca lanza).
 - **Forma de pago**: enum `FormaPago` = `EFECTIVO` | `TARJETA` | `NO_INDICADA`
   (`NO_INDICADA` es el valor de los tickets anteriores a la migración 2 → 3 y de
   los que no dicen cómo se pagó; bizum, vale o pago mixto también se guardan
@@ -18,13 +22,15 @@
   precio final unitario (IVA incluido). Pertenece a un Ticket.
 - **Categoría**: enum fija de 6 valores (Alimentación, Hogar, Transporte,
   Ocio, Salud, Otros) con icono y color en UI. No es una tabla editable.
-- **Motor**: Local | Nube. Se registra con el ticket (qué motor extrajo).
+- **Motor**: Local | Nube. Se registra con el ticket (qué motor extrajo). No hay
+  un motor "manual": su ausencia (`null`) significa gasto manual.
 - **Período**: par de fechas derivado de Día / Semana / Mes / Rango personalizado.
 
 ## Relationships
 
 - Ticket 1—N Líneas (las líneas se guardan y editan con el ticket).
-- Ticket 1—1 Foto original (ruta en ficheros privados; borrado en cascada).
+- Ticket 1—0..1 Foto original (ruta en ficheros privados; borrado en cascada;
+  ausente en un gasto manual).
 - Ticket N—1 Categoría (de la enum fija).
 - Período 1—N Tickets (por fecha de emisión, no de captura).
 
@@ -47,6 +53,10 @@ Transiciones:
 - Reintento de extracción → nueva extracción sobre el Borrador (puede cambiar
   de motor; se actualiza el motor registrado).
 - Guardar → Guardado (persiste ticket, líneas y vincula la foto).
+- Gasto manual → Guardado directamente (sin Borrador ni foto): desde Gastos,
+  "Nuevo gasto" con total > 0 y fecha no futura (el comercio es opcional;
+  categoría Otros por defecto; hora 00:00 de la fecha elegida). Después se edita
+  y borra como cualquier ticket. No genera registro en el log de extracciones.
 - Editar (Guardado) → edición en memoria → Guardar cambios → Guardado.
 - Borrar → se elimina el ticket, sus líneas y su foto (cascada, con confirmación).
 - Repetir foto → se descarta el Borrador actual y se borra de disco la foto del

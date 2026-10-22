@@ -292,6 +292,24 @@ de sombras.
   Sin barra inferior. Eliminar abre un `AlertDialog` de forma 28 dp (la forma
   `extraLarge` del tema es una píldora, hay que fijarla) con "Eliminar" en
   `error` y "Cancelar". Ticket inexistente: "Este ticket ya no existe" + "Volver".
+- **Gasto manual** (`gasto-manual`): 
+  - Botón "+" (`Icons.Outlined.Add`, 48 dp, `contentDescription` "Añadir gasto", color
+    `primary`, tag `gastos_anadir`) como acción de la `CabeceraPantalla` de Gastos: fija y
+    siempre visible, sin FAB (la sombra se reserva a FAB/docks y un FAB competiría con la
+    barra inferior y la lista). En el estado vacío, además, `OutlinedButton` "Añadir gasto
+    manualmente" (`gastos_anadir_vacio`, ≥ 48 dp) apilado bajo "Escanear ticket"
+    (`boton_escanear_vacio`), ambos a ancho completo.
+  - "Nuevo gasto": cabecera con flecha atrás, el mismo papel editable de la revisión
+    (sin foto ni badge), y el dock "Descartar" / "Guardar cambios". Si falta algo, "Guardar
+    cambios" queda deshabilitado y junto al dock hay un texto `bodySmall` con icono (info),
+    nunca solo color: "Indica un total mayor que 0" / "La fecha no puede ser futura".
+    La barra inferior se oculta en esta pantalla.
+  - Detalle: el chip "Manual" (icono `EditNote`, estilo del badge de motor, sin color de IA)
+    sustituye al badge del motor, y la tarjeta "Sin foto" + "Este gasto se añadió a mano"
+    (icono `ImageNotSupported`) sustituye a "Ver foto original"; es distinta de "Foto no
+    disponible" (`BrokenImage`), que sigue siendo para un ticket escaneado cuya foto falta.
+  - Tras guardar, un `Snackbar` breve "Gasto guardado (d/M/yyyy)" se muestra en Gastos
+    (no depende de la lista) y se descarta si se abre Detalle o Nuevo gasto, para no tapar su dock.
 
 ## Core Screens
 

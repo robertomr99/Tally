@@ -16,6 +16,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
+ * Valor guardado en la columna `motor` (TEXT NOT NULL) para un gasto manual, que
+ * en dominio es `Ticket.motor == null` (spec gasto-manual; sin migracion).
+ */
+internal const val MOTOR_MANUAL = "MANUAL"
+
+/**
+ * Lectura tolerante de la columna `motor`: "MANUAL" o un valor desconocido
+ * (p. ej. de una version futura) es `null` (se ve como gasto manual). Nunca lanza.
+ */
+internal fun motorDesde(valor: String): Motor? =
+    Motor.entries.firstOrNull { it.name == valor }
+
+/**
  * Implementación Room de [TicketDataSource] (interna de `:framework:database`;
  * AGENTS.md). El mapping entidad↔dominio vive aquí.
  */
@@ -55,7 +68,7 @@ private fun Ticket.toEntity(): TicketEntity = TicketEntity(
     categoria = categoria.name,
     nota = nota,
     fechaCaptura = fechaCaptura,
-    motor = motor.name,
+    motor = motor?.name ?: MOTOR_MANUAL,
     rutaFoto = rutaFoto,
     textoCrudoOcr = textoCrudoOcr,
     formaPago = formaPago.name,
@@ -76,7 +89,7 @@ private fun TicketWithLineas.toDomain(): Ticket = Ticket(
     total = ticket.total,
     categoria = Categoria.valueOf(ticket.categoria),
     fechaCaptura = ticket.fechaCaptura,
-    motor = Motor.valueOf(ticket.motor),
+    motor = motorDesde(ticket.motor),
     rutaFoto = ticket.rutaFoto,
     nota = ticket.nota,
     textoCrudoOcr = ticket.textoCrudoOcr,
