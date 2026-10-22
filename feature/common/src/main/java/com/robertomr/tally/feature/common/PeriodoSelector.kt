@@ -1,6 +1,7 @@
 package com.robertomr.tally.feature.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,7 +56,8 @@ fun PeriodoSelector(
 ) {
     var pickerAbierto by rememberSaveable { mutableStateOf(false) }
     // Con fuente grande los 4 segmentos no caben en una fila ("Personalizado" se recortaba, V12):
-    // pasan a dos filas, Día/Semana/Mes arriba y Personalizado a ancho completo debajo.
+    // pasan a dos filas, Día/Semana/Mes arriba y Personalizado a ancho completo debajo. No cabe
+    // el check: el activo lleva un borde de 2 dp en onSecondaryContainer (no solo color de fondo).
     val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_SELECTOR
     val alPulsarPersonalizado: (PeriodoTipo) -> Unit = { pickerAbierto = true }
     if (apilar) {
@@ -68,13 +70,13 @@ fun PeriodoSelector(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Segmento(PeriodoTipo.DIA, "Día", "periodo_dia", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false)
-                Segmento(PeriodoTipo.SEMANA, "Semana", "periodo_semana", seleccionado, onSeleccionarTipo, Modifier.weight(1.3f), conCheck = false)
-                Segmento(PeriodoTipo.MES, "Mes", "periodo_mes", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false)
+                Segmento(PeriodoTipo.DIA, "Día", "periodo_dia", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false, conBorde = true)
+                Segmento(PeriodoTipo.SEMANA, "Semana", "periodo_semana", seleccionado, onSeleccionarTipo, Modifier.weight(1.3f), conCheck = false, conBorde = true)
+                Segmento(PeriodoTipo.MES, "Mes", "periodo_mes", seleccionado, onSeleccionarTipo, Modifier.weight(0.9f), conCheck = false, conBorde = true)
             }
             Segmento(
                 PeriodoTipo.PERSONALIZADO, "Personalizado", "periodo_personalizado", seleccionado,
-                alPulsarPersonalizado, Modifier.fillMaxWidth(), conCheck = false,
+                alPulsarPersonalizado, Modifier.fillMaxWidth(), conCheck = false, conBorde = true,
             )
         }
     } else {
@@ -118,6 +120,7 @@ private fun Segmento(
     onSeleccionar: (PeriodoTipo) -> Unit,
     modifier: Modifier,
     conCheck: Boolean = true,
+    conBorde: Boolean = false,
 ) {
     val activo = tipo == seleccionado
     val fondo = if (activo) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
@@ -127,6 +130,7 @@ private fun Segmento(
             .defaultMinSize(minHeight = 48.dp)
             .clip(RoundedCornerShape(50))
             .background(fondo)
+            .then(if (activo && conBorde) Modifier.border(2.dp, MaterialTheme.colorScheme.onSecondaryContainer, RoundedCornerShape(50)) else Modifier)
             .clickable(role = Role.Tab) { onSeleccionar(tipo) }
             .semantics { selected = activo }
             .testTag(tag)

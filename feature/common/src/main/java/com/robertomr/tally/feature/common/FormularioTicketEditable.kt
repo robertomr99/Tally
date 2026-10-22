@@ -480,6 +480,9 @@ private fun BotonAnadirLinea(onClick: () -> Unit) {
  * @param guardarHabilitado `false` deshabilita "Guardar cambios" (p. ej. sin
  * cambios o guardando en el detalle).
  * @param descartarHabilitado `false` deshabilita "Descartar".
+ * @param textoGuardar etiqueta del botón principal ("Guardar gasto" en Nuevo gasto).
+ * @param mostrarTotalRecalculado `false` oculta el bloque "Total recalculado" (Nuevo gasto
+ * sin líneas: la suma de líneas no es el total que el usuario escribió).
  */
 @Composable
 fun DockEdicion(
@@ -489,12 +492,17 @@ fun DockEdicion(
     modifier: Modifier = Modifier,
     guardarHabilitado: Boolean = true,
     descartarHabilitado: Boolean = true,
+    textoGuardar: String = "Guardar cambios",
+    mostrarTotalRecalculado: Boolean = true,
 ) {
     // El fondo llega a todo el ancho; el contenido va en la columna centrada.
     ColumnaCentrada(
         modifier = modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
-        ContenidoDock(lineas, onDescartar, onGuardar, guardarHabilitado, descartarHabilitado)
+        ContenidoDock(
+            lineas, onDescartar, onGuardar, guardarHabilitado, descartarHabilitado,
+            textoGuardar, mostrarTotalRecalculado,
+        )
     }
 }
 
@@ -505,6 +513,8 @@ private fun ContenidoDock(
     onGuardar: () -> Unit,
     guardarHabilitado: Boolean,
     descartarHabilitado: Boolean,
+    textoGuardar: String,
+    mostrarTotalRecalculado: Boolean,
 ) {
     // Con fuente grande el dock no cabe en una fila (V03): los botones se apilan
     // (Guardar primero) y el subtítulo del total baja a ancho completo.
@@ -545,7 +555,7 @@ private fun ContenidoDock(
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(6.dp))
-            Text(text = "Guardar cambios", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text = textoGuardar, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 
@@ -555,7 +565,7 @@ private fun ContenidoDock(
             .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (mostrarTotalRecalculado) Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(28.dp)
@@ -588,7 +598,7 @@ private fun ContenidoDock(
             )
         }
         if (apilar) {
-            SubtituloTotalRecalculado(lineas)
+            if (mostrarTotalRecalculado) SubtituloTotalRecalculado(lineas)
             botonGuardar(Modifier.fillMaxWidth())
             botonDescartar(Modifier.fillMaxWidth())
         } else {

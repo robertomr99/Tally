@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,7 +44,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.robertomr.tally.feature.common.ColumnaCentrada
-import com.robertomr.tally.feature.common.EstadoPantalla
+import com.robertomr.tally.feature.common.EstadoPantallaDesplazable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -267,7 +268,7 @@ private fun PermisoCamaraContent(
     onElegirGaleria: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    EstadoPantalla(
+    EstadoPantallaDesplazable(
         titulo = "Necesitamos la cámara",
         modifier = modifier
             .fillMaxSize()
@@ -288,7 +289,8 @@ private fun PermisoCamaraContent(
         Button(
             onClick = onPermitir,
             modifier = Modifier
-                .height(48.dp)
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .testTag("captura_permitir"),
             shape = RoundedCornerShape(9999.dp),
         ) {
@@ -299,6 +301,7 @@ private fun PermisoCamaraContent(
         OutlinedButton(
             onClick = onElegirGaleria,
             modifier = Modifier
+                .fillMaxWidth()
                 .heightIn(min = 48.dp)
                 .testTag("permiso_galeria"),
             shape = RoundedCornerShape(9999.dp),
@@ -362,7 +365,7 @@ private fun ErrorContent(
     onVolverAlEncuadre: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    EstadoPantalla(
+    EstadoPantallaDesplazable(
         titulo = "No se pudo guardar la foto",
         modifier = modifier
             .fillMaxSize()
@@ -374,7 +377,8 @@ private fun ErrorContent(
         Button(
             onClick = onVolverAlEncuadre,
             modifier = Modifier
-                .height(48.dp)
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
                 .testTag("captura_reintentar"),
             shape = RoundedCornerShape(9999.dp),
         ) {

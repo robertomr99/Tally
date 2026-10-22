@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -272,6 +273,7 @@ internal fun TicketDetalleContenido(
                     ConfirmarBorrado(
                         comercio = ui.ticket.comercio,
                         total = ui.ticket.total,
+                        esManual = ui.ticket.esManual,
                         onCancelar = estado::cerrarConfirmarBorrado,
                         onConfirmar = onConfirmarBorrado,
                     )
@@ -331,7 +333,7 @@ private fun NoExiste(onBack: () -> Unit) {
         Button(
             onClick = onBack,
             modifier = Modifier
-                .height(48.dp)
+                .heightIn(min = 48.dp)
                 .testTag("detalle_volver"),
             shape = RoundedCornerShape(9999.dp),
         ) {
@@ -409,11 +411,21 @@ private fun VisorFoto(rutaFoto: String, onCerrar: () -> Unit) {
     }
 }
 
+/**
+ * Texto del diálogo de borrado. Un gasto manual no tiene foto, así que no se
+ * menciona; [nombre] ya viene resuelto (comercio o "este ticket") y [total] formateado.
+ */
+internal fun textoConfirmarBorrado(nombre: String, total: String, esManual: Boolean): String {
+    val contenido = if (esManual) "sus líneas" else "sus líneas y su foto"
+    return "Se eliminará «$nombre» por $total junto con $contenido. Esta acción no se puede deshacer."
+}
+
 /** Dialogo M3 de confirmacion (forma 28 dp del tema): "Eliminar" en paleta `error`. */
 @Composable
 private fun ConfirmarBorrado(
     comercio: String,
     total: Double,
+    esManual: Boolean,
     onCancelar: () -> Unit,
     onConfirmar: () -> Unit,
 ) {
@@ -422,12 +434,7 @@ private fun ConfirmarBorrado(
         onDismissRequest = onCancelar,
         modifier = Modifier.testTag("detalle_confirmar_borrado"),
         title = { Text("Eliminar ticket") },
-        text = {
-            Text(
-                "Se eliminará «$nombre» por ${formatoImporte(total)} junto con sus " +
-                    "líneas y su foto. Esta acción no se puede deshacer.",
-            )
-        },
+        text = { Text(textoConfirmarBorrado(nombre, formatoImporte(total), esManual)) },
         confirmButton = {
             Button(
                 onClick = onConfirmar,

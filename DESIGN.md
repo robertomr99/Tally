@@ -160,13 +160,24 @@ Roles Material 3 en el front matter. Notas de uso (del design system):
   `LayoutAncho.kt`) los pares de botones de un dock se apilan con el principal
   primero: Guardar/Descartar en el dock de edición (además baja el subtítulo del
   total) y Continuar/Repetir foto en Revisar foto. Con > 1,1 el selector de periodo
-  pasa a dos filas (Día/Semana/Mes y Personalizado a ancho completo, sin check);
+  pasa a dos filas (Día/Semana/Mes y Personalizado a ancho completo); no cabe el check,
+  así que el segmento activo lleva además un borde de 2 dp en `onSecondaryContainer`
+  (no solo color de fondo). El fallo de Procesado (> 1,15) apila "Reintentar" y "Volver a
+  la foto" a ancho completo (Reintentar primero), desplaza el cuerpo (mensaje, "Probar con
+  ...", "Volver al resultado anterior") y centra la etiqueta de proceso con margen
+  `PADDING_PANTALLA`; las dos micro-métricas de `TarjetaTotal` se apilan con > 1,5; los
+  vacíos de Gastos (sin tickets / sin coincidencias) incluyen selector de periodo y filtro
+  dentro del mismo scroll con > 1,15;
   con > 1,4 los pasos de Procesado se apilan sin chevrons. El título de
   `CabeceraPantalla` admite dos líneas.
 - **Estados de pantalla**: vacío, error y permiso usan `EstadoPantalla`
   (icono de 40 dp opcional, titular `headlineSmall`, mensaje `bodyMedium` y botón
   debajo; 24 dp laterales) y la carga usa `CargandoPantalla` (indicador de 40 dp
-  centrado), ambos en `feature/common/ComponentesSeccion.kt`.
+  centrado), ambos en `feature/common/ComponentesSeccion.kt`. Si el estado puede no
+  caber (letra grande, 360 dp: vacíos de Gastos, permiso de cámara y error de captura de
+  Escanear) se usa `EstadoPantallaDesplazable`: mismo contenido, con scroll vertical y
+  centrado cuando cabe. Los botones de esos estados van a ancho completo, ≥ 48 dp sin
+  altura fija.
 - **Tarjetas y secciones**: una sola tarjeta, `TarjetaSeccion` (fondo
   `surfaceContainerLow`, borde `outlineVariant` al 40 %, radio 24 dp, padding de
   20 dp), la usan Resumen y Ajustes; los títulos de sección son `TituloSeccion`
@@ -297,7 +308,8 @@ de sombras.
   revisión ("Descartar" / "Guardar cambios", ambos deshabilitados sin cambios).
   Sin barra inferior. Eliminar abre un `AlertDialog` de forma 28 dp (la forma
   `extraLarge` del tema es una píldora, hay que fijarla) con "Eliminar" en
-  `error` y "Cancelar". Ticket inexistente: "Este ticket ya no existe" + "Volver".
+  `error` y "Cancelar". El texto dice "...junto con sus líneas y su foto..."; en un gasto
+  manual (sin foto) dice "...junto con sus líneas.". Ticket inexistente: "Este ticket ya no existe" + "Volver".
 - **Gasto manual** (`gasto-manual`): 
   - Botón "+" (`Icons.Outlined.Add`, 48 dp, `contentDescription` "Añadir gasto", color
     `primary`, tag `gastos_anadir`) como acción de la `CabeceraPantalla` de Gastos: fija y
@@ -306,8 +318,10 @@ de sombras.
     manualmente" (`gastos_anadir_vacio`, ≥ 48 dp) apilado bajo "Escanear ticket"
     (`boton_escanear_vacio`), ambos a ancho completo.
   - "Nuevo gasto": cabecera con flecha atrás, el mismo papel editable de la revisión
-    (sin foto ni badge), y el dock "Descartar" / "Guardar cambios". Si falta algo, "Guardar
-    cambios" queda deshabilitado y junto al dock hay un texto `bodySmall` con icono (info),
+    (sin foto ni badge), y el dock "Descartar" / "Guardar gasto"; el bloque "Total
+    recalculado" solo aparece cuando hay al menos una línea (Revisión y Detalle lo
+    mantienen siempre visible y conservan "Guardar cambios"). Si falta algo, "Guardar
+    gasto" queda deshabilitado y junto al dock hay un texto `bodySmall` con icono (info),
     nunca solo color: "Indica un total mayor que 0" / "La fecha no puede ser futura".
     La barra inferior se oculta en esta pantalla.
   - Detalle: el chip "Manual" (icono `EditNote`, estilo del badge de motor, sin color de IA)

@@ -3,13 +3,17 @@ package com.robertomr.tally.feature.common
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -115,6 +119,56 @@ fun EstadoPantalla(
             )
         }
         contenido()
+    }
+}
+
+/**
+ * [EstadoPantalla] que se desplaza si no cabe (letra grande, 360 dp) y, si cabe, queda
+ * centrado (alto mínimo = alto disponible). El [modifier] (que suele llevar el tag) se
+ * aplica al contenedor externo y debe darle tamaño (normalmente `fillMaxSize()`).
+ * Con [desplazable] = false solo pinta el [EstadoPantalla] a ancho completo, para
+ * cuando un contenedor superior ya aporta el scroll (no admite altura infinita).
+ */
+@Composable
+fun EstadoPantallaDesplazable(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    icono: ImageVector? = null,
+    colorIcono: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    mensaje: String? = null,
+    colorMensaje: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    mensajeModifier: Modifier = Modifier,
+    desplazable: Boolean = true,
+    contenido: @Composable ColumnScope.() -> Unit = {},
+) {
+    if (!desplazable) {
+        EstadoPantalla(
+            titulo = titulo,
+            modifier = modifier.fillMaxWidth(),
+            icono = icono,
+            colorIcono = colorIcono,
+            mensaje = mensaje,
+            colorMensaje = colorMensaje,
+            mensajeModifier = mensajeModifier,
+            contenido = contenido,
+        )
+        return
+    }
+    BoxWithConstraints(modifier = modifier) {
+        val altoDisponible = maxHeight
+        EstadoPantalla(
+            titulo = titulo,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = altoDisponible),
+            icono = icono,
+            colorIcono = colorIcono,
+            mensaje = mensaje,
+            colorMensaje = colorMensaje,
+            mensajeModifier = mensajeModifier,
+            contenido = contenido,
+        )
     }
 }
 

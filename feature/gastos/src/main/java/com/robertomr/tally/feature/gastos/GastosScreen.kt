@@ -2,7 +2,6 @@ package com.robertomr.tally.feature.gastos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,11 +40,12 @@ import com.robertomr.tally.feature.common.FiltroFormaPagoSelector
 import com.robertomr.tally.feature.common.CabeceraDia
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.CargandoPantalla
-import com.robertomr.tally.feature.common.EstadoPantalla
+import com.robertomr.tally.feature.common.EstadoPantallaDesplazable
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.FilaTicket
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PeriodoSelector
+import com.robertomr.tally.feature.common.UMBRAL_APILAR_BOTONES
 import java.time.LocalDate
 import com.robertomr.tally.feature.common.etiquetaPeriodo
 import com.robertomr.tally.feature.common.formaFilaTicket
@@ -117,21 +118,43 @@ fun GastosContenido(
                     }
                 },
             )
-            PeriodoSelector(
-                seleccionado = ui.tipo,
-                rango = ui.rango,
-                hoy = ui.hoy,
-                onSeleccionarTipo = onSeleccionarPeriodo,
-                onSeleccionarRango = onSeleccionarRango,
-                modifier = Modifier.padding(horizontal = PADDING_PANTALLA, vertical = 12.dp),
-            )
-            FiltroFormaPagoSelector(
-                seleccionado = ui.filtro,
-                onSeleccionar = onSeleccionarFiltro,
-                modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, bottom = 8.dp),
-            )
-
             val grupos = ui.grupos
+            val selectores: @Composable () -> Unit = {
+                PeriodoSelector(
+                    seleccionado = ui.tipo,
+                    rango = ui.rango,
+                    hoy = ui.hoy,
+                    onSeleccionarTipo = onSeleccionarPeriodo,
+                    onSeleccionarRango = onSeleccionarRango,
+                    modifier = Modifier.padding(horizontal = PADDING_PANTALLA, vertical = 12.dp),
+                )
+                FiltroFormaPagoSelector(
+                    seleccionado = ui.filtro,
+                    onSeleccionar = onSeleccionarFiltro,
+                    modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, bottom = 8.dp),
+                )
+            }
+            // Con letra grande, cabecera + selectores ocupan casi toda la pantalla y el vacío
+            // quedaría bajo el pliegue: en esos estados los selectores van dentro del mismo scroll.
+            val vacioEnScroll = grupos != null && grupos.isEmpty() &&
+                LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
+            if (vacioEnScroll) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
+                    selectores()
+                    if (ui.hayTicketsEnPeriodo) {
+                        EstadoVacioFiltro(ui.filtro, desplazable = false) { onSeleccionarFiltro(FiltroFormaPago.TODOS) }
+                    } else {
+                        EstadoVacio(onEscanear, onAnadirGasto, desplazable = false)
+                    }
+                }
+                return@Column
+            }
+            selectores()
             when {
                 // Cargando: cabecera y selector con el indicador común de carga.
                 grupos == null -> CargandoPantalla(
@@ -180,69 +203,63 @@ fun GastosContenido(
 
 /** Hay tickets en el periodo pero ninguno cumple el filtro: se ofrece volver a "Todos". */
 @Composable
-private fun EstadoVacioFiltro(filtro: FiltroFormaPago, onVerTodos: () -> Unit) {
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("listado_vacio_filtro")) {
-        val altoDisponible = maxHeight
-        EstadoPantalla(
-            titulo = when (filtro) {
-                FiltroFormaPago.EFECTIVO -> "Sin gastos en efectivo en este periodo"
-                FiltroFormaPago.TARJETA -> "Sin gastos con tarjeta en este periodo"
-                FiltroFormaPago.TODOS -> "Sin gastos en este periodo"
-            },
+private fun EstadoVacioFiltro(
+    filtro: FiltroFormaPago,
+    desplazable: Boolean = true,
+    onVerTodos: () -> Unit,
+) {
+    EstadoPantallaDesplazable(
+        titulo = when (filtro) {
+            FiltroFormaPago.EFECTIVO -> "Sin gastos en efectivo en este periodo"
+            FiltroFormaPago.TARJETA -> "Sin gastos con tarjeta en este periodo"
+            FiltroFormaPago.TODOS -> "Sin gastos en este periodo"
+        },
+        modifier = (if (desplazable) Modifier.fillMaxSize() else Modifier).testTag("listado_vacio_filtro"),
+        icono = Icons.Outlined.ReceiptLong,
+        mensaje = "Hay gastos en este periodo con otra forma de pago o sin indicar.",
+        desplazable = desplazable,
+    ) {
+        OutlinedButton(
+            onClick = onVerTodos,
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = altoDisponible),
-            icono = Icons.Outlined.ReceiptLong,
-            mensaje = "Hay gastos en este periodo con otra forma de pago o sin indicar.",
+                .heightIn(min = 48.dp)
+                .testTag("filtro_vaciar"),
         ) {
-            OutlinedButton(
-                onClick = onVerTodos,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .testTag("filtro_vaciar"),
-            ) {
-                Text("Ver todos")
-            }
+            Text("Ver todos")
         }
     }
 }
 
 @Composable
-private fun EstadoVacio(onEscanear: () -> Unit, onAnadirGasto: () -> Unit) {
+private fun EstadoVacio(onEscanear: () -> Unit, onAnadirGasto: () -> Unit, desplazable: Boolean = true) {
     // Con letra grande el contenido no cabe en pantalla: se desplaza y, si cabe, queda centrado
     // (alto mínimo = alto disponible).
-    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("listado_vacio")) {
-        val altoDisponible = maxHeight
-        EstadoPantalla(
-            titulo = "Aún no hay tickets en este periodo",
+    EstadoPantallaDesplazable(
+        titulo = "Aún no hay tickets en este periodo",
+        modifier = (if (desplazable) Modifier.fillMaxSize() else Modifier).testTag("listado_vacio"),
+        icono = Icons.Outlined.ReceiptLong,
+        mensaje = "Escanea un ticket o añade un gasto a mano y aparecerá aquí.",
+        desplazable = desplazable,
+    ) {
+        // Apilados a ancho completo: caben a 360 dp y con letra grande.
+        Button(
+            onClick = onEscanear,
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = altoDisponible),
-            icono = Icons.Outlined.ReceiptLong,
-            mensaje = "Escanea un ticket o añade un gasto a mano y aparecerá aquí.",
+                .heightIn(min = 48.dp)
+                .testTag("boton_escanear_vacio"),
         ) {
-            // Apilados a ancho completo: caben a 360 dp y con letra grande.
-            Button(
-                onClick = onEscanear,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .testTag("boton_escanear_vacio"),
-            ) {
-                Text("Escanear ticket")
-            }
-            OutlinedButton(
-                onClick = onAnadirGasto,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .testTag("gastos_anadir_vacio"),
-            ) {
-                Text("Añadir gasto manualmente", textAlign = TextAlign.Center)
-            }
+            Text("Escanear ticket")
+        }
+        OutlinedButton(
+            onClick = onAnadirGasto,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .testTag("gastos_anadir_vacio"),
+        ) {
+            Text("Añadir gasto manualmente", textAlign = TextAlign.Center)
         }
     }
 }

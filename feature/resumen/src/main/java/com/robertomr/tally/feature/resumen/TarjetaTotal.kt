@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -59,22 +60,26 @@ internal fun TarjetaTotal(
         )
         if (resumen != null) BadgeComparativa(resumen.variacion)
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MicroMetrica(
-                etiqueta = "Promedio diario",
-                valor = resumen?.let { formatoPromedio(it.promedioDiario) } ?: "—",
-                tag = "resumen_promedio",
-                modifier = Modifier.weight(1f),
-            )
-            MicroMetrica(
-                etiqueta = "Tickets",
-                valor = resumen?.let { textoTickets(it.numTickets) } ?: "—",
-                tag = "resumen_num_tickets",
-                modifier = Modifier.weight(1f),
-            )
+        val promedio = resumen?.let { formatoPromedio(it.promedioDiario) } ?: "—"
+        val tickets = resumen?.let { textoTickets(it.numTickets) } ?: "—"
+        // Con fuente muy grande (2,0) dos columnas dejan ~110 dp de texto y las etiquetas
+        // parten en 3 líneas: las métricas se apilan a ancho completo (spec mejoras-visuales-3).
+        if (LocalDensity.current.fontScale > UMBRAL_APILAR_METRICAS) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                MicroMetrica("Promedio diario", promedio, "resumen_promedio", Modifier.fillMaxWidth())
+                MicroMetrica("Tickets", tickets, "resumen_num_tickets", Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MicroMetrica("Promedio diario", promedio, "resumen_promedio", Modifier.weight(1f))
+                MicroMetrica("Tickets", tickets, "resumen_num_tickets", Modifier.weight(1f))
+            }
         }
     }
 }
+
+/** Escala de fuente a partir de la cual las dos micro-métricas se apilan (a 1,3 aún caben en fila). */
+private const val UMBRAL_APILAR_METRICAS = 1.5f
 
 @Composable
 private fun BadgeComparativa(variacion: Double?) {

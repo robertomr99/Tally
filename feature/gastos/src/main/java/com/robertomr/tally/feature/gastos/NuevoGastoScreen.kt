@@ -185,6 +185,8 @@ internal fun NuevoGastoContenido(
             onGuardar = onGuardar,
             guardarHabilitado = ui.error == null && !ui.guardando && !ui.hecho,
             descartarHabilitado = ui.hayCambios && !ui.guardando && !ui.hecho,
+            textoGuardar = "Guardar gasto",
+            mostrarTotalRecalculado = ui.datos.lineas.isNotEmpty(),
         )
     }
 }

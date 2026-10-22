@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `filtro-forma-pago` en `passing` (sesión 070) a la espera de validator; luego `mejoras-visuales-3`; `seed-demo` queda para el final.
+- Current next ready feature: `mejoras-visuales-3` en `passing` (sesión 071) a la espera de validator; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2925,3 +2925,35 @@
   rotacion en dispositivo (por ser ViewModel; no se roto), tablet fisica, TalkBack, `:framework:database` (sin
   cambios de BD).
 - Status: `filtro-forma-pago` = **accepted** (validator independiente: accept; 63 E2E :app en emulator-5556) (listo para validator). Siguiente: `mejoras-visuales-3`.
+
+## Session 071 - mejoras-visuales-3 implementacion (2026-10-22, master)
+
+- Implementado (spec `docs/specs/mejoras-visuales-3.md`, W01-W09; W10/W11 solo verificados): `EstadoPantallaDesplazable`
+  en `common/ComponentesSeccion.kt` (usada por los dos vacios de Gastos, el permiso de camara y el error de captura);
+  borde de 2 dp en `onSecondaryContainer` del segmento activo del selector de periodo en modo dos filas (W01) y
+  `selectableGroup()` en `FiltroFormaPagoSelector` (W05); fallo de Procesado desplazable con botones apilados
+  (Reintentar primero) con `fontScale` > 1,15 y etiqueta de proceso centrada con `PADDING_PANTALLA` (W02);
+  micro-metricas de `TarjetaTotal` apiladas con `fontScale` > 1,5 (W03); `DockEdicion(textoGuardar,
+  mostrarTotalRecalculado)` y Nuevo gasto con "Guardar gasto" y sin "Total recalculado" si no hay lineas (W04);
+  vacios de Gastos con selectores dentro del scroll con `fontScale` > 1,15 (W06); `textoConfirmarBorrado`
+  (gasto manual sin "y su foto", W07); botones de permiso/error/"no existe" con `heightIn(min = 48.dp)` y a ancho
+  completo (W08/W09). W10 (chips de forma de pago) y W11 (boton Galeria): sin defecto visible en las capturas
+  revisadas del boton Galeria a 2,0; se dejan intactos (los chips de pago no se capturaron con datos reales:
+  no hay tickets con forma de pago en el emulador, queda sin verificar visualmente).
+- Sin cambios de dominio, Room, modulos, dependencias ni `build-logic/`; ningun tag cambiado.
+- Tests nuevos (aditivos): `TextoConfirmarBorradoTest` (3, JVM), `FuentesGrandesFlujoTest` (6) y
+  `NuevoGastoDockFlujoTest` (1) en `:app` androidTest.
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test` verde (485 tests, 0 fallos).
+  Instrumentados en emulator-5556: clases nuevas `OK (7 tests)`; aisladas `ListadoGastosVacioTest` 3,
+  `FiltroFormaPago*Test` 7, `ProcesadoFlujoTest` 3, `RevisionDatosFlujoTest` 3, todas OK. Suite completa
+  (sin *RealTest): 70 tests, 1 fallo: `GastoManualFlujoTest.altaDetalleEdicionYBorradoDeUnGastoManual` (espera
+  `detalle_ticket_<id>` tras pulsar el ticket, linea 145). **Reproducido identico sobre el arbol sin cambios**
+  (git stash, build e instalacion del baseline): es previo a esta feature; causa sin diagnosticar.
+  El build de androidTest dio OOM de D8 con paralelismo por defecto; se resolvio con `--max-workers=2`.
+- Capturas antes/despues en `docs/evidence/mejoras-visuales-3/` (README con lectura honesta). Emulador restaurado
+  (`wm size`/`density` reset, font_scale 1.0, rotacion intacta, permiso de camara re-concedido).
+  No se instalo nada en la Tab fisica ni se leyo ningun token.
+- NO verificado: revision visual humana de las imagenes (solo las mire yo), TalkBack, dialogo "Eliminar modelo",
+  `captura_error` real, transiciones, motores reales, tablet fisica, camara real de papel, dialogo de borrado de
+  un manual en pantalla (solo JVM), borde W01 sin test automatico (captura + codigo).
+- Status: `mejoras-visuales-3` = **accepted** (validator independiente: accept; JVM 486 OK, E2E 70 OK en emulator-5556; flaky de GastoManualFlujoTest = tickets basura en la BD del emulador). Seguimiento: limpieza en @After de las pruebas que dejan tickets vacios. Siguiente: `seed-demo` (al final).

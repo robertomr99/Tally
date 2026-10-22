@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.ReceiptLong
@@ -42,7 +43,7 @@ fun FiltroFormaPagoSelector(
     modifier: Modifier = Modifier,
 ) {
     FlowRow(
-        modifier = modifier.testTag("filtro_pago"),
+        modifier = modifier.selectableGroup().testTag("filtro_pago"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

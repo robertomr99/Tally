@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
@@ -69,6 +70,7 @@ import com.robertomr.tally.feature.common.FilaRecibo
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.PAPEL_ANCHO_MAXIMO
 import com.robertomr.tally.feature.common.PagoEnPapel
+import com.robertomr.tally.feature.common.UMBRAL_APILAR_BOTONES
 import com.robertomr.tally.feature.common.PapelTicket
 import com.robertomr.tally.feature.common.SeparadorPunteado
 import com.robertomr.tally.feature.common.importeDeLinea
@@ -256,68 +258,106 @@ fun ExtraccionFallidaContent(
         CabeceraDeProceso(motor = motor, estado = EstadoBadge.FALLIDO)
         PasosDeProceso(categorizacion = EstadoPaso.FALLIDO)
 
-        EstadoPantalla(
-            titulo = "No se pudieron extraer los datos",
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            icono = Icons.Outlined.ErrorOutline,
-            colorIcono = MaterialTheme.colorScheme.error,
-            mensaje = mensaje,
-            colorMensaje = MaterialTheme.colorScheme.error,
-            mensajeModifier = Modifier.testTag("procesado_error"),
-        ) {
-            Text(
-                text = "La foto y el texto del ticket siguen guardados.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        BotonOtroMotor(
-            otro = otro,
-            onClick = onReintentarOtro,
-            modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp),
-        )
-        if (hayAnterior) {
-            TextButton(
-                onClick = onVolverAnterior,
-                modifier = Modifier
-                    .padding(horizontal = PADDING_PANTALLA)
-                    .testTag("procesado_volver_anterior"),
+        // Con letra grande (> UMBRAL_APILAR_BOTONES) el cuerpo se desplaza y los botones
+        // inferiores se apilan a ancho completo (Reintentar primero); a letra normal, el
+        // diseño de siempre: cuerpo centrado y fila 1:1.
+        val apilar = LocalDensity.current.fontScale > UMBRAL_APILAR_BOTONES
+        val estadoFallo: @Composable (Modifier) -> Unit = { modificador ->
+            EstadoPantalla(
+                titulo = "No se pudieron extraer los datos",
+                modifier = modificador,
+                icono = Icons.Outlined.ErrorOutline,
+                colorIcono = MaterialTheme.colorScheme.error,
+                mensaje = mensaje,
+                colorMensaje = MaterialTheme.colorScheme.error,
+                mensajeModifier = Modifier.testTag("procesado_error"),
             ) {
-                Text(text = "Volver al resultado anterior")
+                Text(
+                    text = "La foto y el texto del ticket siguen guardados.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        val botonOtro: @Composable () -> Unit = {
+            BotonOtroMotor(
+                otro = otro,
+                onClick = onReintentarOtro,
+                modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp),
+            )
+        }
+        val botonAnterior: @Composable () -> Unit = {
+            if (hayAnterior) {
+                TextButton(
+                    onClick = onVolverAnterior,
+                    modifier = Modifier
+                        .padding(horizontal = PADDING_PANTALLA)
+                        .heightIn(min = 48.dp)
+                        .testTag("procesado_volver_anterior"),
+                ) {
+                    Text(text = "Volver al resultado anterior", textAlign = TextAlign.Center)
+                }
+            }
+        }
+        val botonVolverFoto: @Composable (Modifier) -> Unit = { modificador ->
             OutlinedButton(
                 onClick = onVolverALaFoto,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
+                modifier = modificador
+                    .heightIn(min = 48.dp)
                     .testTag("procesado_volver_foto"),
                 shape = RoundedCornerShape(9999.dp),
             ) {
-                Text(text = "Volver a la foto")
+                Text(text = "Volver a la foto", textAlign = TextAlign.Center)
             }
+        }
+        val botonReintentar: @Composable (Modifier) -> Unit = { modificador ->
             Button(
                 onClick = onReintentar,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp)
+                modifier = modificador
+                    .heightIn(min = 48.dp)
                     .testTag("procesado_reintentar"),
                 shape = RoundedCornerShape(9999.dp),
                 colors = ButtonDefaults.buttonColors(),
             ) {
-                Text(text = "Reintentar")
+                Text(text = "Reintentar", textAlign = TextAlign.Center)
+            }
+        }
+
+        if (apilar) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                estadoFallo(Modifier.fillMaxWidth())
+                botonOtro()
+                botonAnterior()
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                botonReintentar(Modifier.fillMaxWidth())
+                botonVolverFoto(Modifier.fillMaxWidth())
+            }
+        } else {
+            estadoFallo(Modifier.weight(1f).fillMaxWidth())
+            botonOtro()
+            botonAnterior()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 8.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                botonVolverFoto(Modifier.weight(1f))
+                botonReintentar(Modifier.weight(1f))
             }
         }
     }
@@ -345,7 +385,7 @@ private fun BotonOtroMotor(
             enabled = disponible,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .heightIn(min = 48.dp)
                 .testTag("procesado_reintentar_otro"),
             shape = RoundedCornerShape(9999.dp),
         ) {
@@ -394,7 +434,7 @@ private fun CabeceraDeProceso(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.padding(top = 4.dp),
+        modifier = modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, top = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -448,6 +488,7 @@ private fun CabeceraDeProceso(
             style = MaterialTheme.typography.labelSmall,
             // onSurfaceVariant (no outline): el texto de 11 sp necesita contraste AA (V23).
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
             modifier = Modifier.testTag("procesado_proceso"),
         )
     }
@@ -838,7 +879,7 @@ private fun BotonCancelar(
     OutlinedButton(
         onClick = onCancelar,
         modifier = modifier
-            .height(48.dp)
+            .heightIn(min = 48.dp)
             .testTag("procesado_cancelar"),
         shape = RoundedCornerShape(9999.dp),
     ) {

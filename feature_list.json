@@ -587,15 +587,22 @@
     "id": "mejoras-visuales-3",
     "area": "diseno",
     "title": "Mejoras visuales (3): fuentes grandes y deuda de accesibilidad",
-    "user_visible_behavior": "Las pantallas siguen siendo legibles y utilizables con fuente al doble de tamaño: fallo de Procesado sin botones cortados, tarjeta de Resumen sin textos partidos y selector de periodo con indicador de estado no solo por color.",
+    "user_visible_behavior": "Las pantallas siguen siendo legibles y utilizables con fuente al doble de tamaño: fallo de Procesado sin botones cortados, tarjeta de Resumen sin textos partidos y selector de periodo con indicador de estado no solo por color; Nuevo gasto sin total recalculado engañoso (\"Guardar gasto\"), vacío de Gastos alcanzable con fuente grande y diálogo de borrado correcto para un gasto manual.",
     "depends_on": ["mejoras-visuales-2"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Capturas antes/después en fontScale 1,3 y 2,0 en móvil, 360 dp y tablet horizontal en emulator-5556",
       "Selector de periodo en modo dos filas: segmento activo identificable sin depender solo del color (borde u otro indicador) con contraste no textual suficiente",
-      "Suite :app y JVM en verde sin debilitar tests; tags conservados"
+      "Suite :app y JVM en verde sin debilitar tests; tags conservados",
+      "Nuevo gasto: botón 'Guardar gasto' y total recalculado solo con líneas; vacío de Gastos alcanzable con un scroll a 2,0; diálogo de borrado de gasto manual sin 'y su foto'"
     ],
-    "evidence": [],
+    "evidence": [
+      "gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test verde: 485 tests, 0 fallos (incluye TextoConfirmarBorradoTest 3)",
+      "emulator-5556: FuentesGrandesFlujoTest 6 + NuevoGastoDockFlujoTest 1 OK; ListadoGastosVacioTest 3, FiltroFormaPago*Test 7, ProcesadoFlujoTest 3, RevisionDatosFlujoTest 3 OK aisladas",
+      "Suite :app completa (sin *RealTest): 70 tests, 1 fallo GastoManualFlujoTest.altaDetalleEdicionYBorradoDeUnGastoManual (espera detalle_ticket_<id>), reproducido identico en el arbol sin cambios: previo, sin diagnosticar",
+      "Capturas antes/despues en docs/evidence/mejoras-visuales-3/ (revision humana pendiente); W10 y W11 sin cambios; borde W01 sin test automatico",
+      "No verificado: TalkBack, dialogo Eliminar modelo, captura_error real, transiciones, motores reales, tablet fisica, camara real, chips de pago con datos reales"
+    ],
     "notes": "Seguimientos del validator de mejoras-visuales-2: (1) selector en dos filas (fontScale > 1,1) sin check del segmento activo: anadir borde de 1,5 dp en onSecondaryContainer en modo apilado; (2) fallo de Procesado a fontScale 2,0: 'Probar con Local', 'Volver a la foto' y 'Reintentar' cortados, texto tapado por los botones, etiqueta de proceso pegada al borde: apilar con UMBRAL_APILAR_BOTONES, scroll o weight y aplicar PADDING_PANTALLA; (3) 'Promedio diario' en tres lineas a 2,0. Candidatos que requieren decision de diseno del usuario y siguen diferidos (V26-V30 de docs/specs/mejoras-visuales.md): campos del papel solo con subrayado, snackbar de confirmacion, transicion interna de Escanear, dock en movil horizontal, aviso al salir de la Revision con la barra inferior. Sin verificar visualmente en F2: dialogo Eliminar modelo, captura_error, transiciones y TalkBack."
   },
   {
