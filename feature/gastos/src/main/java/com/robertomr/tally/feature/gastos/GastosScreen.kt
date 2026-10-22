@@ -34,7 +34,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.robertomr.tally.domain.expenses.entities.FiltroFormaPago
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
+import com.robertomr.tally.feature.common.FiltroFormaPagoSelector
 import com.robertomr.tally.feature.common.CabeceraDia
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.CargandoPantalla
@@ -66,6 +68,7 @@ fun GastosScreen(
         onTicketClick = onTicketClick,
         onEscanear = onEscanear,
         onAnadirGasto = onAnadirGasto,
+        onSeleccionarFiltro = viewModel::onSeleccionarFiltro,
     )
 }
 
@@ -81,6 +84,7 @@ fun GastosContenido(
     onTicketClick: (Long) -> Unit,
     onEscanear: () -> Unit,
     onAnadirGasto: () -> Unit = {},
+    onSeleccionarFiltro: (FiltroFormaPago) -> Unit = {},
 ) {
     val estado = rememberGastosState()
     ColumnaCentrada(
@@ -121,6 +125,11 @@ fun GastosContenido(
                 onSeleccionarRango = onSeleccionarRango,
                 modifier = Modifier.padding(horizontal = PADDING_PANTALLA, vertical = 12.dp),
             )
+            FiltroFormaPagoSelector(
+                seleccionado = ui.filtro,
+                onSeleccionar = onSeleccionarFiltro,
+                modifier = Modifier.padding(start = PADDING_PANTALLA, end = PADDING_PANTALLA, bottom = 8.dp),
+            )
 
             val grupos = ui.grupos
             when {
@@ -129,6 +138,8 @@ fun GastosContenido(
                     modifier = Modifier.weight(1f),
                     indicadorModifier = Modifier.testTag("listado_cargando"),
                 )
+                grupos.isEmpty() && ui.hayTicketsEnPeriodo ->
+                    EstadoVacioFiltro(ui.filtro) { onSeleccionarFiltro(FiltroFormaPago.TODOS) }
                 grupos.isEmpty() -> EstadoVacio(onEscanear, onAnadirGasto)
                 else -> LazyColumn(
                     state = estado.lista,
@@ -162,6 +173,37 @@ fun GastosContenido(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/** Hay tickets en el periodo pero ninguno cumple el filtro: se ofrece volver a "Todos". */
+@Composable
+private fun EstadoVacioFiltro(filtro: FiltroFormaPago, onVerTodos: () -> Unit) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize().testTag("listado_vacio_filtro")) {
+        val altoDisponible = maxHeight
+        EstadoPantalla(
+            titulo = when (filtro) {
+                FiltroFormaPago.EFECTIVO -> "Sin gastos en efectivo en este periodo"
+                FiltroFormaPago.TARJETA -> "Sin gastos con tarjeta en este periodo"
+                FiltroFormaPago.TODOS -> "Sin gastos en este periodo"
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = altoDisponible),
+            icono = Icons.Outlined.ReceiptLong,
+            mensaje = "Hay gastos en este periodo con otra forma de pago o sin indicar.",
+        ) {
+            OutlinedButton(
+                onClick = onVerTodos,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("filtro_vaciar"),
+            ) {
+                Text("Ver todos")
             }
         }
     }

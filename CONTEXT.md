@@ -20,6 +20,11 @@ Cómo se pagó un ticket: **Efectivo**, **Tarjeta** o **No indicada** (también
 para bizum, vale o pago mixto y para los tickets anteriores a la función). Es
 solo información: no cambia el importe que cuenta el ticket.
 
+### Filtro de forma de pago
+Control **Todos / Efectivo / Tarjeta** de la pestaña Gastos. Solo afecta al
+listado (Resumen y donut no cambian) y se combina con el periodo. **No indicada**
+solo aparece en Todos. Vive mientras vive la pantalla; no se guarda entre sesiones.
+
 ### Entregado
 Importe que el cliente dio en efectivo (p. ej. 50,00 €). Solo existe con forma
 de pago Efectivo. **No es el total**: el total es lo que cuesta el ticket.

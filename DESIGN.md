@@ -242,6 +242,12 @@ de sombras.
     con icono + texto + check en una línea. Con Efectivo aparecen los campos
     "Entregado (€)" y "Cambio (€)" (teclado decimal, formato es-ES como el total) y,
     si no cuadran, un aviso de texto con icono, no bloqueante.
+  - Filtro del listado (`filtro-forma-pago`, `FiltroFormaPagoSelector.kt`): tres `FilterChip`
+    de selección única (Todos / Efectivo / Tarjeta, `Role.RadioButton` + `selected`) bajo el
+    `PeriodoSelector`, con el mismo margen de pantalla. Alto ≥ 48 dp, icono de la forma + texto;
+    el activo lleva check y `secondary-container` (como el selector de periodo), el resto borde
+    de contorno. `FlowRow`: con letra grande los chips pasan a la fila siguiente sin recortarse.
+    Extensión coherente sin mockup Stitch. Sin coincidencias: vacío propio con botón "Ver todos".
   - Papel de solo lectura (resultado del procesado): bajo el total, filas
     "Entregado" y "Cambio" en tipografía de recibo y una línea con icono
     "Pagado en efectivo" / "Pagado con tarjeta". Con No indicada no se pinta nada.

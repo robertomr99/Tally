@@ -626,12 +626,17 @@
     "title": "Filtrar el listado de gastos por forma de pago",
     "user_visible_behavior": "En Gastos se puede filtrar por Todos, Efectivo o Tarjeta, combinado con el selector de periodo y el rango, con estado vacío coherente.",
     "depends_on": ["forma-pago"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "El filtro y el periodo se combinan y el listado refleja exactamente los tickets esperados (con semilla de prueba)",
       "Estado vacío coherente y filtro conservado al volver del detalle"
     ],
-    "evidence": [],
+    "evidence": [
+      "Sesion 070 (implementer): gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test en verde (FiltroFormaPagoTest 3, FiltrarTicketsPorFormaPagoTest 5, GastosViewModelTest 12 incl. 5 nuevos: por defecto TODOS, tarjeta/efectivo sin NO_INDICADA con totales por dia, interseccion con Dia/Semana/Mes/rango y filtro conservado, hayTicketsEnPeriodo, reactividad)",
+      "emulator-5556: installDebug installDebugAndroidTest y am instrument: FiltroFormaPagoFlujoTest 4 + FiltroFormaPagoVacioTest 3 OK (7 tests); suite :app completa con -e notClass los *RealTest OK (63 tests). Semilla propia (3 tickets de hoy, comercio unico) borrada en @After; filtro conservado tras detalle, Nuevo gasto y ida y vuelta por la barra inferior; resumen_suma identico antes y despues de filtrar",
+      "docs/evidence/filtro-forma-pago/ (5 capturas ligeras: Todos, Efectivo y Tarjeta con vacio por filtro, 360 dp a letra 2,0, tablet 800 dp + README); wm size/density, font_scale y user_rotation restaurados",
+      "NO verificado: lista con Efectivo/Tarjeta en captura (emulador sin tickets con forma de pago; cubierto por E2E), vacio por filtro con datos reales (estado fijo), rotacion en dispositivo, tablet fisica, TalkBack, :framework:database (sin cambios de BD), ExtraccionLocal/NubeRealTest"
+    ],
     "notes": "Petición del usuario (2026-10-20). Decisión del planner con default: si el filtro afecta también a Resumen (por defecto solo al listado)."
   },
   {

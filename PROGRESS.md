@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `gasto-manual` en `passing` (sesión 069) a la espera de validator; luego `filtro-forma-pago`, `mejoras-visuales-3`; `seed-demo` queda para el final.
+- Current next ready feature: `filtro-forma-pago` en `passing` (sesión 070) a la espera de validator; luego `mejoras-visuales-3`; `seed-demo` queda para el final.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -2903,3 +2903,25 @@
   `:domain:expenses:test`. Gastos manuales del mismo día se ordenan al final (00:00).
 - NO verificado: tablet real, TalkBack, donut/resumen con un manual en pantalla (sin aserción propia).
 - Status: `gasto-manual` = **accepted** (validator independiente: accept; 470 JVM, 56 E2E :app, 40 :framework:database en emulator-5556). Desviacion aceptada: Snackbar "Gasto guardado". Siguiente: `filtro-forma-pago`.
+
+## Session 070 - filtro-forma-pago implementacion (2026-10-22, master)
+
+- Implementado (spec `docs/specs/filtro-forma-pago.md`, decisiones 1-7): dominio `FiltroFormaPago` (TODOS/EFECTIVO/
+  TARJETA con `admite`; NO_INDICADA solo con TODOS) y `FiltrarTicketsPorFormaPago`; `GastosViewModel` con
+  `MutableStateFlow<FiltroFormaPago>` combinado con la seleccion de periodo, `GastosUiState.filtro` y
+  `hayTicketsEnPeriodo`, `onSeleccionarFiltro`; el constructor pasa de `ObservarListadoDelPeriodo` a
+  `ObservarTicketsDelPeriodo` + `FiltrarTicketsPorFormaPago` + `AgruparTicketsPorDia` (`ObservarListadoDelPeriodo`
+  intacto, lo sigue usando quien lo usaba). UI: `FiltroFormaPagoSelector` (FilterChips en `FlowRow`, >= 48 dp,
+  check en el activo) en `:feature:common`, bajo el `PeriodoSelector`; vacio por filtro `listado_vacio_filtro`
+  con "Ver todos" (`filtro_vaciar`). Sin cambios de Room, modulos, dependencias ni `build-logic/`.
+- `TallyApp.navigateTo` usa `popUpTo(start){saveState}` + `restoreState`: el ViewModel de la entrada Gastos se
+  conserva en la barra inferior (verificado por E2E: Resumen y vuelta mantiene el chip) y por detalle/Nuevo gasto.
+- Verificacion: `gradlew.bat assembleDebug testDebugUnitTest :domain:expenses:test` verde (FiltroFormaPagoTest 3,
+  FiltrarTicketsPorFormaPagoTest 5, GastosViewModelTest 12 = 7 + 5 nuevos). E2E en emulator-5556 (lanzado desde
+  `Pixel_10_Pro -port 5556`; Tab fisica no tocada): `FiltroFormaPagoFlujoTest` 4 + `FiltroFormaPagoVacioTest` 3 y
+  suite `:app` completa sin los *RealTest `OK (63 tests)`. Evidencia en `docs/evidence/filtro-forma-pago/README.md`.
+- NO verificado: lista con tickets Efectivo/Tarjeta en captura (el emulador solo tiene residuales sin forma de
+  pago; esa parte la cubre el E2E con semilla propia), vacio por filtro con la UI real (se prueba con estado fijo),
+  rotacion en dispositivo (por ser ViewModel; no se roto), tablet fisica, TalkBack, `:framework:database` (sin
+  cambios de BD).
+- Status: `filtro-forma-pago` = **accepted** (validator independiente: accept; 63 E2E :app en emulator-5556) (listo para validator). Siguiente: `mejoras-visuales-3`.

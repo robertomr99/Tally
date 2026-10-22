@@ -2,10 +2,13 @@ package com.robertomr.tally.feature.gastos
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.robertomr.tally.domain.expenses.entities.FiltroFormaPago
 import com.robertomr.tally.domain.expenses.entities.GrupoDiaTickets
 import com.robertomr.tally.domain.expenses.entities.Periodo
 import com.robertomr.tally.domain.expenses.entities.PeriodoTipo
-import com.robertomr.tally.domain.expenses.usecases.ObservarListadoDelPeriodo
+import com.robertomr.tally.domain.expenses.usecases.AgruparTicketsPorDia
+import com.robertomr.tally.domain.expenses.usecases.FiltrarTicketsPorFormaPago
+import com.robertomr.tally.domain.expenses.usecases.ObservarTicketsDelPeriodo
 import com.robertomr.tally.domain.expenses.usecases.ObtenerPeriodo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -13,6 +16,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -32,6 +36,10 @@ data class GastosUiState(
     val hoy: LocalDate = LocalDate.now(),
     /** Último rango personalizado elegido (precarga el picker); `null` si nunca hubo. */
     val rango: Periodo? = null,
+    /** Filtro de forma de pago activo (solo afecta al listado, no a Resumen). */
+    val filtro: FiltroFormaPago = FiltroFormaPago.TODOS,
+    /** El período tiene tickets antes de filtrar: distingue el vacío real del vacío por filtro. */
+    val hayTicketsEnPeriodo: Boolean = false,
 )
 
 /**
@@ -45,18 +53,33 @@ data class GastosUiState(
 @HiltViewModel
 class GastosViewModel @Inject constructor(
     private val obtenerPeriodo: ObtenerPeriodo,
-    private val observarListadoDelPeriodo: ObservarListadoDelPeriodo,
+    private val observarTicketsDelPeriodo: ObservarTicketsDelPeriodo,
+    private val filtrarPorFormaPago: FiltrarTicketsPorFormaPago,
+    private val agruparPorDia: AgruparTicketsPorDia,
 ) : ViewModel() {
 
     private val seleccion = MutableStateFlow(Seleccion())
 
-    val uiState: StateFlow<GastosUiState> = seleccion
-        .flatMapLatest { (tipo, rango) ->
+    /** Vive en el ViewModel (no en el estado visual): sobrevive a detalle, Nuevo gasto y rotación. */
+    private val filtro = MutableStateFlow(FiltroFormaPago.TODOS)
+
+    val uiState: StateFlow<GastosUiState> = combine(seleccion, filtro) { sel, f -> sel to f }
+        .flatMapLatest { (sel, filtroActivo) ->
+            val (tipo, rango) = sel
             val periodo = obtenerPeriodo(tipo, rango)
             // El período Día es el de hoy: su `desde` es la fecha del reloj inyectado.
             val hoy = obtenerPeriodo(PeriodoTipo.DIA).desde
-            observarListadoDelPeriodo(periodo).map { grupos ->
-                GastosUiState(cargando = false, tipo = tipo, periodo = periodo, grupos = grupos, hoy = hoy, rango = rango)
+            observarTicketsDelPeriodo(periodo).map { tickets ->
+                GastosUiState(
+                    cargando = false,
+                    tipo = tipo,
+                    periodo = periodo,
+                    grupos = agruparPorDia(filtrarPorFormaPago(tickets, filtroActivo)),
+                    hoy = hoy,
+                    rango = rango,
+                    filtro = filtroActivo,
+                    hayTicketsEnPeriodo = tickets.isNotEmpty(),
+                )
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), GastosUiState())
@@ -69,6 +92,11 @@ class GastosViewModel @Inject constructor(
         seleccion.update { actual ->
             if (tipo == PeriodoTipo.PERSONALIZADO && actual.rango == null) actual else actual.copy(tipo = tipo)
         }
+    }
+
+    /** Todos / Efectivo / Tarjeta; no se reinicia al cambiar de período o rango. */
+    fun onSeleccionarFiltro(nuevo: FiltroFormaPago) {
+        filtro.value = nuevo
     }
 
     /** Rango inclusivo elegido en el picker; un rango invertido (desde > hasta) se ignora. */
