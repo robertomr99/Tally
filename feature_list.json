@@ -719,14 +719,20 @@
     "title": "Datos de demo sembrados (build debug)",
     "user_visible_behavior": "En build debug, un control siembra tickets de varias categorías y períodos (más un ticket 'malo' para demostrar la corrección) para la demo en directo.",
     "depends_on": ["persistencia-room", "grafica-donut"],
-    "status": "not_started",
+    "status": "accepted",
     "verification": [
       "Sembrado idempotente (repetir no duplica)",
       "La demo puede hacerse sin red con los datos sembrados",
       "No activo en build release"
     ],
-    "evidence": [],
-    "notes": "Preparación de la demo según plan de validación (docs/build-brief.md)."
+    "evidence": [
+      "Sesion 073: JVM verde (:feature:ajustes 46 tests, 27 nuevos: generador, casos de uso con aislamiento, ViewModel con doble toque); assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test OK",
+      "E2E SembrarDemoFlujoTest 3/3 y suite completa 81/81 (sin *RealTest) en emulator-5556; tickets reales identicos tras sembrar/repetir/quitar/editar el malo",
+      "assembleRelease OK; 5 classes*.dex sin GeneradorDatosDemo, DatosDemoViewModel ni 'tally-demo' (solo el stub vacio SeccionDatosDemo)",
+      "Capturas y README en docs/evidence/seed-demo/ (360 dp + fontScale 2.0, tablet). NO verificado: modo avion/sin red, TalkBack, release instalada, revision visual humana",
+      "Validator independiente: ACCEPT (comportamiento, alcance, arquitectura, seguridad y docs conformes; rerun :feature:ajustes:testDebugUnitTest y compileReleaseKotlin BUILD SUCCESSFUL)"
+    ],
+    "notes": "Codigo en src/debug de :feature:ajustes con stub en src/release (desviacion D3 confirmada por el usuario); marca nota=tally-demo:v1:<clave>; ActualizarTicket conserva nota (un demo editado sigue siendo de demo)."
   },
   {
     "id": "papel-ticket",

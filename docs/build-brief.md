@@ -74,7 +74,11 @@ Flujo vertical completo, de punta a punta, en dos dispositivos reales:
 - Preparar ~10 tickets reales de distintos comercios/categorías + un ticket
   deliberadamente "malo" (arrugado, borroso) para demostrar la vía de
   reintento y corrección manual sin bloqueo.
-- Datos de demo sembrados (tickets falsos) por si la IA en directo falla.
+- Datos de demo sembrados (tickets falsos) por si la IA en directo falla: en la build
+  debug, Ajustes > "Datos de demo" > "Sembrar datos de demo" crea 13 gastos falsos
+  (6 categorías, 3 formas de pago, 2 manuales y el ticket "Comercio ilegible" para
+  corregir a mano) y "Quitar datos de demo" los borra sin tocar tickets reales
+  (`seed-demo`).
 - Comprobación de la vía manual: extracción vacía → rellenar a mano → guardar.
 
 ## Success Criteria

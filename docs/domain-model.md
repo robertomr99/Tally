@@ -2,7 +2,8 @@
 
 ## Core Concepts
 
-- **Ticket**: agregado raíz. Campos: comercio, fecha/hora de emisión, total
+- **Ticket**: agregado raíz. (`nota` queda reservada por la marca `tally-demo:v1:<clave>` de los
+  datos de demo de la build debug, `seed-demo`; en los tickets reales siempre es `null`.) Campos: comercio, fecha/hora de emisión, total
   (editable), categoría, nota opcional, fecha de captura, motor usado en la
   extracción, ruta de la foto, texto crudo del OCR, forma de pago y, solo en
   efectivo, importe entregado y cambio (`forma-pago`). Un **gasto manual**

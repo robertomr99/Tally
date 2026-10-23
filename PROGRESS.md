@@ -9,7 +9,7 @@
 - Emulador de referencia: `emulator-5554` (sdk_gphone64_x86_64; adb en
   `C:/Users/Roberto/AppData/Local/Android/Sdk/platform-tools`). Tab S9+ y
   realme GT 2 se reservan para `captura-foto` y `spike-gemma-mediapipe`.
-- Current next ready feature: `gasto-manual-2` en `passing` (sesión 072) a la espera de validator; `seed-demo` queda para el final.
+- Current next ready feature: ninguna; `seed-demo` quedó `accepted` (validator independiente, sesión 074) y todas las features de `feature_list.json` están `accepted`.
 - Deuda abierta fuera de features: los E2E existentes dejan tickets vacíos en el emulador; `EscanearViewModelTest` intermitente; revisión editable aún con aspecto de formulario.
   `edicion-lineas` quedó **`accepted`** en la sesión 028 (validator independiente).
   `revision-datos` quedó **`accepted`** en la sesión 026. `captura-recorte-encuadre` quedó `accepted`
@@ -3002,3 +3002,13 @@
 - NO verificado: TalkBack, ticket escaneado real con IA, tablet fisica, formulario completo en tablet, "antes" a fontScale 1,3 y tablet,
   revision visual humana de las capturas.
 - Status: `gasto-manual-2` = **accepted** (validator independiente: accept; JVM 527 OK; E2E por paquetes en emulator-5556 OK; GaleriaFlujoTest flaky de entorno, aislado OK). Notas: total del papel que difiere <=0,01 de la suma se abre automatico (B3); en automatico con conceptos vacios el total pasa a 0 (aviso visible). Siguiente: `seed-demo` (al final).
+
+### Session 073
+
+- Feature: `seed-demo` (spec `docs/specs/seed-demo.md`). Desviación D3 confirmada por el usuario: casos de uso, generador y ViewModel en el source set `debug` de `:feature:ajustes` (`.../ajustes/demo/`) con stub vacío en `src/release`; no van en `domain/usecases`.
+- Verificado de lo no inspeccionado: `ActualizarTicket` conserva `nota` (copy del original); Detalle no muestra `nota`; `PhotoFileStoreImpl.delete("")` devuelve false sin tocar nada; semana lunes-domingo (`TemporalAdjusters.previousOrSame(MONDAY)`); `assembleRelease` funciona sin firma (apk unsigned); `@HiltViewModel` en `src/debug` de una librería funciona (assembleDebug y E2E).
+- Implementado: marca `nota = tally-demo:v1:<clave>` (13 tickets D01..D13, ticket malo D13 "Comercio ilegible"); `SembrarDatosDemo` (idempotente por clave, repone solo los que faltan), `QuitarDatosDemo` (solo marcados, por id), `ObservarDatosDemo`, `DatosDemoViewModel`, `SeccionDatosDemo` (tarjeta en Ajustes tras Diagnóstico, diálogos de confirmación, liveRegion). Un demo editado conserva la marca y Quitar lo borra (se avisa en la UI).
+- Tests: `GeneradorDatosDemoTest` (10), `DatosDemoUseCasesTest` (10, incl. aislamiento con reales del mismo comercio/fecha y nota parecida), `DatosDemoViewModelTest` (7, doble toque); E2E `SembrarDemoFlujoTest` (3) que comprueba que los tickets reales no cambian. Sin cambios en Room, módulos, dependencias, libs.versions ni build-logic.
+- Verificación: `assembleDebug testDebugUnitTest :domain:expenses:test :test:unit:test` verde; `:app:assembleRelease` OK y 5 dex sin `GeneradorDatosDemo`/`DatosDemoViewModel`/`tally-demo` (solo el stub). Emulator-5556 (instalación con ANDROID_SERIAL): suite completa sin *RealTest 81/81 OK (2251 s). Capturas y README en `docs/evidence/seed-demo/`. Emulador restaurado (wm size/density reset, font_scale 1.0, rotación 0) y sin datos de demo.
+- NO verificado: modo avión/sin red en el emulador, TalkBack, revisión visual humana, release instalada en dispositivo, Tab física. No se borraron por la UI los tickets vacíos residuales previos (la suite pasó igualmente).
+- Docs: `docs/build-brief.md`, `docs/architecture.md`, `docs/domain-model.md`. Status: `seed-demo` = **passing**, pendiente de validator independiente.

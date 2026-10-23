@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
 import android.content.pm.ApplicationInfo
 import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
+import com.robertomr.tally.feature.ajustes.demo.SeccionDatosDemo
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
@@ -163,6 +164,8 @@ internal fun AjustesContent(
                             onCopiarCsv = onCopiarCsv,
                             onBorrar = onBorrarRegistro,
                         )
+                        // Datos de demo (spec seed-demo): en release es un stub vacio.
+                        SeccionDatosDemo()
                     }
                 }
             }

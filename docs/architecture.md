@@ -411,6 +411,11 @@ app ──────────► feature:* ──────────�
   y `TarjetaSinFoto`. `:app`: ruta `gasto/nuevo` (`TallyRoute.NuevoGasto`), barra inferior oculta, transición
   deslizante y un `SnackbarHost` en el `Scaffold` para el aviso de guardado; las pantallas solo reciben callbacks
   (`onAnadirGasto`, `onBack`, `onGastoGuardado(fecha)`). Sin módulos ni dependencias nuevos.
+- Datos de demo (`seed-demo`, solo build debug): el código vive en el source set `debug` de
+  `:feature:ajustes` (`.../ajustes/demo/`: generador, casos de uso, `DatosDemoViewModel` y sección) con un stub
+  vacío en `src/release`, así que ni UI, ni generador ni marca existen en el APK release. Es una desviación
+  confirmada de "casos de uso en `domain`". Los tickets se marcan con `nota = "tally-demo:v1:<clave>"` (sin
+  migración); "Quitar" filtra en memoria por esa marca y borra por id, nunca por rango ni comercio.
 
 ## Convenciones de build
 
