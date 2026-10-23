@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Reparto por categoría (spec grafica-donut, T1). */
+/** Reparto por categoría (spec grafica-donut). */
 class CalcularDistribucionCategoriasTest {
 
     private val calcular = CalcularDistribucionCategorias()

@@ -836,7 +836,7 @@ class EscanearViewModel @Inject constructor(
 
 /**
  * Como `runCatching`, pero re-lanza SIEMPRE la [CancellationException]
- * (finding Low sesion 014 / R-OCR4 / R-PROC4 / R-REV4): cancelar no es un fallo
+ * (R-OCR4 / R-PROC4 / R-REV4): cancelar no es un fallo
  * de negocio y no debe convertirse en resultado.
  */
 private inline fun <T> runCatchingLanzandoCancelacion(block: () -> T): Result<T> =

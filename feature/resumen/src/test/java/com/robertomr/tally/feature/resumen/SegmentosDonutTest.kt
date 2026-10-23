@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Geometría pura del donut (spec grafica-donut, T4). */
+/** Geometría pura del donut (spec grafica-donut). */
 class SegmentosDonutTest {
 
     private fun porcion(fraccion: Double, categoria: Categoria = Categoria.OTROS) =

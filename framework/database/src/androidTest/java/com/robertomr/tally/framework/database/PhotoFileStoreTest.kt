@@ -127,7 +127,7 @@ class PhotoFileStoreTest {
         // Escenario 2 del spec: la foto esta en disco en el momento de la
         // captura (nombre relativo); aqui se comprueba que el fichero existe
         // fisicamente bajo filesDir (la persistencia tras force-stop se
-        // verifica en el dispositivo; ver PROGRESS.md).
+        // verifica en el dispositivo).
         val ruta = store.save(byteArrayOf(5, 5))
         guardados += ruta
 

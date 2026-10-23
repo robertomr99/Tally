@@ -40,7 +40,6 @@ dependencies {
     testImplementation(libs.coroutines.test)
 
     // Harness instrumentado sin UI del spike (se ejecuta a mano con la Tab S9+).
-    androidTestImplementation(libs.coroutines.core)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)

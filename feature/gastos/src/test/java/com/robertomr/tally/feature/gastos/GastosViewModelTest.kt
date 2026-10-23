@@ -30,7 +30,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests JVM de [GastosViewModel] (spec listado-gastos, T5). Hoy = jueves
+ * Tests JVM de [GastosViewModel] (spec listado-gastos). Hoy = jueves
  * 2026-10-15; semana 12..18 oct; mes 1..31 oct.
  */
 class GastosViewModelTest {
@@ -128,7 +128,7 @@ class GastosViewModelTest {
         }
     }
 
-    // --- Rango personalizado (spec rango-personalizado, T7) ---
+    // --- Rango personalizado (spec rango-personalizado) ---
 
     private suspend fun sembrar() {
         repository.save(ticket(hoy.atTime(9, 0), 10.0))

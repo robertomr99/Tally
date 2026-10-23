@@ -17,7 +17,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Reactividad del resumen y uso del Clock (spec resumen-total, T3). */
+/** Reactividad del resumen y uso del Clock (spec resumen-total). */
 class ObservarResumenDelPeriodoTest {
 
     private val madrid = ZoneId.of("Europe/Madrid")

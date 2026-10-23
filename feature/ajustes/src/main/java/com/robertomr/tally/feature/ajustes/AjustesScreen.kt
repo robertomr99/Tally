@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -46,6 +45,7 @@ import com.robertomr.tally.domain.expenses.entities.DiagnosticoExtracciones
 import com.robertomr.tally.feature.ajustes.demo.SeccionDatosDemo
 import com.robertomr.tally.feature.common.CabeceraPantalla
 import com.robertomr.tally.feature.common.ColumnaCentrada
+import com.robertomr.tally.feature.common.EstiloTabular
 import com.robertomr.tally.feature.common.PADDING_PANTALLA
 import com.robertomr.tally.feature.common.TarjetaSeccion
 import com.robertomr.tally.feature.common.TituloSeccion
@@ -302,7 +302,7 @@ private fun SeccionModeloLocal(
         detalleEstado(estado)?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.bodyMedium.cifrasTabulares(),
+                style = MaterialTheme.typography.bodyMedium.merge(EstiloTabular),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.testTag("modelo_detalle"),
             )
@@ -530,5 +530,3 @@ internal fun formatearProgreso(bytes: Long, total: Long): String =
     if (bytes >= GB) "${formatearGb(bytes)} / ${formatearTamano(total)}"
     else "${formatearTamano(bytes)} / ${formatearTamano(total)}"
 
-/** Cifras tabulares (DESIGN.md: "tnum" en cualquier cifra). */
-private fun TextStyle.cifrasTabulares(): TextStyle = copy(fontFeatureSettings = "tnum")

@@ -16,7 +16,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Reactividad de la distribución (spec grafica-donut, T2). */
+/** Reactividad de la distribución (spec grafica-donut). */
 class ObservarDistribucionDelPeriodoTest {
 
     private val repository = TicketRepository(FakeTicketDataSource(), FakePhotoFileStore())

@@ -40,10 +40,7 @@ dependencies {
     testImplementation(libs.junit)
 
     // Tests instrumentados sin UI (Room in-memory + fichero real en filesDir).
-    androidTestImplementation(libs.coroutines.core)
     androidTestImplementation(libs.turbine)
-    androidTestImplementation(libs.room.runtime)
-    androidTestImplementation(libs.room.ktx)
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)

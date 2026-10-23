@@ -105,5 +105,3 @@ val TallyTypography = Typography(
         lineHeight = 16.sp,
     ),
 )
-
-fun TextStyle.tabularNumbers(): TextStyle = copy(fontFeatureSettings = "tnum")

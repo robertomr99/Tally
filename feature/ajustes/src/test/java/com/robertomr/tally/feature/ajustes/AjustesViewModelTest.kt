@@ -36,7 +36,7 @@ import org.junit.Test
 
 /**
  * Tests JVM de [AjustesViewModel] con Turbine, CoroutineTestRule y los dobles de
- * :test:unit (spec descarga-modelo, T6): estados del modelo, avisos de WiFi y
+ * :test:unit (spec descarga-modelo): estados del modelo, avisos de WiFi y
  * espacio, cancelar, eliminar y token.
  */
 class AjustesViewModelTest {

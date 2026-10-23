@@ -1,6 +1,5 @@
 package com.robertomr.tally.captura
 
-import android.content.pm.PackageManager
 import android.os.ParcelFileDescriptor
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
@@ -10,14 +9,12 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.robertomr.tally.MainActivity
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
 // E2E enfocado de la feature procesado-ui (spec, T8): pantalla 05 ->
 // "Continuar" -> procesado (mockup 06) con badge del motor REAL y pasos ->

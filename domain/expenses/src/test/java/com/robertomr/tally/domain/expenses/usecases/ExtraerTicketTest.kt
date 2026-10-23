@@ -16,7 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests JVM de [ExtraerTicket] con [FakeTextEngine] (spec extraccion-nube, T4):
+ * Tests JVM de [ExtraerTicket] con [FakeTextEngine] (spec extraccion-nube):
  * texto blank -> vacio SIN invocar el motor, texto valido -> invocacion con el
  * texto tal cual y resultado passthrough (motor registrado), error del motor
  * propagado y CancellationException re-lanzada (nunca convertida en resultado).

@@ -27,19 +27,17 @@ androidxTestRunner = "1.7.0"
 androidxTestJunit = "1.3.0"
 # Espresso para los tests instrumentados de UI (NavigationTest de :app). Se fija
 # explícitamente 3.7.0 porque ui-test-junit4 trae transitivo 3.5.0, que falla en
-# API 35+ (NoSuchMethodException InputManager.getInstance al inyectar eventos);
-# ver sesión 008 de PROGRESS.md.
+# API 35+ (NoSuchMethodException InputManager.getInstance al inyectar eventos).
 androidxTestEspresso = "3.7.0"
 # Navegación de :app (NavHost + rutas). Fuera del Compose BOM: última estable
 # de la línea compatible con compileSdk 36 (2.10.x exige compileSdk 37 vía
-# lifecycle 2.11.0; ver sesión 008 de PROGRESS.md).
+# lifecycle 2.11.0).
 navigationCompose = "2.9.8"
 # javax.inject para el @Inject constructor de los repositorios de :domain:*
 # (AGENTS.md); sin dependencias de Android en dominio.
 javaxInject = "1"
 # CameraX (solo :feature:escanear, spec captura-foto). Ultima estable de la
-# linea (1.7.0 es alpha); compatible con compileSdk 36. Ver sesion 012 de
-# PROGRESS.md.
+# linea (1.7.0 es alpha); compatible con compileSdk 36.
 cameraX = "1.6.2"
 # androidx.exifinterface para corregir la orientacion EXIF de la foto capturada
 # (pipeline de captura-foto). Ultima estable.
@@ -47,9 +45,6 @@ exifinterface = "1.4.2"
 # hiltViewModel() en Compose (androidx.hilt:hilt-navigation-compose). Linea
 # 1.2.x: la 1.4.0 exige compileSdk 37 (AAR metadata) y este repo fija 36.
 hiltNavigationCompose = "1.2.0"
-# androidx.test:rules (GrantPermissionRule del E2E de captura). Misma linea
-# 1.7.0 que androidxTestCore/Runner ya en el catalogo.
-androidxTestRules = "1.7.0"
 # ML Kit Text Recognition v2 (latin, variante bundled: modelo dentro del APK,
 # sin Play Services ni red; spec ocr-mlkit, ADR 0002 etapa 1). Ultima estable
 # de la linea 16.x (16.0.1, 2024-08); coste ~+6 MB de APK aceptado por
@@ -58,12 +53,12 @@ mlkitTextRecognition = "16.0.1"
 # kotlinx-serialization-json: parser/validador de TicketExtraido en dominio
 # (spec extraccion-nube). El spec citaba la linea 1.9.x; se fija 1.11.0, ultima
 # estable en Maven Central a 2026-10-16 (1.12.0-RC es RC), compatible con Kotlin
-# 2.2.10. Decision registrada en la sesion 018 de PROGRESS.md.
+# 2.2.10.
 kotlinxSerializationJson = "1.11.0"
 # Plugin com.google.gms.google-services: SOLO aplica en :app si existe
 # app/google-services.json (extraccion-nube T1: build verde sin credenciales).
 # El spec citaba la linea 4.4.x; se fija 4.5.0, ultima release en Google Maven a
-# 2026-10-16. Decision registrada en la sesion 018 de PROGRESS.md.
+# 2026-10-16.
 googleServices = "4.5.0"
 # Firebase Android BoM (gestiona firebase-ai sin version literal; extraccion-nube).
 # Ultima release a 2026-10-16 (la doc de Firebase AI Logic recomienda 35.0.1+).
@@ -75,12 +70,8 @@ firebaseBom = "35.0.2"
 workManager = "2.12.0"
 
 [libraries]
-# Artefactos de plugin (los usa build-logic)
+# Artefacto del plugin de Android (lo usa build-logic)
 android-gradle-plugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
-kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
-kotlin-compose-gradle-plugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
-ksp-gradle-plugin = { group = "com.google.devtools.ksp", name = "symbol-processing-gradle-plugin", version.ref = "ksp" }
-hilt-gradle-plugin = { group = "com.google.dagger", name = "hilt-android-gradle-plugin", version.ref = "hilt" }
 
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
@@ -130,7 +121,6 @@ mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition"
 # AndroidX y Compose
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 # LocalLifecycleOwner para el binding de CameraX (captura-foto); misma linea
 # de version lifecycle.
 androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
@@ -176,8 +166,6 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "androidxTestEspresso" }
 # Espresso-Intents (solo androidTest, spec galeria-escaneo): stubea el Intent del selector de fotos del sistema.
 androidx-test-espresso-intents = { group = "androidx.test.espresso", name = "espresso-intents", version.ref = "androidxTestEspresso" }
-# Rules de androidx.test (GrantPermissionRule en CapturaFlujoTest; captura-foto).
-androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidxTestRules" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

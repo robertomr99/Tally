@@ -16,7 +16,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Reactividad del listado (spec listado-gastos, T2). */
+/** Reactividad del listado (spec listado-gastos). */
 class ObservarListadoDelPeriodoTest {
 
     private val repository = TicketRepository(FakeTicketDataSource(), FakePhotoFileStore())

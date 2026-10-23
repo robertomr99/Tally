@@ -24,7 +24,7 @@ import org.junit.rules.TemporaryFolder
 
 /**
  * Tests JVM de [ModelDownloadEngine] contra servidores locales `HttpServer` del
- * JDK (spec descarga-modelo, T4): 200 completo, reanudacion 206, servidor que
+ * JDK (spec descarga-modelo): 200 completo, reanudacion 206, servidor que
  * ignora Range, 416, 401/403, redireccion cross-host SIN Authorization,
  * longitud truncada, cancelacion que deja el `.part` y solo-HTTPS.
  */

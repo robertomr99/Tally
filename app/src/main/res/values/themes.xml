@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Tema de la app tras el splash: el mismo que se usaba antes de esta feature. -->
+    <!-- Tema de la app tras el splash. -->
     <style name="Theme.Tally" parent="@android:style/Theme.Material.Light.NoActionBar" />
 
     <!-- Tema de arranque (core-splashscreen). Fondo fijo primary; el emblema es un

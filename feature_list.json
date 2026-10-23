@@ -753,5 +753,26 @@
       "2026-10-19 sesion 054: validator independiente -> accept (diff y codigo revisados; ningun tag revision_*, procesado_* ni detalle_* perdido, tests no debilitados; accesibilidad, rendimiento y DESIGN.md revisados; capturas antes/despues revisadas; JVM y E2E apoyados en evidencia de emulator-5556, OK 43 tests sin desglose de assumeTrue). Deuda no bloqueante: fontScale 2,0 (dock y chip Categorizacion, previos a esta feature), revision editable aun con aspecto de formulario, semantica agrupada de FilaRecibo. Pendiente humano: revision visual."
     ],
     "notes": "Petición del usuario (2026-10-19): que el resumen tras escanear dé sensación de ticket real. Alcance elegido por el usuario: resultado, revisión y detalle; el panel Resumen y las listas NO cambian (DESIGN.md: la estética de recibo se reserva al ticket digitalizado; no copiar la decoración ficticia de los mockups). Sin módulos Gradle ni dependencias nuevas; componente en :feature:common."
+  },
+  {
+    "id": "limpieza-codigo",
+    "area": "base",
+    "title": "Limpieza de codigo: imports, dependencias y comentarios sin valor",
+    "user_visible_behavior": "Ninguno: la app se comporta igual. El codigo queda mas limpio (sin imports ni dependencias sin usar y sin referencias a sesiones en comentarios).",
+    "depends_on": [],
+    "status": "accepted",
+    "verification": [
+      "bash init.sh (assembleDebug + testDebugUnitTest) en verde",
+      "gradlew.bat :domain:expenses:test :test:unit:test en verde, sin bajar el numero de tests",
+      "gradlew.bat assembleDebugAndroidTest y :app:assembleRelease compilan",
+      "git diff sin cambios de logica: solo imports, dependencias/catalogo sin consumidores, codigo sin referencias y comentarios",
+      "Instrumentados en emulator-5556 solo de los paquetes tocados, sin *RealTest"
+    ],
+    "evidence": [
+      "2026-10-23 sesion 076: init.sh OK; testDebugUnitTest + :domain:expenses:test :test:unit:test --rerun-tasks OK (280 tests en las dos tareas, igual que la linea base); assembleDebugAndroidTest y :app:assembleRelease OK; greps finales 0; build-logic/domain core sin diff; instrumentados emulator-5556 sin RealTest: resumen 11/11, gastos 37/37, captura 13+1 skipped, ajustes 11/11, diseno 6/6, navigation 3/3, framework:database 40/40, framework:ai ocr 7/7. Detalle en PROGRESS.md sesion 076.",
+      "2026-10-23 validator independiente -> accept (diff completo revisado: solo imports, comentarios, bajas de catalogo/dependencias sin consumidores y consolidacion de cifras tabulares; gradlew.bat assembleDebug testDebugUnitTest -Xmx4g BUILD SUCCESSFUL; greps finales a 0; build-logic y domain/core sin diff). Nota: el >=527 de la spec era erroneo (:domain:expenses:test + :test:unit:test dan 280, 554 sumando modulos; sin cambio respecto a HEAD). Pendiente humano: revision visual de Ajustes.",
+      "2026-10-23 validator independiente -> accept (diff completo revisado: solo imports, comentarios, bajas de catalogo/dependencias sin consumidores y consolidacion de cifras tabulares; gradlew.bat assembleDebug testDebugUnitTest -Xmx4g BUILD SUCCESSFUL; greps finales a 0; build-logic y domain/core sin diff). Nota: el >=527 de la spec era erroneo (:domain:expenses:test + :test:unit:test dan 280, 554 sumando modulos; sin cambio respecto a HEAD). Pendiente humano: revision visual de Ajustes."
+    ],
+    "notes": "Peticion del usuario (2026-10-23). Alcance acordado tras auditoria: 15 imports sin usar; entradas de catalogo y dependencias sin consumidores (androidx-test-rules, material-icons-extended en :feature:ajustes, artefactos de plugin y lifecycle-runtime-ktx); tabularNumbers() sin uso y consolidar los duplicados de cifras tabulares; comentarios con referencias a sesion/PROGRESS y etiquetas de tarea en cabeceras de test. Fuera: build-logic/, :domain:core vacio (AGENTS.md prohibe tocar modulos sin preguntar), GemmaMediaPipeSpike en main, renombrar di.kt, onAvisoVisto, etiquetas spec/R-/mockup restantes. Se conservan los comentarios que explican un porque."
   }
 ]

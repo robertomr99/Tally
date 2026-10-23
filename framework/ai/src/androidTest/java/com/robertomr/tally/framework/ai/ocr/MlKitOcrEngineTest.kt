@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 
 /**
  * Tests instrumentados de [MlKitOcrEngine] con ML Kit Text Recognition v2
- * latin bundled (spec ocr-mlkit, T6): el OCR corre realmente on-device.
+ * latin bundled (spec ocr-mlkit): el OCR corre realmente on-device.
  *
  * (a) Imagen renderizada en runtime (Canvas: texto grande y claro) con asserts
  *     de tokens exactos — re-ejecutable sin fixtures.
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith
  *     (sin inventar fixtures ni resultados). Desviacion registrada (2026-10-16):
  *     el spec planificaba 5 tickets, pero solo se aportaron 4 fotos reales; se
  *     acepta la desviacion y el harness cubre 4 (ver Desviaciones del spec
- *     ocr-mlkit y PROGRESS.md sesion 015).
+ *     ocr-mlkit).
  *
  * El texto crudo reconocido se loguea con el tag `MlKitOcr` para exportarlo a
  * `docs/evidence/ocr-mlkit/` como evidencia.

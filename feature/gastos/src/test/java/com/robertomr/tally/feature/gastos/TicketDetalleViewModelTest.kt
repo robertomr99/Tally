@@ -26,7 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests JVM de [TicketDetalleViewModel] (spec detalle-ticket, T5) con los
+ * Tests JVM de [TicketDetalleViewModel] (spec detalle-ticket) con los
  * dobles de `:test:unit`: carga, inexistente, edicion, descartar, guardar,
  * borrar y sus fallos, y el doble toque.
  */

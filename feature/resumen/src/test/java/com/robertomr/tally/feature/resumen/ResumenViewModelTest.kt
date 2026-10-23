@@ -31,7 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests JVM de [ResumenViewModel] (spec periodo-selector, T5): Mes por defecto,
+ * Tests JVM de [ResumenViewModel] (spec periodo-selector): Mes por defecto,
  * alternar cambia periodo y cifra, filtro por emisión y reactividad al guardar.
  * Hoy = jueves 2026-10-15; semana 12..18 oct; mes 1..31 oct.
  */
@@ -263,7 +263,7 @@ class ResumenViewModelTest {
         return s
     }
 
-    // --- Rango personalizado (spec rango-personalizado, T7) ---
+    // --- Rango personalizado (spec rango-personalizado) ---
 
     @Test
     fun elRangoAlimentaResumenDistribucionYRecientesALaVezConLimitesInclusivos() = runTest {

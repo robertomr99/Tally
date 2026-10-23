@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Etiquetas del listado (spec listado-gastos, T4). Hoy = jueves 2026-10-22. */
+/** Etiquetas del listado (spec listado-gastos). Hoy = jueves 2026-10-22. */
 class EtiquetaDiaTest {
 
     private val hoy = LocalDate.of(2026, 10, 22)

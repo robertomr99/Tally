@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests JVM de los reductores puros de edicion (spec detalle-ticket, T1): texto
+ * Tests JVM de los reductores puros de edicion (spec detalle-ticket): texto
  * invalido = null, `conservarHora` true/false, `datosRevisionDe` con 0 y N
  * lineas e ids estables.
  */

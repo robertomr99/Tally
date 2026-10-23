@@ -71,8 +71,6 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
-    // GrantPermissionRule del CapturaFlujoTest (spec captura-foto).
-    androidTestImplementation(libs.androidx.test.rules)
     // WorkManager en el E2E de descarga-modelo (comprobar que no se encola trabajo).
     androidTestImplementation(libs.androidx.work.runtime.ktx)
     // App Check debug provider para el test real de nube (extraccion-nube T7):

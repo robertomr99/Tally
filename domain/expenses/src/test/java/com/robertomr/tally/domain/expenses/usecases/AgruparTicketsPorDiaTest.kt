@@ -9,7 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Agrupación por día del listado (spec listado-gastos, T1). */
+/** Agrupación por día del listado (spec listado-gastos). */
 class AgruparTicketsPorDiaTest {
 
     private val agrupar = AgruparTicketsPorDia()

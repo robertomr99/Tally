@@ -34,7 +34,7 @@ import org.junit.runners.MethodSorters
 //
 // La camara del emulador es simulada: si la escena virtual no entrega frames,
 // el test valida los estados de UI y deja la captura real a los dispositivos
-// fisicos (realme GT 2 / Tab S9+, ver PROGRESS.md); en ese caso el test queda
+// fisicos (realme GT 2 / Tab S9+); en ese caso el test queda
 // como "assumption failed" (skipped), nunca como pass inventado.
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -56,7 +56,7 @@ class CapturaFlujoTest {
         assumeTrue(
             "CAMERA ya concedida: no se puede revocar en caliente (Android mata el " +
                 "proceso bajo test). Escenario 6 cubierto con instalacion limpia y " +
-                "verificacion manual (ver PROGRESS.md, sesion 012).",
+                "verificacion manual.",
             !concedido,
         )
 

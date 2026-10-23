@@ -21,9 +21,6 @@ dependencies {
     // collectAsStateWithLifecycle.
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Iconos (arrow_back, delete...); los gestiona el Compose BOM.
-    implementation(libs.androidx.compose.material.icons.extended)
-
     // Tests JVM del ViewModel con dobles de :test:unit + Turbine.
     testImplementation(project(":test:unit"))
     testImplementation(libs.junit)

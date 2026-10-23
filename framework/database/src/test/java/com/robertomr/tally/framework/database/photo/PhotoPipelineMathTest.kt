@@ -5,7 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Tests JVM de la matematica del pipeline de foto (spec captura-foto, T7):
+ * Tests JVM de la matematica del pipeline de foto (spec captura-foto):
  * tablas de escalado (~1280 px lado largo, proporcion conservada) y mapeo
  * EXIF -> grados.
  */

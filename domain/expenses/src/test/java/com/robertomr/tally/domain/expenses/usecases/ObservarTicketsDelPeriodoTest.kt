@@ -15,7 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Filtro por fecha de emisión inclusivo y reactivo (spec periodo-selector, T3). */
+/** Filtro por fecha de emisión inclusivo y reactivo (spec periodo-selector). */
 class ObservarTicketsDelPeriodoTest {
 
     private val repository = TicketRepository(FakeTicketDataSource(), FakePhotoFileStore())
