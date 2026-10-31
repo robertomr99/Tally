@@ -4,6 +4,14 @@ Una aplicación Android nativa de control de gastos personales a partir de **fot
 
 Sin cuentas, sin backend y sin sincronización: todos los datos viven en el dispositivo. Con el motor local, **el ticket nunca sale del móvil**.
 
+## 🎬 Vídeo
+
+<div align="center">
+
+[![Vídeo de Tally](https://img.youtube.com/vi/K4pdDjfJQv8/maxresdefault.jpg)](https://youtu.be/K4pdDjfJQv8)
+
+</div>
+
 ## 📱 Características
 
 - **Escaneo de tickets**: cámara con encuadre guiado o selección desde la galería (sin pedir permisos de medios)
