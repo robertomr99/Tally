@@ -23,3 +23,9 @@ app/google-services.json
 # registrarlo en Firebase Console > App Check > Manage debug tokens; el test real
 # de nube lo lee via testInstrumentationRunnerArguments (app/build.gradle.kts).
 app/appcheck-debug-token.txt
+
+# Material de la presentacion (video Remotion, guion de demo, resumen para slides):
+# fuera del repo. El video se enlaza desde el README.
+/video/
+/demo/
+/docs/resumen-para-slides.md
